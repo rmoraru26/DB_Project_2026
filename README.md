@@ -17,6 +17,7 @@ MariaDB is the database used by the project. A custom audit plugin is planned to
 | Branch | Contents |
 |---|---|
 | `main` | Initial project structure and README |
+| `website` | Website to navigate bookings, loans, cancellations, and returns |
 | `database-schema` | Initial database schema and demonstration data |
 | `error-handling` | C++ audit-support modules, tests, and technical documentation |
 
