@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Items
+{% endblock %}
+
+{% block body %}
+    <h1>Book an Item</h1>
+
+    {% for category, items_list in inventory.items() %}
+        <details>
+            <summary>{{ category }}</summary>
+            <ul>
+                {% for item in items_list %}
+                    <li>
+                        <a href="/items/{{ item }}">{{ item }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </details>
+    {% endfor %}
+
+    <div>
+        <button onclick="history.back()">Back</button>
+    </div>
+
+
+{% endblock %}
