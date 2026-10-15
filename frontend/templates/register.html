@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <h1>Register</h1>
+
+    <form action="/">
+        <div><input autocomplete="off" placeholder="Email" type="text"></div>
+        <div><input autocomplete="off" placeholder="Password" type="text"></div>
+        <div><input autocomplete="off" placeholder="Confirm Password" type="text"></div>
+        <button type="submit">Register</button>
+    </form>
+
+    <div>
+        <button onclick="history.back()">Back</button>
+    </div>
+
+{% endblock %}
