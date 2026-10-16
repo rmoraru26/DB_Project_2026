@@ -184,3 +184,26 @@ def rooms_home():
     rooms_data = ["Study Room", "Meeting Room", "Studio Room", "Practice Room", "Cinema Room"]
 
     return render_template("rooms/roomsHome.html", rooms=rooms_data)
+
+
+# Booking Room
+@app.route("/rooms/<room_name>")
+@login_required
+def room_booking(room_name):
+    # Future Plans:
+    # Ask the database for all versions of this room
+    # Ask the database for all available times for this room
+
+    return render_template("rooms/roomBooking.html", room_name=room_name)
+
+
+# Verify Booking Room
+@app.route("/rooms/<room_name>/verifyBooking", methods=["POST"])
+@login_required
+def verify_room_booking(room_name):
+    # Future Plans:
+    # Verify that the user has selected a valid time and version
+    # If available, save to database
+    # If unavailable, send error message
+
+    return render_template("rooms/verifyRoomBooking.html", room_name=room_name)
