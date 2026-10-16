@@ -5,16 +5,18 @@
 {% endblock %}
 
 {% block body %}
-    <h1>Login</h1>
+    <h1 class="mb-4">Login</h1>
 
-    <form action="/">
-        <div><input autocomplete="off" placeholder="Email" type="text"></div>
-        <div><input autocomplete="off" placeholder="Password" type="text"></div>
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form action="/login" method="post">
+        <div><input autocomplete="off" placeholder="Email" type="email" name="email"></div>
+        <div><input autocomplete="off" placeholder="Password" type="password" name="password"></div>
         <button type="submit">Login</button>
     </form>
-
-    <div>
-        <button onclick="history.back()">Back</button>
-    </div>
 
 {% endblock %}
