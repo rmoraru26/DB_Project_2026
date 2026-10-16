@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request
+import pymysql
+from flask import Flask, render_template, request, session
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
