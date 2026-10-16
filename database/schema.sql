@@ -1,16 +1,4 @@
 -- University Resource Management System
--- Initial MariaDB schema for development.
---
--- This is a starting point, not the final schema. In particular, audit_events is
--- a proposed storage interface. Confirm that the chosen MariaDB plugin API can
--- capture and write the intended events before relying on it.
---
--- To use:
---   1. Connect to MariaDB with an account allowed to create databases.
---   2. Execute this file.
---   3. Optionally execute seed.sql after it has been created.
---
--- Do not put real passwords or secrets in this file.
 
 CREATE DATABASE IF NOT EXISTS university_resources
     CHARACTER SET utf8mb4
@@ -19,12 +7,11 @@ CREATE DATABASE IF NOT EXISTS university_resources
 USE university_resources;
 
 -- People who can use the application.
--- Authentication/password handling can be added once the team's login approach
--- is agreed. Never store plaintext passwords.
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(254) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     role ENUM('student', 'admin') NOT NULL DEFAULT 'student',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
