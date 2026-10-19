@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Book {{ room_name }}
+{% endblock %}
+
+{% block body %}
+<h1>Book: {{ room_name }}</h1>
+
+<!-- Booking Form (sends to verify page) -->
+<form method="POST" action="{{ url_for('verify_room_booking', room_name=room_name) }}">
+
+  <!-- Date -->
+  <label for="date">Date</label>
+  <input type="date" id="date" name="date" required>
+
+  <!-- Time Slot -->
+  <label for="time">Time slot</label>
+  <select id="time" name="time" required>
+    <option value="">Select a time</option>
+    <option>09:00 - 10:00</option>
+    <option>10:00 - 11:00</option>
+    <option>11:00 - 12:00</option>
+    <option>12:00 - 13:00</option>
+    <option>13:00 - 14:00</option>
+    <option>14:00 - 15:00</option>
+  </select>
+
+  <!-- Number of People -->
+  <label for="people">Number of people</label>
+  <input type="number" id="people" name="people" min="1" max="20" required>
+
+  <button type="submit">Continue</button>
+</form>
+
+<!-- Back to Rooms Homepage -->
+<div>
+  <a href="{{ url_for('rooms_home') }}" class="btn btn-secondary">Back</a>
+</div>
+{% endblock %}

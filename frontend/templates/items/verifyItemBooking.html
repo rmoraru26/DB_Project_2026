@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Confirm {{ item_name }}
+{% endblock %}
+
+{% block body %}
+<h1>Confirm Booking: {{ item_name }}</h1>
+
+<!-- Submitted Booking Details -->
+<ul>
+    <li>Version: {{ request.form['version'] }}</li>
+    <li>Date: {{ request.form['date'] }}</li>
+    <li>Time: {{ request.form['time'] }}</li>
+</ul>
+
+<!-- Back to Booking Form -->
+<a href="{{ url_for('item_booking', item_name=item_name) }}" class="btn btn-secondary">Back</a>
+
+<!-- Confirm (returns to Items Homepage) -->
+<form method="POST" action="{{ url_for('confirm_item_booking', item_name=item_name) }}">
+    <input type="hidden" name="version" value="{{ request.form['version'] }}">
+    <input type="hidden" name="date" value="{{ request.form['date'] }}">
+    <input type="hidden" name="time" value="{{ request.form['time'] }}">
+    <button type="submit">Confirm</button>
+</form>
+
+{% endblock %}

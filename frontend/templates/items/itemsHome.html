@@ -7,6 +7,7 @@
 {% block body %}
     <h1>Book an Item</h1>
 
+    <!-- Item Categories -->
     {% for category, items_list in inventory.items() %}
         <details>
             <summary>{{ category }}</summary>
@@ -20,9 +21,9 @@
         </details>
     {% endfor %}
 
+    <!-- Back to Homepage -->
     <div>
-        <button onclick="history.back()">Back</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
     </div>
-
 
 {% endblock %}

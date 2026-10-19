@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -64,6 +64,11 @@ def verify_item_booking(item_name):
 
     return render_template("items/verifyItemBooking.html", item_name=item_name)
 
+# Confirm Booking Item (goes back to Items Homepage)
+@app.route("/items/<item_name>/confirmBooking", methods=["POST"])
+def confirm_item_booking(item_name):
+
+    return redirect(url_for("items_home"))
 
 # ==========================================
 # ROOMS ROUTES
@@ -75,3 +80,25 @@ def rooms_home():
     rooms_data = ["Study Room", "Meeting Room", "Studio Room", "Practice Room", "Cinema Room"]
 
     return render_template("rooms/roomsHome.html", rooms=rooms_data)
+
+# Booking Room
+@app.route("/rooms/<room_name>")
+def room_booking(room_name):
+
+    return render_template("rooms/roomBooking.html", room_name=room_name)
+
+
+# Verify Booking Room
+@app.route("/rooms/<room_name>/verifyBooking", methods=["POST"])
+def verify_room_booking(room_name):
+
+    return render_template("rooms/verifyRoomBooking.html", room_name=room_name)
+
+# Confirm Booking Room (goes back to Rooms Homepage)
+@app.route("/rooms/<room_name>/confirmBooking", methods=["POST"])
+def confirm_room_booking(room_name):
+
+    return redirect(url_for("rooms_home"))
+
+if __name__ == "__main__":
+    app.run(debug=True)
