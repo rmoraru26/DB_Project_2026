@@ -1,11 +1,28 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    {{ room_name }} Confirmed
+    Confirm {{ room_name }}
 {% endblock %}
 
 {% block body %}
+<h1>Confirm Booking: {{ room_name }}</h1>
 
-    <!--TODO (Furkan): Write html here-->
+<!-- Submitted Booking Details -->
+<ul>
+    <li>Date: {{ request.form['date'] }}</li>
+    <li>Time: {{ request.form['time'] }}</li>
+    <li>People: {{ request.form['people'] }}</li>
+</ul>
+
+<!-- Back to Booking Form -->
+<a href="{{ url_for('room_booking', room_name=room_name) }}" class="btn btn-secondary">Back</a>
+
+<!-- Confirm (returns to Rooms Homepage) -->
+<form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}">
+    <input type="hidden" name="date" value="{{ request.form['date'] }}">
+    <input type="hidden" name="time" value="{{ request.form['time'] }}">
+    <input type="hidden" name="people" value="{{ request.form['people'] }}">
+    <button type="submit">Confirm</button>
+</form>
 
 {% endblock %}

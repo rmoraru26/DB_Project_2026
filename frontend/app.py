@@ -2,7 +2,7 @@ import os
 import pymysql
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, redirect, render_template, request, session
+from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -173,6 +173,13 @@ def verify_item_booking(item_name):
     return render_template("items/verifyItemBooking.html", item_name=item_name)
 
 
+# Confirm Booking Item (goes back to Items Homepage)
+@app.route("/items/<item_name>/confirmBooking", methods=["POST"])
+def confirm_item_booking(item_name):
+
+    return redirect(url_for("items_home"))
+
+
 # ==========================================
 # ROOMS TO BOOK
 # ==========================================
@@ -207,3 +214,14 @@ def verify_room_booking(room_name):
     # If unavailable, send error message
 
     return render_template("rooms/verifyRoomBooking.html", room_name=room_name)
+
+
+# Confirm Booking Room
+@app.route("/rooms/<room_name>/confirmBooking", methods=["POST"])
+def confirm_room_booking(room_name):
+
+    return redirect(url_for("rooms_home"))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
