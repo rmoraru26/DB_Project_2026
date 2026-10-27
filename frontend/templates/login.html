@@ -5,18 +5,32 @@
 {% endblock %}
 
 {% block body %}
-    <h1 class="mb-4">Login</h1>
 
-    {% if error %}
-        <div class="alert alert-danger" role="alert">
-            {{ error }}
+    <div class="form-container">
+        <h1 class="text-center mb-4">Login</h1>
+
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/login" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email">
+            </div>
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password">
+            </div>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-lg custom-brand-btn" type="submit">Login</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <a href="/register">Create a new account</a>
         </div>
-    {% endif %}
-
-    <form action="/login" method="post">
-        <div><input autocomplete="off" placeholder="Email" type="email" name="email"></div>
-        <div><input autocomplete="off" placeholder="Password" type="password" name="password"></div>
-        <button type="submit">Login</button>
-    </form>
+    </div>
 
 {% endblock %}

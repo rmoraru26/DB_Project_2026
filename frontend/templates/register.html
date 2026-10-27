@@ -1,20 +1,41 @@
 {% extends "layout.html" %}
 
+{% block title %}
+    Register
+{% endblock %}
+
 {% block body %}
-    <h1 class="mb-4">Register</h1>
 
-    {% if error %}
-        <div class="alert alert-danger" role="alert">
-            {{ error }}
+    <div class="form-container">
+        <h1 class="text-center mb-4">Register</h1>
+
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/register" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Full Name" type="text" class="form-control form-control-lg" name="full_name">
+            </div>
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email"></div>
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password">
+            </div>
+            <div class="mb-3">
+                <input autocomplete="off" placeholder="Confirm Password" type="password" class="form-control form-control-lg" name="confirm_password">
+            </div>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-lg custom-brand-btn" type="submit">Register</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <a href="/login">Already have an account?</a>
         </div>
-    {% endif %}
-
-    <form action="/register" method="post">
-        <div><input autocomplete="off" placeholder="Full Name" type="text" name="full_name"></div>
-        <div><input autocomplete="off" placeholder="Email" type="email" name="email"></div>
-        <div><input autocomplete="off" placeholder="Password" type="password" name="password"></div>
-        <div><input autocomplete="off" placeholder="Confirm Password" type="password" name="confirm_password"></div>
-        <button type="submit">Register</button>
-    </form>
+    </div>
 
 {% endblock %}
