@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Book {{ item_name }}
+{% endblock %}
+
+{% block body %}
+<h1>Book: {{ item_name }}</h1>
+
+<!-- Booking Form (sends to verify page) -->
+<form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
+
+  <!-- Version (filler options) -->
+  <label for="version">Version</label>
+  <select id="version" name="version" required>
+    <option value="">Select a version</option>
+    <option>Version A</option>
+    <option>Version B</option>
+  </select>
+
+  <!-- Date -->
+  <label for="date">Date</label>
+  <input type="date" id="date" name="date" required>
+
+  <!-- Time Slot -->
+  <label for="time">Time slot</label>
+  <select id="time" name="time" required>
+    <option value="">Select a time</option>
+    <option>09:00 - 10:00</option>
+    <option>10:00 - 11:00</option>
+    <option>11:00 - 12:00</option>
+    <option>12:00 - 13:00</option>
+    <option>13:00 - 14:00</option>
+    <option>14:00 - 15:00</option>
+  </select>
+  <!-- Future plan: user creates the range of time instead of given options-->
+
+  <button type="submit">Continue</button>
+</form>
+
+<!-- Back to Items Homepage -->
+<div>
+  <a href="{{ url_for('items_home') }}" class="btn btn-secondary">Back</a>
+</div>
+
+{% endblock %}

@@ -1,7 +1,7 @@
 /* 
-    ==========================================
-    BOOKING ROOMS LINKS (BUTTONS)
-    ==========================================
+    ====================
+    BUTTONS
+    ====================
 */
 
 .custom-brand-btn {
@@ -12,5 +12,25 @@
 
 .custom-brand-btn:hover {
     background-color: #6495ED;
-    color: white
+    color: white;
+}
+
+/* 
+    ====================
+    CONTAINERS & CARDS
+    ====================
+*/
+
+.form-container {
+    max-width: 500px;
+    margin: 3rem auto;
+    padding: 2rem;
+    border: 1px solid black;
+    border-radius: 8px;
+}
+
+.card-img-top {
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    width: 100%;
 }

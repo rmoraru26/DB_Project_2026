@@ -5,24 +5,32 @@
 {% endblock %}
 
 {% block body %}
-    <h1>Book an Item</h1>
+    <h1 class="mb-4">Book an Item... or Multiple</h1>
 
-    {% for category, items_list in inventory.items() %}
-        <details>
-            <summary>{{ category }}</summary>
-            <ul>
-                {% for item in items_list %}
-                    <li>
-                        <a href="/items/{{ item }}">{{ item }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        </details>
-    {% endfor %}
+    <div class="row row-cols-1 row-cols-md-4 g-4">
 
-    <div>
-        <button onclick="history.back()">Back</button>
+        {% for category, items_list in inventory.items() %}
+            <div class="col">
+                <div class="card">
+                    
+                    <img src="{{ url_for('static', filename='images/' ~ category|lower|replace(' ', '_') ~ '.jpg') }}" class="card-img-top" alt="{{ category }} image">
+
+                    <div class="card-body">
+                        <h4 class="card-title">{{ category }}</h4>
+                    </div>
+
+                    <ul class="list-group list-group-flush">
+                        {% for item in items_list %}
+                            <li class="list-group-item">
+                                <a href="/items/{{ item }}">{{ item }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+        
+                </div>
+            </div>
+        {% endfor %}
+
     </div>
-
 
 {% endblock %}

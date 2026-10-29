@@ -5,16 +5,25 @@
 {% endblock %}
 
 {% block body %}
-    <h1>Book a Room</h1>
+    <h1 class="mb-4">Book a Room... or Multiple</h1>
 
-    <div>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for room in rooms %}
-            <a href="/rooms/{{ room }}" class="btn btn-lg custom-brand-btn">{{ room }}</a>
-        {% endfor %}
-    </div>
+            <div class="col">
+                <div class="card">
 
-    <div>
-        <button onclick="history.back()">Back</button>
+                    <img src="{{ url_for('static', filename='images/' ~ room|lower|replace(' ', '_') ~ '.jpg') }}" class="card-img-top" alt="{{ room }} image">
+
+                    <div class="card-body">
+                        <h4 class="card-title">{{ room }}</h4>
+                    </div>
+
+                    <a href="/rooms/{{ room }}" class="btn btn-lg custom-brand-btn">Book</a>
+
+                </div>
+            </div>
+        {% endfor %}
+
     </div>
 
 {% endblock %}
