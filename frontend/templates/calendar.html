@@ -1,0 +1,41 @@
+<!-- Weekly Calendar (green = your bookings, grey = other users) -->
+<div id="calendar" class="my-4"
+     data-slot-min="{{ slot_min }}"
+     data-slot-max="{{ slot_max }}"
+     data-min-date="{{ min_date }}"
+     data-max-date="{{ max_date }}"
+     data-events='{{ events|tojson }}'></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("calendar");
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "timeGridWeek",
+      allDaySlot: false,
+      height: "auto",
+      slotMinTime: calendarEl.dataset.slotMin,
+      slotMaxTime: calendarEl.dataset.slotMax,
+      validRange: {
+        start: calendarEl.dataset.minDate,
+        end: calendarEl.dataset.maxDate + "T23:59:59"
+      },
+      events: JSON.parse(calendarEl.dataset.events),
+
+      // Clicking a slot fills in the date and time fields of the form
+      dateClick: function (info) {
+        document.getElementById("date").value = info.dateStr.slice(0, 10);
+        const hour = info.dateStr.slice(11, 13);
+        const select = document.getElementById("time");
+        for (const option of select.options) {
+          if (option.value.startsWith(hour + ":")) {
+            select.value = option.value;
+          }
+        }
+      }
+    });
+
+    calendar.render();
+  });
+</script>

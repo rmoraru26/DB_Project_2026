@@ -7,23 +7,27 @@
 {% block body %}
 <h1>Book: {{ room_name }}</h1>
 
+<!-- Error Message -->
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<p>Rooms can be booked up to 3 months in advance. Quiet hours: 22:00 - 09:00.</p>
+
 <!-- Booking Form (sends to verify page) -->
 <form method="POST" action="{{ url_for('verify_room_booking', room_name=room_name) }}">
 
   <!-- Date -->
   <label for="date">Date</label>
-  <input type="date" id="date" name="date" required>
+  <input type="date" id="date" name="date" min="{{ min_date }}" max="{{ max_date }}" required>
 
   <!-- Time Slot -->
   <label for="time">Time slot</label>
   <select id="time" name="time" required>
     <option value="">Select a time</option>
-    <option>09:00 - 10:00</option>
-    <option>10:00 - 11:00</option>
-    <option>11:00 - 12:00</option>
-    <option>12:00 - 13:00</option>
-    <option>13:00 - 14:00</option>
-    <option>14:00 - 15:00</option>
+    {% for slot in slots %}
+      <option>{{ slot }}</option>
+    {% endfor %}
   </select>
 
   <!-- Number of People -->
@@ -32,6 +36,9 @@
 
   <button type="submit">Continue</button>
 </form>
+
+<!-- Weekly Calendar -->
+{% include "calendar.html" %}
 
 <!-- Back to Rooms Homepage -->
 <div>
