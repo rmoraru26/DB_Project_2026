@@ -5,24 +5,34 @@
 {% endblock %}
 
 {% block body %}
-<h1>Confirm Booking: {{ room_name }}</h1>
+    <div class="contains-inline">
+        <ol class="stepper sm:stepper-horizontal">
+            <li class="stepper-item active">Choose Room</li>
+            <li class="stepper-item active">Select Booking Date</li>
+            <li class="stepper-item active">Confirm Booking Date</li>
+        </ol>
+    </div>    
 
-<!-- Submitted Booking Details -->
-<ul>
-    <li>Date: {{ request.form['date'] }}</li>
-    <li>Time: {{ request.form['time'] }}</li>
-    <li>People: {{ request.form['people'] }}</li>
-</ul>
+    <h1>Confirm Booking: {{ room_name }}</h1>
 
-<!-- Back to Booking Form -->
-<a href="{{ url_for('room_booking', room_name=room_name) }}" class="btn btn-secondary">Back</a>
+    <!-- Submitted Booking Details -->
+    <ul>
+        <li>Date: {{ request.form['date'] }}</li>
+        <li>Time: {{ request.form['time'] }}</li>
+        <li>People: {{ request.form['people'] }}</li>
+    </ul>
 
-<!-- Confirm (returns to Rooms Homepage) -->
-<form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}">
-    <input type="hidden" name="date" value="{{ request.form['date'] }}">
-    <input type="hidden" name="time" value="{{ request.form['time'] }}">
-    <input type="hidden" name="people" value="{{ request.form['people'] }}">
-    <button type="submit">Confirm</button>
-</form>
+    <!-- Confirm (returns to Rooms Homepage) -->
+    <div>
+        <form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}">
+            <input type="hidden" name="date" value="{{ request.form['date'] }}">
+            <input type="hidden" name="time" value="{{ request.form['time'] }}">
+            <input type="hidden" name="people" value="{{ request.form['people'] }}">
+            <button class="btn btn-lg custom-brand-btn" type="submit">Confirm</button>
+        </form>   
+    </div>
+
+    <!-- Back to Booking Form -->
+    <a href="{{ url_for('room_booking', room_name=room_name) }}" class="btn btn-secondary">Back</a>
 
 {% endblock %}

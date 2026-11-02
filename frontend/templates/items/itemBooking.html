@@ -5,48 +5,53 @@
 {% endblock %}
 
 {% block body %}
-<h1>Book: {{ item_name }}</h1>
+    <div class="contains-inline">
+        <ol class="stepper sm:stepper-horizontal">
+            <li class="stepper-item active">Choose Item</li>
+            <li class="stepper-item active">Select Booking Date</li>
+            <li class="stepper-item">Confirm Booking Date</li>
+        </ol>
+    </div>
 
-<!-- Error Message -->
-{% if error %}
-  <div class="alert alert-danger">{{ error }}</div>
-{% endif %}
+    <h1>Book: {{ item_name }}</h1>
 
-<p>Items can be booked up to 2 weeks in advance. Quiet hours: 22:00 - 09:00.</p>
+    <!-- Error Message -->
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
 
-<!-- Booking Form (sends to verify page) -->
-<form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
+    <p>Items can be booked up to 2 weeks in advance. Quiet hours: 22:00 - 09:00.</p>
 
-  <!-- Version (filler options) -->
-  <label for="version">Version</label>
-  <select id="version" name="version" required>
-    <option value="">Select a version</option>
-    <option>Version A</option>
-    <option>Version B</option>
-  </select>
+    <!-- Booking Form (sends to verify page) -->
+    <form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
 
-  <!-- Date -->
-  <label for="date">Date</label>
-  <input type="date" id="date" name="date" min="{{ min_date }}" max="{{ max_date }}" required>
+        <!-- Version (filler options) -->
+        <label for="version">Version</label>
+        <select id="version" name="version" required>
+            <option value="">Select a version</option>
+            <option>{{ item_name}} A</option>
+            <option>{{ item_name}} B</option>
+            <option>{{ item_name}} C</option>
+        </select>
 
-  <!-- Time Slot -->
-  <label for="time">Time slot</label>
-  <select id="time" name="time" required>
-    <option value="">Select a time</option>
-    {% for slot in slots %}
-      <option>{{ slot }}</option>
-    {% endfor %}
-  </select>
+        <!-- Date -->
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" min="{{ min_date }}" max="{{ max_date }}" required>
 
-  <button type="submit">Continue</button>
-</form>
+        <!-- Time Slot -->
+        <label for="time">Time slot</label>
+        <select id="time" name="time" required>
+            <option value="">Select a time</option>
+            {% for slot in slots %}
+              <option>{{ slot }}</option>
+            {% endfor %}
+        </select>
 
-<!-- Weekly Calendar -->
-{% include "calendar.html" %}
+        <button class="btn btn-secondary" type="submit">Continue</button>
+  
+    </form>
 
-<!-- Back to Items Homepage -->
-<div>
-  <a href="{{ url_for('items_home') }}" class="btn btn-secondary">Back</a>
-</div>
+    <!-- Weekly Calendar -->
+    {% include "calendar.html" %}
 
 {% endblock %}

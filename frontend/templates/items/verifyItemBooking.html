@@ -5,24 +5,34 @@
 {% endblock %}
 
 {% block body %}
-<h1>Confirm Booking: {{ item_name }}</h1>
+    <div class="contains-inline">
+        <ol class="stepper sm:stepper-horizontal">
+            <li class="stepper-item active">Choose Item</li>
+            <li class="stepper-item active">Select Booking Date</li>
+            <li class="stepper-item active">Confirm Booking Date</li>
+        </ol>
+    </div>
 
-<!-- Submitted Booking Details -->
-<ul>
-    <li>Version: {{ request.form['version'] }}</li>
-    <li>Date: {{ request.form['date'] }}</li>
-    <li>Time: {{ request.form['time'] }}</li>
-</ul>
+    <h1>Confirm Booking: {{ item_name }}</h1>
 
-<!-- Back to Booking Form -->
-<a href="{{ url_for('item_booking', item_name=item_name) }}" class="btn btn-secondary">Back</a>
+    <!-- Submitted Booking Details -->
+    <ul>
+        <li>Version: {{ request.form['version'] }}</li>
+        <li>Date: {{ request.form['date'] }}</li>
+        <li>Time: {{ request.form['time'] }}</li>
+    </ul>
 
-<!-- Confirm (returns to Items Homepage) -->
-<form method="POST" action="{{ url_for('confirm_item_booking', item_name=item_name) }}">
-    <input type="hidden" name="version" value="{{ request.form['version'] }}">
-    <input type="hidden" name="date" value="{{ request.form['date'] }}">
-    <input type="hidden" name="time" value="{{ request.form['time'] }}">
-    <button type="submit">Confirm</button>
-</form>
+    <!-- Confirm (returns to Items Homepage) -->
+    <div>
+        <form method="POST" action="{{ url_for('confirm_item_booking', item_name=item_name) }}">
+            <input type="hidden" name="version" value="{{ request.form['version'] }}">
+            <input type="hidden" name="date" value="{{ request.form['date'] }}">
+            <input type="hidden" name="time" value="{{ request.form['time'] }}">
+            <button class="btn btn-lg custom-brand-btn">Confirm</button>
+        </form>
+    </div>
+
+    <!-- Back to Booking Form -->
+    <a href="{{ url_for('item_booking', item_name=item_name) }}" class="btn btn-secondary">Back</a>
 
 {% endblock %}
