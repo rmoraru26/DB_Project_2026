@@ -646,12 +646,25 @@ def cancel_booking():
                 cursor.execute(sql_query, (booking_id, user_id))
 
             elif kind == "item":
-                sql_query = """
-                    UPDATE loans 
-                    SET status = 'returned', returned_at = CURRENT_TIMESTAMP(6) 
-                    WHERE loan_id = %s AND user_id = %s 
-                """               
-                cursor.execute(sql_query, (booking_id, user_id))
+                cursor.execute(
+                    """
+                    DELETE FROM loans
+                    WHERE loan_id = %s AND user_id = %s AND status = 'active'
+                      AND borrowed_at > CURRENT_TIMESTAMP(6)
+                    """,
+                    (booking_id, user_id),
+                )
+
+                if cursor.rowcount == 0:
+                    cursor.execute(
+                        """
+                        UPDATE loans
+                        SET status = 'returned', returned_at = CURRENT_TIMESTAMP(6)
+                        WHERE loan_id = %s AND user_id = %s AND status = 'active'
+                          AND borrowed_at <= CURRENT_TIMESTAMP(6)
+                        """,
+                        (booking_id, user_id),
+                    )
 
             db.commit()
 
