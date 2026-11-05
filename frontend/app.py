@@ -107,14 +107,6 @@ def account_profile():
     return render_template("account/accountProfile.html", user_name=user[0])
 
 
-# Account Settings Page
-@app.route("/accountSettings", methods=["GET", "POST"])
-@login_required
-def account_settings():
-
-    return render_template("account/accountSettings.html")
-
-
 # Account Bookings Page
 @app.route("/accountBookings", methods=["GET", "POST"])
 @login_required
@@ -174,6 +166,55 @@ def account_bookings():
             db.close()
 
     return render_template("account/accountBookings.html", bookings=my_bookings)
+
+
+# Account Settings Page
+@app.route("/accountSettings", methods=["GET", "POST"])
+@login_required
+def account_settings():
+    message = error = None
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        if request.method == "POST":
+
+            # Change Name
+            if request.form.get("action") == "name":
+                new_name = request.form.get("full_name", "").strip()
+                if new_name:
+                    cursor.execute("UPDATE users SET full_name = %s WHERE user_id = %s",
+                                   (new_name, session["user_id"]))
+                    db.commit()
+                    message = "Name updated."
+                else:
+                    error = "Name cannot be empty."
+
+            # Change Password
+            elif request.form.get("action") == "password":
+                cursor.execute("SELECT password_hash FROM users WHERE user_id = %s", (session["user_id"],))
+                current_hash = cursor.fetchone()[0]
+                new_password = request.form.get("new_password", "")
+
+                if not check_password_hash(current_hash, request.form.get("current_password", "")):
+                    error = "Current password is incorrect."
+                elif new_password != request.form.get("confirm_password"):
+                    error = "New passwords do not match."
+                elif len(new_password) < 8:
+                    error = "New password must be at least 8 characters."
+                else:
+                    cursor.execute("UPDATE users SET password_hash = %s WHERE user_id = %s",
+                                   (generate_password_hash(new_password), session["user_id"]))
+                    db.commit()
+                    message = "Password updated."
+
+        cursor.execute("SELECT full_name, email FROM users WHERE user_id = %s", (session["user_id"],))
+        user = cursor.fetchone()
+
+    finally:
+        db.close()
+
+    return render_template("account/accountSettings.html", user=user, message=message, error=error)
 
 
 # ==========================================

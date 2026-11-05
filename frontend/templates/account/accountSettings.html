@@ -4,19 +4,29 @@
     Account Settings
 {% endblock %}
 
-
 {% block body %}
-
     <h1>Account Settings</h1>
+    <p>Email: {{ user[1] }}</p>
 
-    <div class="mb-3">
-        <label for="formGroupExampleInput" class="form-label">Example label</label>
-        <input type="text" class="form-control" id="formGroupExampleInput" placeholder="Example input placeholder">
-    </div>
+    <!-- Messages -->
+    {% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
-    <div class="mb-3">
-        <label for="formGroupExampleInput2" class="form-label">Another label</label>
-        <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder">
-    </div>
+    <!-- Change Name -->
+    <h2>Change Name</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="name">
+        <input type="text" name="full_name" value="{{ user[0] }}" required>
+        <button type="submit">Save Name</button>
+    </form>
 
+    <!-- Change Password -->
+    <h2>Change Password</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="password">
+        <input type="password" name="current_password" placeholder="Current password" required>
+        <input type="password" name="new_password" placeholder="New password" minlength="8" required>
+        <input type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
+        <button type="submit">Save Password</button>
+    </form>
 {% endblock %}
