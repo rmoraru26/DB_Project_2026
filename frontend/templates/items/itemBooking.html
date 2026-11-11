@@ -13,43 +13,67 @@
         </ol>
     </div>
 
-    <h1>Book: {{ item_name }}</h1>
+    <!-- Middle Booking Interface -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card-body p-0">
+            <h1 class="mb-3">Book: {{ item_name }}</h1>
+            
+            <!-- Booking Rules as Subtle Badges (Stacked Under Title) -->
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge bg-light text-secondary border fw-normal px-3 py-2">
+                    &#128197; Up to 2 weeks in advance
+                </span>
+                <span class="badge bg-light text-secondary border fw-normal px-3 py-2">
+                    &#128337; Quiet Hours: 22:00 &ndash; 09:00
+                </span>
+            </div>
 
-    <!-- Error Message -->
-    {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
+            <!-- Error Message -->
+            {% if error %}
+                <div class="alert alert-danger mb-3">{{ error }}</div>
+            {% endif %}
 
-    <p>Items can be booked up to 2 weeks in advance. Quiet hours: 22:00 - 09:00.</p>
+            <!-- Booking Form (sends to verify page) -->
+            <form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
+                <div class="row g-3 align-items-end">
+                    
+                    <!-- Version -->
+                    <div class="col-12 col-md-3">
+                        <label for="version" class="form-label fw-semibold text-secondary small mb-1">Version</label>
+                        <select id="version" name="version" class="form-select" required>
+                            <option value="">Select a version</option>
+                            <option>{{ item_name }} A</option>
+                            <option>{{ item_name }} B</option>
+                            <option>{{ item_name }} C</option>
+                        </select>
+                    </div>
 
-    <!-- Booking Form (sends to verify page) -->
-    <form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
+                    <!-- Date -->
+                    <div class="col-12 col-md-3">
+                        <label for="date" class="form-label fw-semibold text-secondary small mb-1">Date</label>
+                        <input type="date" id="date" name="date" class="form-control" min="{{ min_date }}" max="{{ max_date }}" required>
+                    </div>
 
-        <!-- Version (filler options) -->
-        <label for="version">Version</label>
-        <select id="version" name="version" required>
-            <option value="">Select a version</option>
-            <option>{{ item_name}} A</option>
-            <option>{{ item_name}} B</option>
-            <option>{{ item_name}} C</option>
-        </select>
+                    <!-- Time Slot -->
+                    <div class="col-12 col-md-3">
+                        <label for="time" class="form-label fw-semibold text-secondary small mb-1">Time Slot</label>
+                        <select id="time" name="time" class="form-select" required>
+                            <option value="">Select a time</option>
+                            {% for slot in slots %}
+                                <option>{{ slot }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-        <!-- Date -->
-        <label for="date">Date</label>
-        <input type="date" id="date" name="date" min="{{ min_date }}" max="{{ max_date }}" required>
+                    <!-- Submit Button -->
+                    <div class="col-12 col-md-3 d-grid">
+                        <button class="btn custom-filled-btn" type="submit">Continue</button>
+                    </div>
 
-        <!-- Time Slot -->
-        <label for="time">Time slot</label>
-        <select id="time" name="time" required>
-            <option value="">Select a time</option>
-            {% for slot in slots %}
-              <option>{{ slot }}</option>
-            {% endfor %}
-        </select>
-
-        <button class="btn btn-secondary" type="submit">Continue</button>
-  
-    </form>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Weekly Calendar -->
     {% include "calendar.html" %}

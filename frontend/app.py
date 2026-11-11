@@ -71,7 +71,7 @@ def login_required(f):
 
 
 # ==========================================
-# HOMEPAGE & ACCOUNT PAGES
+# HOME & LAB PAGES
 # ==========================================
 
 # Homepage
@@ -79,6 +79,18 @@ def login_required(f):
 def index():
     return render_template("index.html")
 
+
+@app.route("/lab", methods=["GET", "POST"])
+@login_required
+def lab():
+
+    return render_template("lab.html")
+
+
+
+# ==========================================
+# ACCOUNT PAGES
+# ==========================================
 
 # Account Profile Page
 @app.route("/accountProfile", methods=["GET", "POST"])
@@ -513,8 +525,6 @@ def items_home():
 @app.route("/items/<item_name>")
 @login_required
 def item_booking(item_name):
-    # Future Plans:
-    # Ask the database for all versions of this item
 
     return render_template("items/itemBooking.html", item_name=item_name,
                            **booking_context("item", item_name))
@@ -597,8 +607,6 @@ def rooms_home():
 @app.route("/rooms/<room_name>")
 @login_required
 def room_booking(room_name):
-    # Future Plans:
-    # Ask the database for all versions of this room
 
     return render_template("rooms/roomBooking.html", room_name=room_name,
                            **booking_context("room", room_name))

@@ -8,9 +8,13 @@ h1 {
     font-family: Verdana, sans-serif;
     color:#0a0a0a;
     line-height: 1.2;
-    font-weight: 500;
-    font-size: 60px;
+    font-weight: 600;
+    font-size: 50px;
     margin-bottom: 10px;
+}
+
+.card-description {
+    max-width: 850px;
 }
 
 
@@ -29,6 +33,28 @@ h1 {
 .custom-brand-btn:hover {
     background-color: #6495ED;
     color: white;
+}
+
+.custom-grey-btn {
+    background-color: transparent;
+    color: #7c7c7c;
+    border: 2px solid #7c7c7c;
+}
+
+.custom-grey-btn:hover {
+    background-color: #7c7c7c;
+    color: white;
+}
+
+.custom-filled-btn {
+    background-color: #6495ED;
+    color: white;
+}
+
+.custom-filled-btn:hover {
+    background-color: transparent;
+    color: #6495ED;
+    border: 2px solid #6495ED;
 }
 
 
@@ -51,6 +77,15 @@ h1 {
     object-fit: cover;
     width: 100%;
 }
+
+.welcome-card {
+    border-left: 5px solid #4338ca !important;
+}
+
+.lab-card {
+    border-left: 5px solid #38adca !important;
+}
+
 
 
 /* 
@@ -130,5 +165,66 @@ h1 {
 
 .stepper-item.active::before {
     background-color: #0d6efd;
+    color: #ffffff;
+}
+
+
+/* 
+    ====================
+    LAB TOUR STEPPER
+    ====================
+*/
+
+.lab-progress {
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 999px;
+}
+
+.lab-progress-bar {
+    background-color: #0d6efd;
+    border-radius: 999px;
+}
+
+.lab-step-btn {
+    color: #495057;
+    font-weight: 400;
+}
+
+.lab-step-btn:hover {
+    background-color: #f8f9fa !important;
+    color: #212529;
+}
+
+.lab-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #adb5bd;
+    color: #495057;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Visited / previous steps */
+.lab-step-btn.completed .lab-step-badge {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* Currently active step */
+.lab-step-btn.active {
+    background-color: #eef2ff !important;
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.lab-step-btn.active .lab-step-badge {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
     color: #ffffff;
 }

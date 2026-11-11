@@ -13,37 +13,64 @@
         </ol>
     </div>
 
-    <h1>Book: {{ room_name }}</h1>
+    <!-- Middle Booking Interface -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card-body p-0">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h1 class="mb-3">Book: {{ room_name }}</h1>
+                
+                <!-- Booking Rules as Subtle Badges -->
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-light text-secondary border fw-normal px-3 py-2">
+                        &#128197; Up to 3 months in advance
+                    </span>
+                    <span class="badge bg-light text-secondary border fw-normal px-3 py-2">
+                        &#128337; Quiet Hours: 22:00 &ndash; 09:00
+                    </span>
+                </div>
+            </div>
 
-    <!-- Error Message -->
-    {% if error %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
+            <!-- Error Message -->
+            {% if error %}
+                <div class="alert alert-danger mb-3">{{ error }}</div>
+            {% endif %}
 
-    <p>Rooms can be booked up to 3 months in advance. Quiet hours: 22:00 - 09:00.</p>
+            <!-- Booking Form (sends to verify page) -->
+            <form method="POST" action="{{ url_for('verify_room_booking', room_name=room_name) }}">
+                <div class="row g-3 align-items-end">
+                    
+                    <!-- Date -->
+                    <div class="col-12 col-md-3">
+                        <label for="date" class="form-label fw-semibold text-secondary small mb-1">Date</label>
+                        <input type="date" id="date" name="date" class="form-control" min="{{ min_date }}" max="{{ max_date }}" required>
+                    </div>
 
-    <!-- Booking Form (sends to verify page) -->
-    <form method="POST" action="{{ url_for('verify_room_booking', room_name=room_name) }}">
+                    <!-- Time Slot -->
+                    <div class="col-12 col-md-3">
+                        <label for="time" class="form-label fw-semibold text-secondary small mb-1">Time Slot</label>
+                        <select id="time" name="time" class="form-select" required>
+                            <option value="">Select a time</option>
+                            {% for slot in slots %}
+                                <option>{{ slot }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-      <!-- Date -->
-      <label for="date">Date</label>
-      <input type="date" id="date" name="date" min="{{ min_date }}" max="{{ max_date }}" required>
+                    <!-- Number of People -->
+                    <div class="col-12 col-md-3">
+                        <label for="people" class="form-label fw-semibold text-secondary small mb-1">Number of People</label>
+                        <input type="number" id="people" name="people" class="form-control" min="1" max="20" placeholder="1 - 20" required>
+                    </div>
 
-      <!-- Time Slot -->
-      <label for="time">Time slot</label>
-      <select id="time" name="time" required>
-        <option value="">Select a time</option>
-        {% for slot in slots %}
-          <option>{{ slot }}</option>
-        {% endfor %}
-      </select>
+                    <!-- Submit Button -->
+                    <div class="col-12 col-md-3 d-grid">
+                        <button class="btn custom-filled-btn" type="submit">Continue</button>
+                    </div>
 
-      <!-- Number of People -->
-      <label for="people">Number of people</label>
-      <input type="number" id="people" name="people" min="1" max="20" required>
-
-      <button type="submit">Continue</button>
-    </form>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Weekly Calendar -->
     {% include "calendar.html" %}

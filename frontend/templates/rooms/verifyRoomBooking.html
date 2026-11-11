@@ -13,26 +13,41 @@
         </ol>
     </div>    
 
-    <h1>Confirm Booking: {{ room_name }}</h1>
+    <!-- Confirmation Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white">
+        <div class="card-body p-0">
+            <h1 class="mb-2">Confirm Booking: {{ room_name }}</h1>
+            <p class="text-secondary mb-4">Please review your room reservation details before confirming.</p>
 
-    <!-- Submitted Booking Details -->
-    <ul>
-        <li>Date: {{ request.form['date'] }}</li>
-        <li>Time: {{ request.form['time'] }}</li>
-        <li>People: {{ request.form['people'] }}</li>
-    </ul>
+            <!-- Submitted Booking Details -->
+            <ul class="list-group list-group-flush border rounded-3 mb-4">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-secondary">Date</span>
+                    <span class="fw-semibold text-dark">{{ request.form['date'] }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-secondary">Time Slot</span>
+                    <span class="fw-semibold text-dark">{{ request.form['time'] }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-secondary">People</span>
+                    <span class="fw-semibold text-dark">{{ request.form['people'] }}</span>
+                </li>
+            </ul>
 
-    <!-- Confirm (returns to Rooms Homepage) -->
-    <div>
-        <form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}">
-            <input type="hidden" name="date" value="{{ request.form['date'] }}">
-            <input type="hidden" name="time" value="{{ request.form['time'] }}">
-            <input type="hidden" name="people" value="{{ request.form['people'] }}">
-            <button class="btn btn-lg custom-brand-btn" type="submit">Confirm</button>
-        </form>   
+            <!-- Action Buttons -->
+            <form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}" class="d-flex flex-wrap gap-2">
+                <input type="hidden" name="date" value="{{ request.form['date'] }}">
+                <input type="hidden" name="time" value="{{ request.form['time'] }}">
+                <input type="hidden" name="people" value="{{ request.form['people'] }}">
+                
+                <a href="{{ url_for('room_booking', room_name=room_name) }}" class="btn custom-grey-btn btn-lg">
+                    Back
+                </a>
+                <button class="btn custom-brand-btn btn-lg" type="submit">
+                    Confirm
+                </button>
+            </form>
+        </div>
     </div>
-
-    <!-- Back to Booking Form -->
-    <a href="{{ url_for('room_booking', room_name=room_name) }}" class="btn btn-secondary">Back</a>
-
 {% endblock %}

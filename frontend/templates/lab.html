@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Audit Lab
+{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+
+        <!-- Lab Intro Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white lab-card">
+            <div class="card-body p-0">                
+                <h1 class="text-dark mb-4">Audit Lab</h1>
+                
+                <p class="fs-5 text-secondary mb-4 card-description">
+                    Nine short steps.
+                </p>
+                <p class="fs-5 text-secondary mb-0 card-description">
+                    You run real statements, and then read what <code>campus_audit</code> wrote about them, 
+                    next to what the SQL triggers wrote.
+                </p>      
+            </div>
+        </div>
+
+        <!-- Guided Tour Layout -->
+        <div class="row g-4 align-items-start">
+            
+            <!-- Left Sidebar: 9 Steps -->
+            <div class="col-12 col-lg-3">
+                <nav class="nav flex-column gap-1" id="labStepper">
+                    <button type="button" class="nav-link lab-step-btn active d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="1" data-title="Welcome">
+                        <span class="lab-step-badge">1</span>
+                        <span>Welcome</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="2" data-title="How it fits together">
+                        <span class="lab-step-badge">2</span>
+                        <span>How it fits together</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="3" data-title="Check the plugin">
+                        <span class="lab-step-badge">3</span>
+                        <span>Check the plugin</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="4" data-title="Run a statement">
+                        <span class="lab-step-badge">4</span>
+                        <span>Run a statement</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="5" data-title="The plugin's records">
+                        <span class="lab-step-badge">5</span>
+                        <span>The plugin's records</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="6" data-title="Row history (triggers)">
+                        <span class="lab-step-badge">6</span>
+                        <span>Row history (triggers)</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="7" data-title="Explore events">
+                        <span class="lab-step-badge">7</span>
+                        <span>Explore events</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="8" data-title="Where it stops">
+                        <span class="lab-step-badge">8</span>
+                        <span>Where it stops</span>
+                    </button>
+                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="9" data-title="You have seen the plugin at work">
+                        <span class="lab-step-badge">9</span>
+                        <span>Finish</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Right Column: Step Content Card -->
+            <div class="col-12 col-lg-9">
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                    <div class="card-body p-0">
+                        
+                        <!-- Progress Bar & Step Indicator -->
+                        <div class="progress mb-2 lab-progress">
+                            <div id="labProgressBar" class="progress-bar lab-progress-bar" role="progressbar" style="width: 11.11%;" aria-valuenow="1" aria-valuemin="1" aria-valuemax="9"></div>
+                        </div>
+                        <p id="labStepSubtitle" class="small text-secondary mb-4">
+                            Step 1 of 9 &middot; Welcome
+                        </p>
+
+                        <!-- Step Panels -->
+                        <div class="lab-step-panel" data-panel="1">
+                            <h2 class="h4 fw-bold text-dark mb-3">Welcome</h2>
+                            <p class="text-secondary mb-0">Step 1 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="2">
+                            <h2 class="h4 fw-bold text-dark mb-3">How it fits together</h2>
+                            <p class="text-secondary mb-0">Step 2 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="3">
+                            <h2 class="h4 fw-bold text-dark mb-3">Check the plugin</h2>
+                            <p class="text-secondary mb-0">Step 3 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="4">
+                            <h2 class="h4 fw-bold text-dark mb-3">Run a statement</h2>
+                            <p class="text-secondary mb-0">Step 4 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="5">
+                            <h2 class="h4 fw-bold text-dark mb-3">The plugin's records</h2>
+                            <p class="text-secondary mb-0">Step 5 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="6">
+                            <h2 class="h4 fw-bold text-dark mb-3">Row history (triggers)</h2>
+                            <p class="text-secondary mb-0">Step 6 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="7">
+                            <h2 class="h4 fw-bold text-dark mb-3">Explore events</h2>
+                            <p class="text-secondary mb-0">Step 7 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="8">
+                            <h2 class="h4 fw-bold text-dark mb-3">Where it stops</h2>
+                            <p class="text-secondary mb-0">Step 8 content goes here.</p>
+                        </div>
+
+                        <div class="lab-step-panel d-none" data-panel="9">
+                            <h2 class="h4 fw-bold text-dark mb-3">You have seen the plugin at work</h2>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button type="button" class="btn custom-filled-btn px-3 js-lab-restart">Restart the tour</button>
+                                <button type="button" class="btn custom-brand-btn px-3" id="keepExploringBtn">Keep exploring events</button>
+                                <a href="/" class="btn custom-grey-btn px-3">Back to Smart Campus</a>
+                            </div>
+                            <p class="text-secondary small mb-0">
+                                Next: the five SQL files in <code>examples/</code> show the same plugin from the <code>mariadb</code> command line, including configuration and unloading.
+                            </p>
+                        </div>
+
+                        <!-- Step Footer Navigation -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-4">
+                            <button type="button" id="labBackBtn" class="btn custom-grey-btn px-3" disabled>Back</button>
+                            <button type="button" class="btn btn-link text-decoration-underline js-lab-restart">Restart</button>
+                            <button type="button" id="labNextBtn" class="btn custom-brand-btn px-3">Next</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const totalSteps = 9;
+            let currentStep = 1;
+
+            const stepButtons = document.querySelectorAll(".lab-step-btn");
+            const stepPanels = document.querySelectorAll(".lab-step-panel");
+            const progressBar = document.getElementById("labProgressBar");
+            const subtitle = document.getElementById("labStepSubtitle");
+            const backBtn = document.getElementById("labBackBtn");
+            const nextBtn = document.getElementById("labNextBtn");
+            const restartBtns = document.querySelectorAll(".js-lab-restart");
+            const keepExploringBtn = document.getElementById("keepExploringBtn");
+
+            function goToStep(step) {
+                currentStep = Math.max(1, Math.min(totalSteps, step));
+
+                // Update sidebar buttons
+                stepButtons.forEach(btn => {
+                    const btnStep = parseInt(btn.dataset.step, 10);
+                    btn.classList.toggle("active", btnStep === currentStep);
+                    btn.classList.toggle("completed", btnStep < currentStep);
+                    if (btnStep === currentStep) {
+                        subtitle.innerHTML = `Step ${currentStep} of ${totalSteps} &middot; ${btn.dataset.title}`;
+                    }
+                });
+
+                // Show active panel
+                stepPanels.forEach(panel => {
+                    const panelStep = parseInt(panel.dataset.panel, 10);
+                    panel.classList.toggle("d-none", panelStep !== currentStep);
+                });
+
+                // Update progress bar
+                const percent = (currentStep / totalSteps) * 100;
+                progressBar.style.width = `${percent}%`;
+                progressBar.setAttribute("aria-valuenow", currentStep);
+
+                // Update footer buttons
+                backBtn.disabled = currentStep === 1;
+                nextBtn.textContent = currentStep === totalSteps ? "Finish" : "Next";
+            }
+
+            stepButtons.forEach(btn => {
+                btn.addEventListener("click", () => goToStep(parseInt(btn.dataset.step, 10)));
+            });
+
+            backBtn.addEventListener("click", () => {
+                if (currentStep > 1) goToStep(currentStep - 1);
+            });
+
+            nextBtn.addEventListener("click", () => {
+                if (currentStep < totalSteps) {
+                    goToStep(currentStep + 1);
+                } else {
+                    window.location.href = "/";
+                }
+            });
+
+            restartBtns.forEach(btn => {
+                btn.addEventListener("click", () => goToStep(1));
+            });
+
+            if (keepExploringBtn) {
+                keepExploringBtn.addEventListener("click", () => goToStep(7));
+            }
+        });
+    </script>
+{% endblock %}
