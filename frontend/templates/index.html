@@ -1,22 +1,56 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Homepage
+    Home
 {% endblock %}
 
 
 {% block body %}
 
-    <h1 class="mb-4">Homepage</h1>
+    <!-- Welcome Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white welcome-card">
+        <div class="card-body p-0">                
+            <h1 class="text-dark mb-4">Smart Campus</h1>
+            
+            <p class="fs-5 text-secondary mb-4 card-description">
+                Book rooms and items.
+            </p>
 
-    <p>Nothing really here yet LOL</p>
-
-    <div>
-        <a href="/itemsHome">Items</a>
+            <p class="fs-5 text-secondary mb-4 card-description">
+                Every change you make is watched by 
+                <code>campus_audit</code>, a native C++ plugin loaded into MariaDB itself: 
+                it records who touched which table, with which statement and whether it worked, 
+                while every value in the statement is replaced by <code>?</code>.
+            </p>
+            
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a href="/lab" class="btn custom-filled-btn btn-lg px-4">Start Guided Tour</a>
+                <a href="#" class="btn btn-lg custom-grey-btn px-4">Explore Audit Events</a>
+            </div>                
+        </div>
     </div>
 
-    <div>
-        <a href="/roomsHome">Rooms</a>
+    <!-- Bottom Section -->
+    <h2 class="h4 fw-bold text-dark mb-3">Start Booking</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <a href="/itemsHome" class="card h-100 hover-lift text-decoration-none" style="max-width: 20rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">Items &#128230;</h5>
+                        <p class="card-text text-secondary mb-0">Book an item</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col">
+                <a href="/roomsHome" class="card h-100 hover-lift text-decoration-none" style="max-width: 20rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">Rooms &#128682;</h5>
+                        <p class="card-text text-secondary mb-0">Book a room.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
     </div>
 
 {% endblock %}

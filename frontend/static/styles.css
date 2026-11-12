@@ -1,5 +1,25 @@
 /* 
     ====================
+    TEXT
+    ====================
+*/
+
+h1 {
+    font-family: Verdana, sans-serif;
+    color:#0a0a0a;
+    line-height: 1.2;
+    font-weight: 600;
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+.card-description {
+    max-width: 850px;
+}
+
+
+/* 
+    ====================
     BUTTONS
     ====================
 */
@@ -14,6 +34,29 @@
     background-color: #6495ED;
     color: white;
 }
+
+.custom-grey-btn {
+    background-color: transparent;
+    color: #7c7c7c;
+    border: 2px solid #7c7c7c;
+}
+
+.custom-grey-btn:hover {
+    background-color: #7c7c7c;
+    color: white;
+}
+
+.custom-filled-btn {
+    background-color: #6495ED;
+    color: white;
+}
+
+.custom-filled-btn:hover {
+    background-color: transparent;
+    color: #6495ED;
+    border: 2px solid #6495ED;
+}
+
 
 /* 
     ====================
@@ -33,4 +76,155 @@
     aspect-ratio: 1 / 1;
     object-fit: cover;
     width: 100%;
+}
+
+.welcome-card {
+    border-left: 5px solid #4338ca !important;
+}
+
+.lab-card {
+    border-left: 5px solid #38adca !important;
+}
+
+
+
+/* 
+    ====================
+    HOVER LIFT
+    ====================
+*/
+
+.hover-lift {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover,
+.hover-lift:focus {
+  transform: translateY(-5px); 
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); 
+}
+
+
+/* 
+    ====================
+    STEPPER
+    ====================
+*/
+
+.stepper {
+    list-style-type: none;
+    padding: 0;
+    margin: 2rem 0;
+    display: flex;
+    justify-content: space-between;
+    counter-reset: step;
+}
+
+.stepper-item {
+    position: relative;
+    flex: 1;
+    text-align: center;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stepper-item::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: #e9ecef;
+    top: 15px;
+    left: 50%;
+    z-index: 1;
+}
+
+.stepper-item:last-child::after {
+    display: none;
+}
+
+.stepper-item::before {
+    counter-increment: step;
+    content: counter(step);
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    text-align: center;
+    line-height: 32px;
+    margin: 0 auto 10px auto;
+    position: relative;
+    z-index: 2;
+}
+
+.stepper-item.active {
+    color: #0d6efd;
+}
+
+.stepper-item.active::before {
+    background-color: #0d6efd;
+    color: #ffffff;
+}
+
+
+/* 
+    ====================
+    LAB TOUR STEPPER
+    ====================
+*/
+
+.lab-progress {
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 999px;
+}
+
+.lab-progress-bar {
+    background-color: #0d6efd;
+    border-radius: 999px;
+}
+
+.lab-step-btn {
+    color: #495057;
+    font-weight: 400;
+}
+
+.lab-step-btn:hover {
+    background-color: #f8f9fa !important;
+    color: #212529;
+}
+
+.lab-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #adb5bd;
+    color: #495057;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Visited / previous steps */
+.lab-step-btn.completed .lab-step-badge {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* Currently active step */
+.lab-step-btn.active {
+    background-color: #eef2ff !important;
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.lab-step-btn.active .lab-step-badge {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
 }

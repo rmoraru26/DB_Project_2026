@@ -1,0 +1,6 @@
+# These are what is needed to run the project
+
+Flask
+PyMySQL
+python-dotenv
+Werkzeug

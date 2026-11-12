@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Profile
+{% endblock %}
+
+
+{% block body %}
+
+    <h1 class="mb-3">Hello, {{ user_name }}!</h1>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        <div class="cols">
+            <a href="/accountBookings" class="card hover-lift text-decoration-none" style="max-width: 20rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Your Bookings &#128197;</h5>
+                    <p class="card-text mb-0">See details of your reservations</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="cols">
+            <a href="{{ url_for('account_settings') }}" class="card hover-lift text-decoration-none" style="max-width: 20rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Account Settings &#9881;</h5>
+                    <p class="card-text mb-0">Change your account details</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <a href="/logout" class="btn btn-lg btn-outline-danger">Logout</a>
+
+{% endblock %}
