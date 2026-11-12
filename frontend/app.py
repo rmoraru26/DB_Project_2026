@@ -81,7 +81,6 @@ def index():
 
 
 @app.route("/lab", methods=["GET", "POST"])
-@login_required
 def lab():
 
     return render_template("lab.html")
