@@ -12,11 +12,11 @@ USE university_resources;
 START TRANSACTION;
 
 -- Users
-INSERT INTO users (full_name, email, role)
+INSERT INTO users (full_name, email, password_hash, role)
 VALUES
-    ('Alice Student', 'alice.student@example.edu', 'student'),
-    ('Bob Student', 'bob.student@example.edu', 'student'),
-    ('Dana Administrator', 'dana.admin@example.edu', 'admin')
+    ('Alice Student', 'alice.student@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'student'),
+    ('Bob Student', 'bob.student@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'student'),
+    ('Dana Administrator', 'dana.admin@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'admin')
 ON DUPLICATE KEY UPDATE
     full_name = VALUES(full_name),
     role = VALUES(role);
