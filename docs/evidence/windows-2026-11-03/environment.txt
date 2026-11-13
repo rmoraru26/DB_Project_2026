@@ -1,0 +1,20 @@
+# Environment of the runs in this directory (2026-11-03)
+OS: Windows 11 Pro 10.0.26300 x64 (no Docker on this machine)
+MariaDB: official mariadb-13.0.2-winx64.zip, SHA-256 ba9cefd6674b3f2f7bc67334c05305dc7c919643d76836e10767e70db0b5fb74 (verified), fresh mariadb-install-db data directory, port 3399, 127.0.0.1 only
+my.ini: plugin_maturity=beta, secure_file_priv=<scratch>/auditlogs, loose_campus_audit_* as docker/mariadb/campus_audit.cnf
+Compiler: Zig 0.16.0 (zig-x86_64-windows-0.16.0.zip, SHA-256 68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e verified) via plugin/build_windows.ps1
+Python 3.14.7 venv with frontend/requirements-dev.txt and requirements-browser.txt (Flask 3.1.3, Werkzeug 3.1.9, PyMySQL 1.2.3, waitress 3.0.2, pytest 9.1.1, Playwright 1.55.0 driving the installed Microsoft Edge, PLAYWRIGHT_CHANNEL=msedge)
+Files 06-07: pytest with Flask's test client, database tests against the clean server of 10-clean-environment-run.txt (port 3397).
+File 08: browser tests against `python app.py` served by waitress (port 5081, same clean server).
+Files 05, 09, 12 and 13 ran against the first local server (port 3399); 11 against the clean server.
+Plugin versions: 01-03 reproduce the original code (1.0.0). 06-12 were produced with 1.1.0. 04, 05
+and 13 come from the final code, plugin 1.1.1. 1.1.1 differs from 1.1.0 in three places: the
+"log this SET statement" mark is a thread-local flag, not a THDVAR (the Linux deadlock found by CI);
+the startup option campus_audit_readable_by_all (no effect on Windows); and the digest masks the rest
+of a statement after a backslash before a quote (NO_BACKSLASH_ESCAPES). 05 has three checks for these
+(90 passes; the 1.1.0 run had 87), 04 three more digest checks (93; earlier 90).
+Step 6 of 10-clean-environment-run.txt ran under pytest 8.4.2, which the pytest-playwright plugin had
+pulled in at that time; the plugin is not needed and was removed, and 06-08 repeat the suites under the
+pinned pytest 9.1.1 with the same results (104 passed / 80 passed / 11 passed).
+Client: MARIADB_CLIENT="mariadb.exe -h127.0.0.1 -P3399 --skip-ssl-verify-server-cert" (the 13.x client otherwise prints a certificate warning on stderr for MYSQL_PWD logins over TCP)
+Not covered here: the Docker path (docker compose, make up/demo/test) - it ran in CI, see docs/evidence/linux-ci-2026-11-03/

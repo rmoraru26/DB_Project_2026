@@ -1,0 +1,249 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# make test: plugin unit tests, check_repo, end-to-end tests, database checks (password-hash helper, database_tests.sql), web app and Audit Lab tests with the database
+
+make -C plugin test
+make[1]: Entering directory '<repo>/plugin'
+mkdir -p build
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+== test_record_format
+PASS: JSON plain string
+PASS: JSON quotes and backslashes escaped
+PASS: JSON newline/tab/CR escaped
+PASS: JSON control characters escaped
+PASS: JSON embedded NUL escaped, length respected
+PASS: JSON valid UTF-8 kept as is
+PASS: JSON invalid UTF-8 replaced by U+FFFD
+PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+PASS: JSON overlong encoding rejected
+PASS: JSON NULL pointer becomes null
+PASS: JSON empty string stays empty string
+PASS: JSON overflow detected instead of writing past the buffer
+PASS: JSON overflow keeps buffer NUL-terminated
+PASS: bounded field cut before a multi-byte character
+PASS: JSON numbers, booleans and null
+PASS: digest masks string and number literals
+PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+PASS: the same rule hides the rest of a default-mode escaped quote
+PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+PASS: digest hides passwords given as literals
+PASS: digest hides password hashes
+PASS: digest masks hex, bit, national and introducer literals
+PASS: digest masks decimals and exponents
+PASS: digest keeps identifiers containing digits and backtick identifiers
+PASS: digest keeps doubled backticks inside identifiers
+PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+PASS: digest removes all comment styles including executable comments
+PASS: digest collapses whitespace
+PASS: '--' without trailing space is not a comment
+PASS: digest of empty statement
+PASS: digest handles an unterminated string
+PASS: digest handles an unterminated comment
+PASS: digest keeps variable names but masks quoted ones
+PASS: digest truncates at max length and reports it
+PASS: digest never ends inside a UTF-8 sequence
+PASS: digest with max length 0 is empty and marked truncated
+PASS: 100 kB literal collapses to one '?'
+PASS: digest of a NULL statement
+PASS: database list parsed and trimmed
+PASS: database match is case-insensitive
+PASS: database match needs the whole name
+PASS: NULL database never matches
+PASS: empty database list watches nothing
+PASS: empty list matches nothing
+PASS: '*' accepted for databases
+PASS: '*' matches user schemas
+PASS: '*' never matches system schemas
+PASS: empty element rejected
+PASS: trailing comma rejected
+PASS: space inside a name rejected
+PASS: punctuation rejected
+PASS: '*' cannot be mixed with names
+PASS: '*' rejected for users
+PASS: more than 16 names rejected
+PASS: name longer than 128 characters rejected
+PASS: user list with '.', '-' and '@' accepted
+PASS: user match is exact and case-sensitive
+PASS: user match needs the whole name
+PASS: user match: a login that is only a prefix of an excluded name is still audited
+PASS: timestamp of the epoch
+PASS: timestamp 2026-10-25
+PASS: timestamp on a leap day
+PASS: timestamp one second before the epoch
+PASS: timestamp exactly one day before the epoch
+PASS: bounded_length stops at the limit and accepts NULL
+PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+PASS: login name is the part of the account before '['
+PASS: account without '[', NULL account and the length bound
+Failures: 0
+== test_log_sink
+PASS: NULL path rejected
+PASS: empty path rejected
+PASS: directory-like path rejected
+PASS: directory-like path ending in a backslash rejected
+PASS: control character in path rejected
+PASS: over-long path rejected
+PASS: missing directory reported as open_Failed
+PASS: open failure message carries errno
+PASS: sink stays closed after failed open
+PASS: write on closed sink fails
+PASS: valid path opened
+PASS: first record written
+PASS: failed re-open keeps the previous file open
+PASS: previous file still writable
+PASS: re-opened file is appended to
+PASS: file holds all records in order
+PASS: a newly created log file has no permission bits for others
+PASS: readable_by_all: an existing log file becomes readable by others
+PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+PASS: opened for EBADF test
+PASS: write on a dead descriptor reported as write_Failed
+PASS: write failure message carries errno
+PASS: /dev/full write reported as write_Failed (ENOSPC)
+Failures: 0
+== test_automatic_errors
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+Failures: 0
+== test_error_reporter
+Reported: Cannot open audit log
+PASS: all reporter checks
+All unit test programs passed.
+make[1]: Leaving directory '<repo>/plugin'
+python3 scripts/check_repo.py
+Repository checks passed.
+== campus_audit integration tests (run 1793734856_5262)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 98 passed, 0 failed, 0 skipped
+PASS: hash equals PASSWORD() for 100 random passwords (quotes, backslashes, %, spaces)
+PASS: account created from the hash accepts the plain password
+PASS: a wrong password is still rejected (ER 1045)
+== 3 passed, 0 failed
+PASS: TEST 1: all seven tables exist
+PASS: TEST 2: Alice Student, Room 201, confirmed
+PASS: TEST 3: Alice Student, Arduino Starter Kit, returned
+PASS: expected error 1: ERROR 4025 naming chk_rooms_capacity_positive
+PASS: expected error 2: ERROR 4025 naming chk_bookings_time_order
+PASS: expected error 3: ERROR 1062 naming uq_users_email
+PASS: expected error 4: ERROR 1452 naming fk_bookings_user
+PASS: expected error 5: ERROR 4025 naming chk_loans_status_returned_consistent
+PASS: no other error (5 errors, each one expected)
+PASS: the file ran to its last statement
+== 10 passed, 0 failed
+docker compose exec -T -e RUN_DB_TESTS=1 web python -m pytest -q
+........................................................................ [ 69%]
+................................                                         [100%]
+104 passed, 1 skipped in 2.63s

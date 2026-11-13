@@ -1,3 +1,10 @@
+-- SUPERSEDED - DO NOT APPLY.  The deployed trigger set is database/triggers.sql
+-- (installed by scripts/setup_database.sh and the Docker initdb scripts).  It
+-- drops the six triggers below and replaces them with trg_bookings_audit_* and
+-- trg_loans_audit_*.  Applying this file afterwards would install a second
+-- trigger set and record every booking and loan change twice.  Kept only as a
+-- record of the team's original design.
+--
 -- Audit triggers for bookings and loans. Apply after schema.sql.
 -- Run only in a development database first.
 -- Trigger writes share the source transaction; test audit-failure behaviour.

@@ -1,0 +1,103 @@
+# The CI runs before the green one, and what each found (2026-11-03, private copy of the repository,
+# GitHub-hosted ubuntu-24.04 and windows-2022 runners).  Excerpts of the job logs, timestamps removed.
+# Fixes and their commits are listed in README.md of this directory.
+
+======== Run 1 - Docker job: the end-to-end tests stop at the first accepted SET GLOBAL (plugin 1.1.0)
+
+== campus_audit integration tests (run 1793724563_5086)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+##[error]The operation was canceled.
+
+-- MariaDB error log: the last lines; nothing after connection 45, no crash
+mariadb-1  | 2026-11-03 16:49:25 43 [Warning] mariadbd: campus_audit: empty database name in list
+mariadb-1  | 2026-11-03 16:49:25 44 [Warning] mariadbd: campus_audit: '*' cannot be combined with explicit database names
+mariadb-1  | 2026-11-03 16:49:26 45 [Warning] mariadbd: campus_audit: unsupported character in user name 'x;DROP'
+
+-- the web container's health checks (one every few seconds) never got a database connection
+web-1  | WARNING:waitress.queue:Task queue depth is 1
+web-1  | WARNING:waitress.queue:Task queue depth is 2
+web-1  | ...
+web-1  | WARNING:waitress.queue:Task queue depth is 89
+web-1  | WARNING:waitress.queue:Task queue depth is 90
+web-1  | WARNING:waitress:total open connections reached the connection limit, no longer accepting new connections
+
+======== Run 1 - Windows job: the server started by one step is gone in the next step
+
+Running bootstrap
+Creation of the database was successful
+mysqld is alive
+ERROR 2002 (HY000): Can't connect to server on '127.0.0.1' (10061)
+##[error]Process completed with exit code 1.
+
+======== Run 2 - Docker job (plugin 1.1.1 with the deadlock fixed): LOAD_FILE() reads nothing on Linux
+# The workflow's steps still ran without -o pipefail, so `make ... | tee` showed these steps as passed.
+
+-- make demo
+ERROR 1644 (45000) at line 1: import_plugin_log: LOAD_FILE returned NULL (file missing, no FILE privilege, outside secure_file_priv, or larger than max_allowed_packet)
+make: *** [Makefile:64: demo] Error 1
+
+-- make test: the SET GLOBAL check now passes; every check that reads the log back fails
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: SET GLOBAL as the first statement of a connection returns
+FAIL: every line is valid JSON
+FAIL: CREATE TABLE recorded as table_create
+FAIL: INSERT/UPDATE/DELETE recorded as table_write (3)
+      got: 0     (and so on, 42 times)
+== 54 passed, 42 failed, 0 skipped
+make: *** [Makefile:78: test-e2e] Error 1
+
+-- regression step: after make repair-credentials the web container still gets ERROR 1045
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running unhealthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T18:15:22Z; .env last changed 2026-11-03 18:18:08 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [FAIL] web app cannot use the database: {"status":"error","database":"login failed","code":1045}
+         Only campus_app's password differs: make up re-creates the account from .env.
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+
+1 check(s) failed.
+# Cause: the step had exported the OLD .env (set -a; . ./.env), and Docker Compose prefers exported
+# variables over the .env file.  Fixed by `unexport` of the three secrets in the Makefile.
+
+======== Run 3 - Docker job: the .env fix works; the remaining failures are LOAD_FILE() again
+
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T18:31:32Z; .env last changed 2026-11-03 18:33:53 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+
+All checks passed. Web app: http://127.0.0.1:5080  (guided tour: /lab)
+
+-- make test-browser (Audit Lab in Chromium)
+FAILED frontend/tests/browser/test_lab_browser.py::test_insert_shows_plugin_records_and_the_trigger_row - AssertionError: Locator expected to be visible
+FAILED frontend/tests/browser/test_lab_browser.py::test_check_violation_is_recorded_without_row_history - AssertionError: Locator expected to contain text 'error 4025'
+FAILED frontend/tests/browser/test_lab_browser.py::test_explorer_filters_by_event_type - AssertionError: Locator expected to be visible
+3 failed, 8 passed in 23.32s
+   the page showed: Plugin log not imported: import_plugin_log: LOAD_FILE returned NULL (file missing, no FILE privilege, outside secure_file_priv, or larger than
+
+-- make test-app at the end of the regression step
+8 failed, 96 passed, 1 skipped in 2.45s
+
+======== Run 4: all three jobs green, see the other files of this directory.

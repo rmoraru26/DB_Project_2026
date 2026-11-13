@@ -29,6 +29,9 @@
         </div>
     </div>
 
-    <a href="/logout" class="btn btn-lg btn-outline-danger">Logout</a>
+    <form action="{{ url_for('logout') }}" method="POST" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-lg btn-outline-danger">Logout</button>
+    </form>
 
 {% endblock %}

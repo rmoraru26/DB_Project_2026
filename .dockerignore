@@ -1,0 +1,15 @@
+.git/
+.agents/
+.env
+.env.*
+!.env.example
+.admin-credentials
+.admin-credentials.*
+**/build/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+**/venv/
+*.log
+*.jsonl
+!docs/evidence/sample-records.jsonl

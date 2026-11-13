@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# An explicit `shell: bash` runs every step with -o pipefail.  The default
+# shell does not, and `make test 2>&1 | tee test.txt` then reported success
+# although make had failed (seen in the second CI run).
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  static:
+    name: Unit tests and static checks (no server)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Plugin unit tests (g++)
+        run: make -C plugin test
+
+      - name: Mutation check (every injected plugin bug must be caught by the unit tests)
+        run: python3 scripts/mutation_check.py | tee mutation-check.txt
+
+      - name: Plugin build without server headers fails clearly
+        run: |
+          if make -C plugin plugin SERVER_INCLUDE=/nonexistent > out.txt 2>&1; then
+            echo "expected failure"; exit 1
+          fi
+          grep -q "MariaDB server headers not found" out.txt
+
+      - name: Shell scripts parse
+        run: for f in $(git ls-files '*.sh'); do bash -n "$f"; done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Web app and Audit Lab tests that need no database
+        working-directory: frontend
+        run: |
+          pip install -r requirements-dev.txt
+          python -m pytest -q
+
+      - name: README and repository consistency
+        run: python scripts/check_repo.py
+
+  docker-integration:
+    name: make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)
+    runs-on: ubuntu-24.04
+    needs: static
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fresh checkout path - make up (creates .env, builds, migrates, installs the plugin)
+        run: make up
+
+      - name: make doctor
+        run: make doctor
+
+      - name: make demo
+        run: make demo 2>&1 | tee demo.txt
+
+      - name: make test (unit + end-to-end incl. CHANGE_USER + database + web app)
+        run: make test 2>&1 | tee test.txt
+
+      - name: make examples
+        run: |
+          make examples 2>&1 | tee examples.txt
+          grep -q "campus_audit.*ACTIVE.*AUDIT" examples.txt
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Audit Lab in a real browser (registration, login, tour, live records)
+        run: |
+          pip install -r frontend/requirements-browser.txt
+          python -m playwright install --with-deps chromium
+          SCREENSHOT_DIR=screenshots make test-browser 2>&1 | tee browser-tests.txt
+
+      - name: Restart the server; the plugin must come back
+        run: |
+          docker compose restart mariadb
+          make up
+          make doctor
+
+      - name: Regression - a new .env against an existing volume is explained and repaired without data loss
+        run: |
+          # The old .env stays exported in this shell on purpose: Docker Compose would
+          # prefer those values over the new .env (the first run of this step failed
+          # that way), so this also checks that the Makefile takes the secrets from .env.
+          set -a; . ./.env; set +a
+          users_before=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users")
+          mv .env .env.previous
+          bash scripts/make_env.sh 2>&1 | tee make-env.txt
+          grep -q "already exists" make-env.txt
+          if make up > stale-up.txt 2>&1; then echo "make up should refuse the stale passwords"; exit 1; fi
+          grep -q "rejects the root password" stale-up.txt
+          if make doctor > stale-doctor.txt 2>&1; then echo "doctor should report the failure"; exit 1; fi
+          grep -q "ERROR 1045" stale-doctor.txt
+          YES=1 make repair-credentials
+          make doctor
+          set -a; . ./.env; set +a
+          users_after=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users")
+          test "$users_before" = "$users_after"
+          make test-app
+
+      - name: Server and web logs
+        if: always()
+        run: |
+          docker compose logs mariadb | tail -n 200
+          docker compose logs web | tail -n 100
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docker-test-output
+          path: |
+            demo.txt
+            test.txt
+            examples.txt
+            browser-tests.txt
+            screenshots/
+            make-env.txt
+            stale-up.txt
+            stale-doctor.txt
+
+      - name: Clean up (disposable runner)
+        if: always()
+        run: docker compose down -v
+
+  windows-native:
+    name: Build the DLL and load it into native Windows MariaDB 13.0.2
+    runs-on: windows-2022
+    needs: static
+    timeout-minutes: 40
+    env:
+      MARIADB_ZIP_SHA256: ba9cefd6674b3f2f7bc67334c05305dc7c919643d76836e10767e70db0b5fb74
+      ZIG_VERSION: 0.16.0
+      ZIG_ZIP_SHA256: 68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download MariaDB 13.0.2 and Zig (checksums verified)
+        shell: pwsh
+        run: |
+          # Both pinned by URL and SHA-256.  Zig's download index once returned no
+          # entry for 0.16.0 (CI run 6), so it is no longer read at run time.
+          Invoke-WebRequest https://archive.mariadb.org/mariadb-13.0.2/winx64-packages/mariadb-13.0.2-winx64.zip -OutFile mariadb.zip -MaximumRetryCount 3 -RetryIntervalSec 10
+          if ((Get-FileHash mariadb.zip -Algorithm SHA256).Hash -ne $env:MARIADB_ZIP_SHA256) { throw "MariaDB checksum mismatch" }
+          Expand-Archive mariadb.zip -DestinationPath C:\mdb
+          Invoke-WebRequest "https://ziglang.org/download/$env:ZIG_VERSION/zig-x86_64-windows-$env:ZIG_VERSION.zip" -OutFile zig.zip -MaximumRetryCount 3 -RetryIntervalSec 10
+          if ((Get-FileHash zig.zip -Algorithm SHA256).Hash -ne $env:ZIG_ZIP_SHA256) { throw "Zig checksum mismatch" }
+          Expand-Archive zig.zip -DestinationPath C:\zig
+
+      - name: Build plugin DLL, CHANGE_USER helper and run unit tests
+        shell: pwsh
+        run: |
+          $zig = (Get-ChildItem C:\zig -Recurse -Filter zig.exe | Select-Object -First 1).FullName
+          $mdb = "C:\mdb\mariadb-13.0.2-winx64"
+          .\plugin\build_windows.ps1 -MariaDBDir $mdb -Zig $zig
+          Copy-Item plugin\build\campus_audit.dll "$mdb\lib\plugin\"
+          & $zig cc -target x86_64-windows-gnu -O2 "-I$mdb\include\mysql" tests\plugin\change_user.c "$mdb\lib\libmariadb.lib" -o C:\mdb\campus_change_user.exe
+          if ($LASTEXITCODE -ne 0) { throw "change_user helper build failed" }
+
+      - name: Start MariaDB, database setup and end-to-end plugin tests (incl. CHANGE_USER)
+        shell: bash
+        run: |
+          # The server is started in the step that uses it: in the first CI run a
+          # server started by an earlier step was gone when this step began
+          # (ERROR 2002 on 127.0.0.1:3306, no shutdown in its log).
+          mdb=/c/mdb/mariadb-13.0.2-winx64
+          "$mdb/bin/mariadb-install-db.exe" --datadir=C:/mdbdata --port=3306
+          printf '\n[mysqld]\nplugin_maturity=beta\nbind-address=127.0.0.1\n' >> /c/mdbdata/my.ini
+          "$mdb/bin/mariadbd.exe" --defaults-file=C:/mdbdata/my.ini --console \
+            < /dev/null > /c/mdbdata/server.out 2> /c/mdbdata/server.log &
+          # The 13.x client warns on stderr about certificate verification for
+          # passwordless TCP logins; the flag keeps that line out of the checks.
+          admin="$mdb/bin/mariadb-admin.exe -h127.0.0.1 -P3306 -uroot --skip-ssl-verify-server-cert"
+          trap '$admin shutdown > /dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do $admin ping > /dev/null 2>&1 && break; sleep 1; done
+          $admin ping
+          export MARIADB_CLIENT="$mdb/bin/mariadb.exe -h127.0.0.1 -P3306 --skip-ssl-verify-server-cert"
+          export PATH="$mdb/lib:$PATH"
+          export CHANGE_USER_CLIENT=/c/mdb/campus_change_user.exe CU_HOST=127.0.0.1 CU_PORT=3306
+          bash scripts/setup_database.sh
+          bash scripts/demo.sh
+          bash tests/plugin/run_plugin_tests.sh
+
+      - name: Server log
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path C:\mdbdata\server.log) { Get-Content C:\mdbdata\server.log -Tail 100 } else { "no server log, the server was not started" }

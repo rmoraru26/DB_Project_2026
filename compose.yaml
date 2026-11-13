@@ -1,0 +1,82 @@
+# Reproducible demo: MariaDB 13.0.2 with the campus_audit plugin, and the web app.
+#
+#   make up        (= scripts/make_env.sh, then the commands in docs/docker.md)
+#
+# Ports are bound to 127.0.0.1 only.  The project name fixes the volume names
+# (campus-audit_mariadb-data, campus-audit_audit-logs): a second clone of the
+# repository reuses the same database volume, with the passwords it was
+# initialised with.  Set COMPOSE_PROJECT_NAME in .env for a separate copy.
+
+name: campus-audit
+
+services:
+  mariadb:
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+    image: campus-audit-mariadb:13.0.2
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD in .env}
+      CAMPUS_APP_PASSWORD: ${CAMPUS_APP_PASSWORD:?set CAMPUS_APP_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${MARIADB_PORT:-3307}:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - audit-logs:/var/log/campus_audit
+    # Proves only that the server answers: healthcheck.sh logs in with its own
+    # account stored in the volume, not with the passwords from .env.  The
+    # web service's check below is the one that proves campus_app can log in.
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  web:
+    build: ./frontend
+    image: campus-audit-web
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_USER: campus_app
+      DB_PASSWORD: ${CAMPUS_APP_PASSWORD}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5080}:5000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    # Healthy only when the app can log in to MariaDB as campus_app and read
+    # its schema (/healthz), so `up --wait` fails instead of serving HTTP 500s.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=4)"]
+      interval: 5s
+      timeout: 6s
+      retries: 12
+      start_period: 5s
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+      target: test-runner
+    image: campus-audit-test-runner
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD in .env}
+      CAMPUS_APP_PASSWORD: ${CAMPUS_APP_PASSWORD:?set CAMPUS_APP_PASSWORD in .env}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      TEST_ADMIN_EMAIL: ${TEST_ADMIN_EMAIL:-}
+      TEST_ADMIN_PASSWORD: ${TEST_ADMIN_PASSWORD:-}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    profiles: ["test"]
+
+volumes:
+  mariadb-data:
+  audit-logs:

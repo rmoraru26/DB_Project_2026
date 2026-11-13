@@ -15,12 +15,13 @@
             </div>
         {% endif %}
 
-        <form action="/login" method="post">
+        <form action="{{ url_for('login', next='lab') if request.args.get('next') == 'lab' else url_for('login') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email">
+                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email" id="login-email" aria-label="Email">
             </div>
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password">
+                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password" id="login-password" aria-label="Password">
             </div>
 
             <div class="text-center mt-4">

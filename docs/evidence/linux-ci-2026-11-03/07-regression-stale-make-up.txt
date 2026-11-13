@@ -1,0 +1,122 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# regression step: make up with the new .env against the old volume (must refuse)
+
+docker compose up -d --build --wait mariadb
+#1 [internal] load local bake definitions
+#1 reading from stdin 479B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 3.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#3 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 127B done
+#4 DONE 0.0s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 2.23kB done
+#6 DONE 0.0s
+
+#7 [stage-1  6/15] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#7 CACHED
+
+#8 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#8 CACHED
+
+#9 [stage-1  3/15] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#9 CACHED
+
+#10 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#10 CACHED
+
+#11 [build 5/9] RUN make clean && make test && make plugin
+#11 CACHED
+
+#12 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [build 3/9] WORKDIR /src/plugin
+#13 CACHED
+
+#14 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#14 CACHED
+
+#15 [stage-1  2/15] RUN test -d /usr/lib/mysql/plugin
+#15 CACHED
+
+#16 [build 4/9] COPY plugin/ ./
+#16 CACHED
+
+#17 [stage-1  8/15] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#17 CACHED
+
+#18 [stage-1  4/15] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#18 CACHED
+
+#19 [stage-1  9/15] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#19 CACHED
+
+#20 [build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#20 CACHED
+
+#21 [stage-1 13/15] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#21 CACHED
+
+#22 [stage-1 12/15] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#22 CACHED
+
+#23 [stage-1  5/15] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#23 CACHED
+
+#24 [stage-1 11/15] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#24 CACHED
+
+#25 [stage-1 14/15] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#25 CACHED
+
+#26 [stage-1 10/15] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#26 CACHED
+
+#27 [stage-1  7/15] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#27 CACHED
+
+#28 [stage-1 15/15] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/50-app-account.sh
+#28 CACHED
+
+#29 exporting to image
+#29 exporting layers done
+#29 writing image sha256:6b737f394350ca1246135bc03d7ee944b75e91ed4974219c5c862f03fcb4d27e done
+#29 naming to docker.io/library/campus-audit-mariadb:13.0.2 done
+#29 DONE 0.0s
+
+#30 resolving provenance for metadata file
+#30 DONE 0.0s
+ mariadb  Built
+ Container campus-audit-mariadb-1  Recreate
+ Container campus-audit-mariadb-1  Recreated
+ Container campus-audit-mariadb-1  Starting
+ Container campus-audit-mariadb-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+post_start: cannot log in to MariaDB as 'root':
+    ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+
+The server is running but rejects the root password from .env.  The MariaDB
+image applies MARIADB_ROOT_PASSWORD (and creates campus_app) only when it
+initialises an EMPTY database volume.  This volume was initialised earlier,
+with the passwords of a previous .env (a fresh clone, a deleted .env or a
+re-run of make_env.sh all create new passwords; the volume keeps the old ones).
+
+  * Keep the data:  make repair-credentials   (sets the stored passwords to the ones in .env)
+                    or put the old .env back if you still have it
+  * Start over:     make reset && make up      (DELETES the database and audit-log volumes)
+
+make doctor shows the details.
+make: *** [Makefile:40: up] Error 3

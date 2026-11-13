@@ -16,16 +16,17 @@
         {% endif %}
 
         <form action="/register" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Full Name" type="text" class="form-control form-control-lg" name="full_name">
+                <input autocomplete="off" placeholder="Full Name" type="text" class="form-control form-control-lg" name="full_name" id="reg-name" aria-label="Full Name">
             </div>
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email"></div>
+                <input autocomplete="off" placeholder="Email" type="email" class="form-control form-control-lg" name="email" id="reg-email" aria-label="Email"></div>
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password">
+                <input autocomplete="off" placeholder="Password" type="password" class="form-control form-control-lg" name="password" id="reg-password" aria-label="Password">
             </div>
             <div class="mb-3">
-                <input autocomplete="off" placeholder="Confirm Password" type="password" class="form-control form-control-lg" name="confirm_password">
+                <input autocomplete="off" placeholder="Confirm Password" type="password" class="form-control form-control-lg" name="confirm_password" id="reg-confirm" aria-label="Confirm Password">
             </div>
 
             <div class="text-center mt-4">

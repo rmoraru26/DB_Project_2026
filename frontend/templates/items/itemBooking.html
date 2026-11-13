@@ -35,6 +35,7 @@
 
             <!-- Booking Form (sends to verify page) -->
             <form method="POST" action="{{ url_for('verify_item_booking', item_name=item_name) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="row g-3 align-items-end">
                     
                     <!-- Version -->

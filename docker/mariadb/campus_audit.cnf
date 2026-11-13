@@ -1,0 +1,24 @@
+# Server options for the campus_audit plugin.
+#
+# The plugin is installed explicitly with INSTALL SONAME 'campus_audit'
+# (recorded in mysql.plugin, so it is loaded again after every restart).
+# "loose-" lets the server start even while the plugin is not installed yet;
+# the values are applied when INSTALL SONAME runs and at every later start.
+
+[mariadbd]
+# campus_audit declares itself BETA; the server default (gamma) refuses it.
+plugin_maturity = beta
+
+loose_campus_audit_file_path = /var/log/campus_audit/campus_audit.jsonl
+loose_campus_audit_databases = university_resources
+loose_campus_audit_connections = FAILED
+loose_campus_audit_log_reads = OFF
+loose_campus_audit_max_sql_length = 1024
+
+# LOAD_FILE() / import_plugin_log() may only read the audit log directory.
+secure_file_priv = /var/log/campus_audit
+
+# LOAD_FILE() also reads only files that are readable by all (S_IROTH), and
+# the plugin creates its log without that bit.  Here the log files get it;
+# other users are kept out by the directory (0750 mysql:mysql, Dockerfile).
+loose_campus_audit_readable_by_all = ON

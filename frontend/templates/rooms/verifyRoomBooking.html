@@ -37,6 +37,7 @@
 
             <!-- Action Buttons -->
             <form method="POST" action="{{ url_for('confirm_room_booking', room_name=room_name) }}" class="d-flex flex-wrap gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="date" value="{{ request.form['date'] }}">
                 <input type="hidden" name="time" value="{{ request.form['time'] }}">
                 <input type="hidden" name="people" value="{{ request.form['people'] }}">

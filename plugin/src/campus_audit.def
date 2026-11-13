@@ -1,0 +1,10 @@
+; Exports for MinGW/Zig builds of campus_audit.dll.
+; MSVC builds export these through MYSQL_PLUGIN_EXPORT (_declspec(dllexport))
+; in mysql/plugin.h; GNU toolchains on Windows need them listed explicitly.
+LIBRARY campus_audit
+EXPORTS
+    _maria_plugin_interface_version_ DATA
+    _maria_sizeof_struct_st_plugin_ DATA
+    _maria_plugin_declarations_ DATA
+    my_print_error_service DATA
+    thd_alloc_service DATA

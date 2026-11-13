@@ -4,215 +4,448 @@
     Audit Lab
 {% endblock %}
 
+{% block head %}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='lab.css') }}">
+{% endblock %}
+
 {% block body %}
-    <div class="container py-4">
+{% set logged_in = session.get("user_id") is not none %}
+<div id="lab" class="lab" data-logged-in="{{ 'true' if logged_in else 'false' }}"
+     data-role="{{ session.get('role') or '' }}" data-login-url="{{ url_for('login', next='lab') }}">
 
-        <!-- Lab Intro Card -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white lab-card">
-            <div class="card-body p-0">                
-                <h1 class="text-dark mb-4">Audit Lab</h1>
-                
-                <p class="fs-5 text-secondary mb-4 card-description">
-                    Nine short steps.
+    <!-- Lab Intro Card -->
+    <header class="lab-hero card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white lab-card">
+        <div class="card-body p-0">
+            <p class="lab-kicker text-secondary">Area 11 &middot; a native MariaDB server plugin, live</p>
+            <h1 class="lab-title text-dark mb-4">Audit Lab</h1>
+            <p class="fs-5 text-secondary mb-4 card-description">
+                Nine short steps. You run real statements, and then read what <code>campus_audit</code>, a C++
+                plugin running inside <code>mariadbd</code>, wrote about them, next to what the SQL triggers
+                wrote. Nothing on this page is simulated.
+            </p>
+            <div class="lab-hero-actions">
+                <button type="button" class="btn custom-filled-btn btn-lg px-4" data-tour="start">Start the guided tour</button>
+                <button type="button" class="btn custom-grey-btn btn-lg px-4" data-tour="skip">Skip to the event explorer</button>
+            </div>
+            {% if not logged_in %}
+                <p class="lab-hero-note text-secondary">
+                    Steps 1, 2 and 8 work without an account. For the live steps,
+                    <a href="{{ url_for('login', next='lab') }}">log in</a> with your own account or
+                    <a href="{{ url_for('register') }}">register</a>.
                 </p>
-                <p class="fs-5 text-secondary mb-0 card-description">
-                    You run real statements, and then read what <code>campus_audit</code> wrote about them, 
-                    next to what the SQL triggers wrote.
-                </p>      
-            </div>
+            {% endif %}
         </div>
+    </header>
 
-        <!-- Guided Tour Layout -->
-        <div class="row g-4 align-items-start">
-            
-            <!-- Left Sidebar: 9 Steps -->
-            <div class="col-12 col-lg-3">
-                <nav class="nav flex-column gap-1" id="labStepper">
-                    <button type="button" class="nav-link lab-step-btn active d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="1" data-title="Welcome">
-                        <span class="lab-step-badge">1</span>
-                        <span>Welcome</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="2" data-title="How it fits together">
-                        <span class="lab-step-badge">2</span>
-                        <span>How it fits together</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="3" data-title="Check the plugin">
-                        <span class="lab-step-badge">3</span>
-                        <span>Check the plugin</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="4" data-title="Run a statement">
-                        <span class="lab-step-badge">4</span>
-                        <span>Run a statement</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="5" data-title="The plugin's records">
-                        <span class="lab-step-badge">5</span>
-                        <span>The plugin's records</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="6" data-title="Row history (triggers)">
-                        <span class="lab-step-badge">6</span>
-                        <span>Row history (triggers)</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="7" data-title="Explore events">
-                        <span class="lab-step-badge">7</span>
-                        <span>Explore events</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="8" data-title="Where it stops">
-                        <span class="lab-step-badge">8</span>
-                        <span>Where it stops</span>
-                    </button>
-                    <button type="button" class="nav-link lab-step-btn d-flex align-items-center gap-3 text-start rounded-3 px-3 py-2 border-0 bg-transparent" data-step="9" data-title="You have seen the plugin at work">
-                        <span class="lab-step-badge">9</span>
-                        <span>Finish</span>
-                    </button>
-                </nav>
+    <div class="lab-shell">
+        <nav class="lab-stepper" aria-label="Tour steps">
+            <ol id="lab-step-list">
+                <li><button type="button" data-goto="1">Welcome</button></li>
+                <li><button type="button" data-goto="2">How it fits together</button></li>
+                <li><button type="button" data-goto="3">Check the plugin</button></li>
+                <li><button type="button" data-goto="4">Run a statement</button></li>
+                <li><button type="button" data-goto="5">The plugin's records</button></li>
+                <li><button type="button" data-goto="6">Row history (triggers)</button></li>
+                <li><button type="button" data-goto="7">Explore events</button></li>
+                <li><button type="button" data-goto="8">Where it stops</button></li>
+                <li><button type="button" data-goto="9">Finish</button></li>
+            </ol>
+        </nav>
+
+        <div class="lab-main card border-0 shadow-sm rounded-4 bg-white">
+            <div class="lab-progress-wrap">
+                <div class="lab-progress" role="progressbar" aria-label="Tour progress"
+                     aria-valuemin="1" aria-valuemax="9" aria-valuenow="1">
+                    <div class="lab-progress-bar" style="width: 11%"></div>
+                </div>
+                <p class="lab-progress-text" id="lab-progress-text" aria-live="polite">Step 1 of 9</p>
             </div>
 
-            <!-- Right Column: Step Content Card -->
-            <div class="col-12 col-lg-9">
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-                    <div class="card-body p-0">
-                        
-                        <!-- Progress Bar & Step Indicator -->
-                        <div class="progress mb-2 lab-progress">
-                            <div id="labProgressBar" class="progress-bar lab-progress-bar" role="progressbar" style="width: 11.11%;" aria-valuenow="1" aria-valuemin="1" aria-valuemax="9"></div>
-                        </div>
-                        <p id="labStepSubtitle" class="small text-secondary mb-4">
-                            Step 1 of 9 &middot; Welcome
-                        </p>
-
-                        <!-- Step Panels -->
-                        <div class="lab-step-panel" data-panel="1">
-                            <h2 class="h4 fw-bold text-dark mb-3">Welcome</h2>
-                            <p class="text-secondary mb-0">Step 1 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="2">
-                            <h2 class="h4 fw-bold text-dark mb-3">How it fits together</h2>
-                            <p class="text-secondary mb-0">Step 2 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="3">
-                            <h2 class="h4 fw-bold text-dark mb-3">Check the plugin</h2>
-                            <p class="text-secondary mb-0">Step 3 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="4">
-                            <h2 class="h4 fw-bold text-dark mb-3">Run a statement</h2>
-                            <p class="text-secondary mb-0">Step 4 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="5">
-                            <h2 class="h4 fw-bold text-dark mb-3">The plugin's records</h2>
-                            <p class="text-secondary mb-0">Step 5 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="6">
-                            <h2 class="h4 fw-bold text-dark mb-3">Row history (triggers)</h2>
-                            <p class="text-secondary mb-0">Step 6 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="7">
-                            <h2 class="h4 fw-bold text-dark mb-3">Explore events</h2>
-                            <p class="text-secondary mb-0">Step 7 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="8">
-                            <h2 class="h4 fw-bold text-dark mb-3">Where it stops</h2>
-                            <p class="text-secondary mb-0">Step 8 content goes here.</p>
-                        </div>
-
-                        <div class="lab-step-panel d-none" data-panel="9">
-                            <h2 class="h4 fw-bold text-dark mb-3">You have seen the plugin at work</h2>
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                <button type="button" class="btn custom-filled-btn px-3 js-lab-restart">Restart the tour</button>
-                                <button type="button" class="btn custom-brand-btn px-3" id="keepExploringBtn">Keep exploring events</button>
-                                <a href="/" class="btn custom-grey-btn px-3">Back to Smart Campus</a>
-                            </div>
-                            <p class="text-secondary small mb-0">
-                                Next: the five SQL files in <code>examples/</code> show the same plugin from the <code>mariadb</code> command line, including configuration and unloading.
-                            </p>
-                        </div>
-
-                        <!-- Step Footer Navigation -->
-                        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-4">
-                            <button type="button" id="labBackBtn" class="btn custom-grey-btn px-3" disabled>Back</button>
-                            <button type="button" class="btn btn-link text-decoration-underline js-lab-restart">Restart</button>
-                            <button type="button" id="labNextBtn" class="btn custom-brand-btn px-3">Next</button>
-                        </div>
-
+            <!-- ======================================================== 1 -->
+            <section class="lab-step" data-step="1" aria-labelledby="s1-title">
+                <h2 id="s1-title" tabindex="-1">What a MariaDB audit plugin is</h2>
+                <p>
+                    Every connection, every opened table and every finished statement passes through the
+                    server's <strong>audit API</strong>. <code>campus_audit</code> is a shared library
+                    (<code>campus_audit.so</code>, C++, <code>MYSQL_AUDIT_PLUGIN</code>) that the server
+                    loads with <code>INSTALL SONAME 'campus_audit'</code>. From then on its callback runs
+                    <em>inside</em> <code>mariadbd</code> and appends one JSON line per event to a log file.
+                </p>
+                <div class="lab-compare">
+                    <div class="lab-compare-card">
+                        <h3>Application logging sees&hellip;</h3>
+                        <p>only what one application decides to log, only for that application.</p>
+                    </div>
+                    <div class="lab-compare-card lab-compare-card--plugin">
+                        <h3>The server plugin sees&hellip;</h3>
+                        <p>every client of the server (this web app, the <code>mariadb</code> CLI, any
+                            script), including failed logins, rejected statements and schema changes,
+                            and replaces every value in a statement by <code>?</code> before it writes.</p>
                     </div>
                 </div>
-            </div>
+                <h3 class="h6 mt-4">In this tour you will</h3>
+                <ol class="lab-checklist">
+                    <li>ask the server whether the plugin is loaded and how it is configured;</li>
+                    <li>run allow-listed statements against a disposable table of your own;</li>
+                    <li>read the plugin's records and the trigger's row history side by side;</li>
+                    <li>see three places where the plugin's view of the server ends.</li>
+                </ol>
+            </section>
 
+            <!-- ======================================================== 2 -->
+            <section class="lab-step" data-step="2" aria-labelledby="s2-title" hidden>
+                <h2 id="s2-title" tabindex="-1">How it fits together</h2>
+                <figure class="lab-figure">
+                    <svg class="lab-diagram" viewBox="0 0 920 400" role="img" aria-labelledby="dg-title dg-desc">
+                        <title id="dg-title">Where the audit records come from</title>
+                        <desc id="dg-desc">The web app sends statements as campus_app to mariadbd. Inside the server the
+                            executor changes the tables; AFTER triggers write the row history into audit_events;
+                            the audit API calls the campus_audit plugin, which appends JSON lines to a log file.
+                            import_current_log() loads that file into campus_audit.plugin_events, which the
+                            Audit Lab reads.</desc>
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M0,0 L10,5 L0,10 z" class="dg-arrowhead"/>
+                            </marker>
+                        </defs>
+                        <rect x="10" y="150" width="150" height="74" rx="12" class="dg-box"/>
+                        <text x="85" y="182" class="dg-label">Web app</text>
+                        <text x="85" y="202" class="dg-sub">account campus_app</text>
+
+                        <rect x="200" y="20" width="520" height="360" rx="18" class="dg-server"/>
+                        <text x="220" y="48" class="dg-server-label">mariadbd 13.0.2</text>
+
+                        <rect x="230" y="150" width="140" height="74" rx="12" class="dg-box"/>
+                        <text x="300" y="182" class="dg-label">Executor</text>
+                        <text x="300" y="202" class="dg-sub">parse · check · run</text>
+
+                        <rect x="420" y="70" width="270" height="74" rx="12" class="dg-box"/>
+                        <text x="555" y="102" class="dg-label">university_resources</text>
+                        <text x="555" y="122" class="dg-sub">bookings, loans, audit_lab_notes…</text>
+
+                        <rect x="420" y="160" width="270" height="56" rx="12" class="dg-box dg-trigger"/>
+                        <text x="555" y="194" class="dg-label">AFTER triggers → audit_events</text>
+
+                        <rect x="420" y="232" width="270" height="56" rx="12" class="dg-box dg-plugin"/>
+                        <text x="555" y="266" class="dg-label">audit API → campus_audit</text>
+
+                        <rect x="420" y="304" width="270" height="56" rx="12" class="dg-box dg-plugin-soft"/>
+                        <text x="555" y="328" class="dg-label">campus_audit.plugin_events</text>
+                        <text x="555" y="346" class="dg-sub">+ views</text>
+
+                        <rect x="760" y="232" width="150" height="56" rx="12" class="dg-box dg-plugin"/>
+                        <text x="835" y="258" class="dg-label">campus_audit</text>
+                        <text x="835" y="276" class="dg-sub">.jsonl file</text>
+
+                        <path d="M160 187 H228" class="dg-line" marker-end="url(#arrow)"/>
+                        <path d="M370 170 C395 150 395 107 418 107" class="dg-line" marker-end="url(#arrow)"/>
+                        <path d="M555 144 V158" class="dg-line dg-line-trigger" marker-end="url(#arrow)"/>
+                        <path d="M370 205 C395 230 395 260 418 260" class="dg-line dg-line-plugin" marker-end="url(#arrow)"/>
+                        <path d="M690 260 H758" class="dg-line dg-line-plugin" marker-end="url(#arrow)"/>
+                        <path d="M835 288 C835 330 760 332 692 332" class="dg-line dg-line-plugin" marker-end="url(#arrow)"/>
+                        <text x="770" y="350" class="dg-sub dg-left">import_current_log()</text>
+                        <path d="M418 332 C120 332 85 300 85 226" class="dg-line dg-line-read" marker-end="url(#arrow)"/>
+                        <text x="94" y="252" class="dg-sub dg-left">Audit Lab reads</text>
+                    </svg>
+                </figure>
+                <div class="lab-legend">
+                    <div class="lab-legend-item lab-legend-item--plugin">
+                        <span class="lab-chip lab-chip--plugin">campus_audit plugin</span>
+                        <p>Called by the server for the TABLE, GENERAL and CONNECTION event classes. Knows
+                            <strong>who</strong> (database account), <strong>which table</strong>,
+                            <strong>which statement</strong> (as a digest without values) and
+                            <strong>whether it worked</strong> (error code). Writes a JSON Lines file, because
+                            writing tables from inside an audit callback would re-enter the server.</p>
+                    </div>
+                    <div class="lab-legend-item lab-legend-item--trigger">
+                        <span class="lab-chip lab-chip--trigger">SQL triggers</span>
+                        <p>Run inside the changing statement and store <strong>what changed in the row</strong>
+                            (old and new values as JSON) in <code>audit_events</code>. They never see failed
+                            statements, DDL or logins: the audit API is the only place that does.</p>
+                    </div>
+                </div>
+                <p class="small text-body-secondary mb-0">
+                    The two are joined by the connection id: <code>CONNECTION_ID()</code> in a trigger row
+                    equals <code>conn</code> in a plugin record.
+                </p>
+            </section>
+
+            <!-- ======================================================== 3 -->
+            <section class="lab-step" data-step="3" aria-labelledby="s3-title" hidden>
+                <h2 id="s3-title" tabindex="-1">Check the plugin</h2>
+                <p>The page asks the running server, with the web app's own unprivileged account:</p>
+                <pre class="lab-sql"><code>SELECT PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_MATURITY, ...
+  FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';
+SHOW GLOBAL STATUS    LIKE 'campus\_audit\_%';
+SHOW GLOBAL VARIABLES LIKE 'campus\_audit\_%';</code></pre>
+                <div class="lab-live" data-needs-login>
+                    <button type="button" class="btn custom-filled-btn" data-load="plugin">Ask the server</button>
+                    <div id="plugin-state" class="mt-3" aria-live="polite"></div>
+                </div>
+            </section>
+
+            <!-- ======================================================== 4 -->
+            <section class="lab-step" data-step="4" aria-labelledby="s4-title" hidden>
+                <h2 id="s4-title" tabindex="-1">Run a statement</h2>
+                <p>
+                    Each button runs one fixed statement on <code>audit_lab_notes</code>, a table that exists only
+                    for this lab. You can only change your own rows. Try <strong>Insert a row</strong> first,
+                    then come back for the others: each one teaches something different.
+                </p>
+                <div class="lab-live" data-needs-login>
+                    <form id="lab-form" class="lab-form" autocomplete="off">
+                        <div>
+                            <label for="lab-label" class="form-label">
+                                Label (used when inserting a row)
+                            </label>
+                            <input id="lab-label" class="form-control" maxlength="60" value="Projector for Friday">
+                        </div>
+                        <div>
+                            <label for="lab-quantity" class="form-label">Quantity (1–100)</label>
+                            <input id="lab-quantity" class="form-control" type="number" min="1" max="100" value="2">
+                        </div>
+                    </form>
+                    <div class="lab-actions">
+                        <button type="button" class="lab-action" data-action="create">
+                            <span class="lab-action-title">Insert a row</span>
+                            <span class="lab-action-text">INSERT: a table record, a statement record and a trigger row</span>
+                        </button>
+                        <button type="button" class="lab-action" data-action="update">
+                            <span class="lab-action-title">Update your latest row's quantity</span>
+                            <span class="lab-action-text">
+                                UPDATE: changes quantity only; the trigger stores old and new values
+                            </span>
+                        </button>
+                        <button type="button" class="lab-action" data-action="delete">
+                            <span class="lab-action-title">Delete your latest row</span>
+                            <span class="lab-action-text">DELETE: only the trigger keeps the deleted values</span>
+                        </button>
+                        <button type="button" class="lab-action lab-action--warn" data-action="violate">
+                            <span class="lab-action-title">Insert an invalid row</span>
+                            <span class="lab-action-text">quantity 0 breaks a CHECK constraint (ERROR 4025)</span>
+                        </button>
+                        <button type="button" class="lab-action lab-action--warn" data-action="rollback">
+                            <span class="lab-action-title">Update, then ROLLBACK</span>
+                            <span class="lab-action-text">the statement succeeds, the transaction is undone</span>
+                        </button>
+                        <button type="button" class="lab-action lab-action--warn" data-action="denied">
+                            <span class="lab-action-title">Run a forbidden statement</span>
+                            <span class="lab-action-text">DELETE on bookings: the app's account lacks the privilege</span>
+                        </button>
+                        <button type="button" class="lab-action lab-action--warn" data-action="failed_login">
+                            <span class="lab-action-title">Failed database login</span>
+                            <span class="lab-action-text">a login as a non-existent account (ERROR 1045)</span>
+                        </button>
+                    </div>
+                    <div id="action-result" class="mt-3" aria-live="polite"></div>
+                    <details class="lab-notes mt-3">
+                        <summary>Your lab rows</summary>
+                        <div id="lab-notes"></div>
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" data-reset>Delete all my lab rows</button>
+                    </details>
+                </div>
+            </section>
+
+            <!-- ======================================================== 5 -->
+            <section class="lab-step" data-step="5" aria-labelledby="s5-title" hidden>
+                <h2 id="s5-title" tabindex="-1">The plugin's records</h2>
+                <p>
+                    These records were written by <code>campus_audit</code> inside the server while your
+                    statement ran, then imported with <code>CALL campus_audit.import_current_log()</code> and read
+                    back from <code>campus_audit.plugin_events</code>, filtered by your request's connection id.
+                    Open a record to see what each field means and the raw JSON line.
+                </p>
+                <div id="plugin-events" aria-live="polite"></div>
+            </section>
+
+            <!-- ======================================================== 6 -->
+            <section class="lab-step" data-step="6" aria-labelledby="s6-title" hidden>
+                <h2 id="s6-title" tabindex="-1">Row history from the triggers</h2>
+                <p>
+                    A different mechanism: the <code>AFTER</code> triggers in <code>database/triggers.sql</code>
+                    wrote these rows into <code>audit_events</code> in the same statement. They hold the row's
+                    values, which the plugin never sees, and the application user id (<code>@app_user_id</code>)
+                    that the web app asserts on every connection.
+                </p>
+                <div id="row-history" aria-live="polite"></div>
+            </section>
+
+            <!-- ======================================================== 7 -->
+            <section class="lab-step" data-step="7" aria-labelledby="s7-title" hidden>
+                <h2 id="s7-title" tabindex="-1">Explore events</h2>
+                <p>
+                    Students see the records of their own lab actions; administrators can switch to every record on
+                    the server. <strong>Refresh</strong> imports whatever the plugin has written since.
+                </p>
+                <div class="lab-live" data-needs-login>
+                    <div class="lab-tabs" role="tablist" aria-label="Record source">
+                        <button type="button" role="tab" id="tab-events" aria-controls="panel-events" aria-selected="true">Plugin records</button>
+                        <button type="button" role="tab" id="tab-history" aria-controls="panel-history" aria-selected="false" tabindex="-1">Row history</button>
+                    </div>
+                    <div id="panel-events" role="tabpanel" aria-labelledby="tab-events">
+                        <form id="event-filters" class="lab-filters">
+                            <label>Event type
+                                <select name="type" class="form-select form-select-sm">
+                                    <option value="">any</option>
+                                    {% for t in event_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                                </select>
+                            </label>
+                            <label>Table
+                                <input name="table" class="form-control form-control-sm" placeholder="e.g. audit_lab_notes" maxlength="64">
+                            </label>
+                            <label>Outcome
+                                <select name="outcome" class="form-select form-select-sm">
+                                    <option value="">any</option><option value="ok">succeeded</option><option value="error">failed</option>
+                                </select>
+                            </label>
+                            <label>Account
+                                <input name="account" class="form-control form-control-sm" placeholder="e.g. campus_app" maxlength="80">
+                            </label>
+                            <label>Time
+                                <select name="since" class="form-select form-select-sm">
+                                    <option value="15">last 15 min</option><option value="60" selected>last hour</option>
+                                    <option value="1440">last day</option><option value="10080">last week</option><option value="all">all</option>
+                                </select>
+                            </label>
+                            {% if session.get("role") == "admin" %}
+                            <label>Scope
+                                <select name="scope" class="form-select form-select-sm">
+                                    <option value="mine">my lab actions</option><option value="all">every record</option>
+                                </select>
+                            </label>
+                            {% endif %}
+                            <div class="lab-filter-buttons">
+                                <button type="submit" class="btn btn-sm custom-filled-btn">Apply</button>
+                                <button type="button" class="btn btn-sm custom-grey-btn" data-refresh>Refresh from the plugin log</button>
+                            </div>
+                        </form>
+                        <div id="event-list" aria-live="polite"></div>
+                    </div>
+                    <div id="panel-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+                        <form id="history-filters" class="lab-filters">
+                            <label>Table
+                                <select name="table" class="form-select form-select-sm">
+                                    <option value="">any</option>
+                                    {% for t in history_tables %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                                </select>
+                            </label>
+                            <label>Action
+                                <select name="action" class="form-select form-select-sm">
+                                    <option value="">any</option><option>INSERT</option><option>UPDATE</option><option>DELETE</option>
+                                </select>
+                            </label>
+                            <label>Time
+                                <select name="since" class="form-select form-select-sm">
+                                    <option value="60" selected>last hour</option><option value="1440">last day</option><option value="all">all</option>
+                                </select>
+                            </label>
+                            {% if session.get("role") == "admin" %}
+                            <label>Scope
+                                <select name="scope" class="form-select form-select-sm">
+                                    <option value="mine">my changes</option><option value="all">every change</option>
+                                </select>
+                            </label>
+                            {% endif %}
+                            <div class="lab-filter-buttons">
+                                <button type="submit" class="btn btn-sm custom-filled-btn">Apply</button>
+                            </div>
+                        </form>
+                        <div id="history-list" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ======================================================== 8 -->
+            <section class="lab-step" data-step="8" aria-labelledby="s8-title" hidden>
+                <h2 id="s8-title" tabindex="-1">Where the plugin's view ends</h2>
+                <p>Each limit below is something you can reproduce in step 4, or that the test suite checks.</p>
+                <div class="lab-limits">
+                    <article class="lab-limit">
+                        <h3>“Opened for write” is not “changed”</h3>
+                        <p>TABLE events fire when the server opens and locks a table, <em>before</em> the statement
+                            runs. <strong>Insert an invalid row</strong> still produces a <code>table_write</code>
+                            record; only the statement record after it carries <code>error_code 4025</code>, and no
+                            trigger row exists.</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>Statements, not commits</h3>
+                        <p>After <strong>Update, then ROLLBACK</strong> the plugin reports
+                            <code>status: ok</code>, because the statement did succeed. The trigger row was
+                            rolled back with the transaction. No audit event announces COMMIT or ROLLBACK of
+                            the rows.</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>Refused before any table is opened</h3>
+                        <p>The privilege check runs before the server opens a table, so a
+                            <strong>forbidden statement</strong> raises no TABLE event at all. Version 1.0 of the
+                            plugin therefore left no trace of it; version 1.1 records it from the GENERAL STATUS
+                            event when the session's default schema is watched
+                            (<code>access_denied: true</code>). A refused statement that names another schema
+                            explicitly is still invisible.</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>Values never reach the plugin</h3>
+                        <p>No audit event carries row values. Your label appears in the trigger's
+                            <code>new_values</code>, but in the plugin's <code>sql_digest</code> it is
+                            <code>?</code>: the plugin removes every literal on purpose.</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>Database account, not person</h3>
+                        <p>Every web request uses the shared account <code>campus_app</code>; the plugin cannot know
+                            which student acted. Only the trigger row has <code>application_user_id</code>, and that
+                            is an assertion of the client (<code>SET @app_user_id</code>), not something the server
+                            verified.</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>Observe, never block</h3>
+                        <p>The audit callback returns <code>void</code>: a plugin can watch but cannot veto. When
+                            the log cannot be written, statements still succeed, the state becomes
+                            <code>DEGRADED</code> and an <code>audit_gap</code> record later states how many records
+                            were lost (tested with <code>/dev/full</code> and a locked file).</p>
+                    </article>
+                    <article class="lab-limit">
+                        <h3>CHANGE_USER names the old account</h3>
+                        <p>A <code>COM_CHANGE_USER</code> event describes the session <em>before</em> the switch,
+                            even when the switch fails. A failed switch therefore names the current account, not
+                            the one somebody tried to become (measured with <code>mysql_change_user()</code> in the
+                            end-to-end tests).</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ======================================================== 9 -->
+            <section class="lab-step" data-step="9" aria-labelledby="s9-title" hidden>
+                <h2 id="s9-title" tabindex="-1">You have seen the plugin at work</h2>
+                <div id="lab-summary" class="lab-summary"></div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="btn custom-filled-btn px-3" data-tour="restart">Restart the tour</button>
+                    <button type="button" class="btn custom-brand-btn px-3" data-goto="7">Keep exploring events</button>
+                    <a class="btn custom-grey-btn px-3" href="{{ url_for('index') }}">Back to Smart Campus</a>
+                </div>
+                <p class="small text-body-secondary mt-3 mb-0">
+                    Next: the five SQL files in <code>examples/</code> show the same plugin from the
+                    <code>mariadb</code> command line, including configuration and unloading.
+                </p>
+            </section>
+
+            <div class="lab-nav">
+                <button type="button" class="btn custom-grey-btn px-3" data-tour="back">Back</button>
+                <button type="button" class="btn btn-link text-decoration-underline" data-tour="restart">Restart</button>
+                <button type="button" class="btn custom-brand-btn px-3" data-tour="next">Next</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const totalSteps = 9;
-            let currentStep = 1;
+    <template id="login-needed">
+        <div class="alert alert-secondary lab-login" role="note">
+            This step talks to the database. <a href="{{ url_for('login', next='lab') }}">Log in</a> or
+            <a href="{{ url_for('register') }}">register</a> to run it; you will come back to this step.
+        </div>
+    </template>
+</div>
+{% endblock %}
 
-            const stepButtons = document.querySelectorAll(".lab-step-btn");
-            const stepPanels = document.querySelectorAll(".lab-step-panel");
-            const progressBar = document.getElementById("labProgressBar");
-            const subtitle = document.getElementById("labStepSubtitle");
-            const backBtn = document.getElementById("labBackBtn");
-            const nextBtn = document.getElementById("labNextBtn");
-            const restartBtns = document.querySelectorAll(".js-lab-restart");
-            const keepExploringBtn = document.getElementById("keepExploringBtn");
-
-            function goToStep(step) {
-                currentStep = Math.max(1, Math.min(totalSteps, step));
-
-                // Update sidebar buttons
-                stepButtons.forEach(btn => {
-                    const btnStep = parseInt(btn.dataset.step, 10);
-                    btn.classList.toggle("active", btnStep === currentStep);
-                    btn.classList.toggle("completed", btnStep < currentStep);
-                    if (btnStep === currentStep) {
-                        subtitle.innerHTML = `Step ${currentStep} of ${totalSteps} &middot; ${btn.dataset.title}`;
-                    }
-                });
-
-                // Show active panel
-                stepPanels.forEach(panel => {
-                    const panelStep = parseInt(panel.dataset.panel, 10);
-                    panel.classList.toggle("d-none", panelStep !== currentStep);
-                });
-
-                // Update progress bar
-                const percent = (currentStep / totalSteps) * 100;
-                progressBar.style.width = `${percent}%`;
-                progressBar.setAttribute("aria-valuenow", currentStep);
-
-                // Update footer buttons
-                backBtn.disabled = currentStep === 1;
-                nextBtn.textContent = currentStep === totalSteps ? "Finish" : "Next";
-            }
-
-            stepButtons.forEach(btn => {
-                btn.addEventListener("click", () => goToStep(parseInt(btn.dataset.step, 10)));
-            });
-
-            backBtn.addEventListener("click", () => {
-                if (currentStep > 1) goToStep(currentStep - 1);
-            });
-
-            nextBtn.addEventListener("click", () => {
-                if (currentStep < totalSteps) {
-                    goToStep(currentStep + 1);
-                } else {
-                    window.location.href = "/";
-                }
-            });
-
-            restartBtns.forEach(btn => {
-                btn.addEventListener("click", () => goToStep(1));
-            });
-
-            if (keepExploringBtn) {
-                keepExploringBtn.addEventListener("click", () => goToStep(7));
-            }
-        });
-    </script>
+{% block scripts %}
+    <script src="{{ url_for('static', filename='lab.js') }}"></script>
 {% endblock %}

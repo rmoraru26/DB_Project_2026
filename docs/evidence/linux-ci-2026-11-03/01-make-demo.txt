@@ -1,0 +1,107 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# make demo
+
+
+=== Server version
++------------------------+------------------+-----------------+
+| version                | os               | plugin_maturity |
++------------------------+------------------+-----------------+
+| 13.0.2-MariaDB-ubu2604 | debian-linux-gnu | beta            |
++------------------------+------------------+-----------------+
+
+=== 1. Install the plugin (no-op if it is already installed)
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY  | PLUGIN_MATURITY | PLUGIN_AUTH_VERSION |
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
+| campus_audit | ACTIVE        | AUDIT       | campus_audit.so | Beta            | 1.1.1               |
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
++------------------------------+------------------------------------------+
+| Variable_name                | Value                                    |
++------------------------------+------------------------------------------+
+| campus_audit_connections     | FAILED                                   |
+| campus_audit_databases       | university_resources                     |
+| campus_audit_exclude_users   |                                          |
+| campus_audit_file_path       | /var/log/campus_audit/campus_audit.jsonl |
+| campus_audit_log_reads       | OFF                                      |
+| campus_audit_max_sql_length  | 1024                                     |
+| campus_audit_readable_by_all | ON                                       |
+| campus_audit_reopen_now      | OFF                                      |
++------------------------------+------------------------------------------+
+
+=== 2. Cause events: an application booking, a rejected statement, a failed login
++-----------------+----------+
+| name            | capacity |
++-----------------+----------+
+| Room 201        |        8 |
+| Project Room 12 |        6 |
+| Electronics Lab |       12 |
++-----------------+----------+
+   (expected) --------------
+   (expected) INSERT INTO university_resources.rooms (name, capacity) VALUES ('Broken room', 0)
+   (expected) --------------
+   (expected)
+   (expected) ERROR 4025 (23000) at line 1: CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
+   (expected) ERROR 1045 (28000): Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+
+=== 3. Raw JSON lines written by the plugin (last 6)
+*************************** 1. row ***************************
+tail_of_log: 76Z","seq":2,"instance":"65f646f2ca878-1","event":"plugin_stop","events_written":1,"events_dropped":0}
+{"ts":"2026-11-03T19:40:37.249341Z","seq":1,"instance":"65f646fcba53c-1","event":"plugin_start","version":"1.1.1","file_path":"/var/log/campus_audit/campus_audit.jsonl","databases":"university_resources","exclude_users":"","log_reads":false,"connections":"FAILED","max_sql_length":1024,"readable_by_all":true}
+{"ts":"2026-11-03T19:40:49.107329Z","seq":2,"instance":"65f646fcba53c-1","event":"table_write","conn":16,"query_id":36,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"bookings"}
+{"ts":"2026-11-03T19:40:49.107351Z","seq":3,"instance":"65f646fcba53c-1","event":"table_write","conn":16,"query_id":36,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-03T19:40:49.107944Z","seq":4,"instance":"65f646fcba53c-1","event":"statement","conn":16,"query_id":36,"account":"root[root] @ localhost []","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @app_user_id, room_id, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR FROM rooms WHERE name = ?","sql_digest_truncated":false}
+{"ts":"2026-11-03T19:40:49.238962Z","seq":5,"instance":"65f646fcba53c-1","event":"table_write","conn":17,"query_id":40,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"rooms"}
+{"ts":"2026-11-03T19:40:49.238986Z","seq":6,"instance":"65f646fcba53c-1","event":"table_write","conn":17,"query_id":40,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-03T19:40:49.239061Z","seq":7,"instance":"65f646fcba53c-1","event":"statement","conn":17,"query_id":40,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-03T19:40:49.365255Z","seq":8,"instance":"65f646fcba53c-1","event":"connect_failed","conn":18,"status":1045,"user":"nobody_demo","priv_user":"","proxy_user":"","host":"localhost","ip":null,"port":0,"db":null,"tls_version":"TLSv1.3"}
+
+
+=== 4. Import into campus_audit.plugin_events
++------------------------------------------+-------------+-----------------------+----------------+
+| log_file                                 | total_lines | invalid_lines_skipped | newly_imported |
++------------------------------------------+-------------+-----------------------+----------------+
+| /var/log/campus_audit/campus_audit.jsonl |          10 |                     0 |             10 |
++------------------------------------------+-------------+-----------------------+----------------+
+
+=== 5. Table access with statement outcome (campus_audit.v_table_activity)
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+| event_time                 | event_type  | table_name   | db_user | connection_id | query_id | err  | sql_digest                                                             |
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+| 2026-11-03 19:40:49.238986 | table_write | audit_events | root    |            17 |       40 | 4025 | INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)  |
+| 2026-11-03 19:40:49.238962 | table_write | rooms        | root    |            17 |       40 | 4025 | INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)  |
+| 2026-11-03 19:40:49.107351 | table_write | audit_events | root    |            16 |       36 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
+| 2026-11-03 19:40:49.107329 | table_write | bookings     | root    |            16 |       36 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+
+=== 6. Row changes (triggers) joined with the plugin's statement (v_row_change_history)
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+| event_id | entity_table | action | entity_id | app_user | event_source | plugin_query_id | sql_digest                                                   |
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+|       16 | bookings     | INSERT | 2         |        1 | application  |              36 | INSERT INTO bookings (user_id, room_id, start_time, end_time |
+|       15 | loans        | INSERT | 1         |     NULL | direct_sql   |            NULL | NULL                                                         |
+|       14 | bookings     | INSERT | 1         |     NULL | direct_sql   |            NULL | NULL                                                         |
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+
+=== 7. Failed logins
++----------------------------+----------------+-------------+------------+
+| event_time                 | attempted_user | client_host | error_code |
++----------------------------+----------------+-------------+------------+
+| 2026-11-03 19:40:49.365255 | nobody_demo    | localhost   |       1045 |
++----------------------------+----------------+-------------+------------+
+
+=== 8. Plugin health counters
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 2397                                     |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 8                                        |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+

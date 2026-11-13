@@ -1,0 +1,45 @@
+# Windows write-failure experiment (MariaDB 13.0.2, native Windows 11)
+# A second process held FileStream.Lock(0, long.MaxValue) on the audit log for 25 s
+# (11:45:26 to 11:45:51 UTC+1). Four INSERTs ran during the lock; one after it.
+
+## All campus_audit lines in the error log (stderr) of this server run; the lock experiment is at 11:45 UTC
+2026-10-25 12:23:28 5 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:39:47 50 [Warning] mariadbd.exe: campus_audit: The audit log path is empty
+2026-10-25 12:39:47 51 [Warning] mariadbd.exe: campus_audit: campus_audit_file_path cannot be NULL
+2026-10-25 12:39:48 52 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>\run\data\no_such_dir_1792928384_1552/x.jsonl
+2026-10-25 12:39:48 53 [Warning] mariadbd.exe: campus_audit: The audit log path names a directory: some_dir/
+2026-10-25 12:39:48 54 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>\run\data\no_such_dir_1792928384_1552/x.jsonl
+2026-10-25 12:39:49 56 [Warning] mariadbd.exe: campus_audit: unsupported character in database name 'bad name'
+2026-10-25 12:39:49 57 [Warning] mariadbd.exe: campus_audit: empty database name in list
+2026-10-25 12:39:49 58 [Warning] mariadbd.exe: campus_audit: '*' cannot be combined with explicit database names
+2026-10-25 12:39:50 59 [Warning] mariadbd.exe: campus_audit: unsupported character in user name 'x;DROP'
+2026-10-25 12:40:30 249 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:43:56 262 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:44:06 275 [Warning] mariadbd.exe: campus_audit: The audit log path is empty
+2026-10-25 12:44:06 276 [Warning] mariadbd.exe: campus_audit: campus_audit_file_path cannot be NULL
+2026-10-25 12:44:07 277 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>\run\data\no_such_dir_1792928643_2338/x.jsonl
+2026-10-25 12:44:07 278 [Warning] mariadbd.exe: campus_audit: The audit log path names a directory: some_dir/
+2026-10-25 12:44:07 279 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>\run\data\no_such_dir_1792928643_2338/x.jsonl
+2026-10-25 12:44:08 281 [Warning] mariadbd.exe: campus_audit: unsupported character in database name 'bad name'
+2026-10-25 12:44:08 282 [Warning] mariadbd.exe: campus_audit: empty database name in list
+2026-10-25 12:44:08 283 [Warning] mariadbd.exe: campus_audit: '*' cannot be combined with explicit database names
+2026-10-25 12:44:08 284 [Warning] mariadbd.exe: campus_audit: unsupported character in user name 'x;DROP'
+2026-10-25 12:44:49 475 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25T11:45:32.692663Z [Warning] campus_audit: Write to audit log failed: Permission denied (errno 13); audit records are being dropped (fail-open), retrying every 5 s
+2026-10-25T11:46:19.388811Z [Warning] campus_audit: audit log reopened; 8 event(s) were lost, see the audit_gap record
+2026-10-25 12:46:45 492 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>/exp/denied/audit.jsonl
+2026-10-25 12:46:45 493 [Warning] mariadbd.exe: campus_audit: Cannot open audit log: <scratch>/exp/denied/audit.jsonl
+
+## Audit log file after the experiment
+{"ts":"2026-10-25T11:45:18.770181Z","seq":16,"instance":"65ea8bda3b0fb-4a84","event":"config_change","variable":"campus_audit_file_path","value":"<scratch>/exp/lock_test.jsonl (previous: campus_audit.jsonl)"}
+{"ts":"2026-10-25T11:45:18.770498Z","seq":17,"instance":"65ea8bda3b0fb-4a84","event":"statement","conn":485,"query_id":2495,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_file_path=?","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:45:18.789698Z","seq":18,"instance":"65ea8bda3b0fb-4a84","event":"config_change","variable":"campus_audit_databases","value":"exp_db"}
+{"ts":"2026-10-25T11:45:18.789833Z","seq":19,"instance":"65ea8bda3b0fb-4a84","event":"statement","conn":485,"query_id":2496,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_databases=?","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:45:18.797711Z","seq":20,"instance":"65ea8bda3b0fb-4a84","event":"table_create","conn":485,"query_id":2498,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"exp_db","table":"t"}
+{"ts":"2026-10-25T11:45:18.798703Z","seq":21,"instance":"65ea8bda3b0fb-4a84","event":"statement","conn":485,"query_id":2498,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"CREATE TABLE IF NOT EXISTS exp_db.t (id INT AUTO_INCREMENT PRIMARY KEY, v VARCHAR(?))","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:45:18.799181Z","seq":22,"instance":"65ea8bda3b0fb-4a84","event":"table_write","conn":485,"query_id":2499,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"exp_db","table":"t"}
+{"ts":"2026-10-25T11:45:18.799868Z","seq":23,"instance":"65ea8bda3b0fb-4a84","event":"statement","conn":485,"query_id":2499,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO exp_db.t (v) VALUES (?)","sql_digest_truncated":false}
+
+{"ts":"2026-10-25T11:46:19.388695Z","seq":34,"instance":"65ea8bda3b0fb-4a84","event":"audit_gap","dropped_events":8,"last_error":"Write to audit log failed: Permission denied (errno 13)"}
+{"ts":"2026-10-25T11:46:19.388355Z","seq":33,"instance":"65ea8bda3b0fb-4a84","event":"table_write","conn":491,"query_id":2514,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"exp_db","table":"t"}
+{"ts":"2026-10-25T11:46:19.390456Z","seq":35,"instance":"65ea8bda3b0fb-4a84","event":"statement","conn":491,"query_id":2514,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO exp_db.t (v) VALUES (?)","sql_digest_truncated":false}

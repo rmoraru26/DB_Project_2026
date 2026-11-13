@@ -1,3 +1,5 @@
+A project for area 11, "Write a server plugin" for the [MariaDB student database projects, 2026-09](https://mariadb.org/bachelor_hackathon_2026-09/).
+
 # Smart Campus — University Resource Management
 
 A university database project for managing room reservations, equipment loans, and database activity monitoring.
@@ -51,11 +53,15 @@ The `audit_events` table is a proposed interface. Automatic population through a
 
 `database/seed.sql` provides fictional demonstration records, including:
 
-- Students and an administrator
+- Students and an administrator (the shared demo administrator is demoted to student by
+  migration 004 during setup; see "Set Up the Database")
 - Campus rooms
 - Equipment items
 - A room reservation
 - A returned equipment loan
+
+The rooms and items offered by the website's booking pages are a separate catalogue, loaded by
+`frontend/seed.py`; see "Load the Booking Catalogue".
 
 ## Audit Error Handling
 
@@ -90,20 +96,35 @@ cd DB_Project_2026
 
 ### Set Up the Database
 
-Switch to the database branch:
+The integrated project needs more than `schema.sql` and `seed.sql`. The migrations and triggers
+create the row history (`audit_events` triggers), the `campus_audit` schema for the server plugin's
+records, the Audit Lab objects, the local administrator bootstrap and the `cancelled` loan status;
+the application account `campus_app` is what the web app logs in with. Loading only the schema and
+the seed leaves out all of these.
+
+The files must be applied in this order:
+
+1. `database/schema.sql`
+2. migrations 001–003 in `database/migrations/`
+3. `database/triggers.sql`
+4. `database/seed.sql` (fictional demonstration data; skip it for an existing database)
+5. migrations 004–006 (004 demotes the shared demo administrator created by the seed; 005 then
+   opens the one-time local administrator gate; 006 adds the `cancelled` loan status)
+6. the application account, created by `database/app_account.sh` from `CAMPUS_APP_PASSWORD`
+
+Use the setup script rather than running these files by hand; it applies exactly this order, and
+every step is safe to re-run. With an account permitted to create databases, triggers and users,
+run from the repository root (Git Bash on Windows):
 
 ```bash
-git switch database-schema
+MARIADB_CLIENT="mariadb -h127.0.0.1 -P3306" DB_ADMIN_USER=root MYSQL_PWD='<admin password>' \
+  CAMPUS_APP_PASSWORD='<12+ characters of A-Z a-z 0-9 . _ ->' bash scripts/setup_database.sh
 ```
 
-Open the MariaDB client with an account permitted to create databases, then execute:
-
-```sql
-SOURCE database/schema.sql;
-SOURCE database/seed.sql;
-```
-
-Start the MariaDB client from the repository root, or provide absolute file paths to the SQL scripts.
+For an existing database, add `SKIP_SEED=1`: the seed is skipped and existing data is kept. With
+Docker, `make up` (Windows: `frantastic.cmd up`) initialises an empty database volume in the same
+order, upgrades an existing one and also installs the `campus_audit` plugin, which the Audit Lab
+needs; see `docs/docker.md`. `make migrate` upgrades an existing Docker volume.
 
 Verify the database:
 
@@ -113,6 +134,76 @@ SHOW TABLES;
 SELECT * FROM rooms;
 SELECT * FROM items;
 ```
+
+### Load the Booking Catalogue (once per new database)
+
+The booking pages offer a fixed catalogue: 18 items (Vacuum, Mop, Chess, Basketball, Speaker, …,
+three copies A–C of each) and five rooms (Study Room, Meeting Room, Studio Room, Practice Room,
+Cinema Room). `database/seed.sql` does **not** contain them; it only has the demonstration rows
+(Room 201, Project Room 12, Electronics Lab and three `DEMO-…` items). The catalogue rows are
+inserted by `frontend/seed.py`, and **no setup path runs that script**: not
+`scripts/setup_database.sh`, not `make up` / `frantastic.cmd up`, not the Docker initialisation and
+not `scripts/post_start.sh`. Until it has been run, the pages are shown but every booking attempt
+answers "This item does not exist." or "This room does not exist."
+
+**When.** Once, after the database setup above has finished (the script needs the `items` and
+`rooms` tables): after `scripts/setup_database.sh` on a new database, after the first `make up` /
+`frantastic.cmd up` on an empty Docker volume, and again after `make reset`, which deletes the
+volume. Not after a restart, `make migrate` or an upgrade of an existing database.
+
+**Account.** The script reads two variables and has no default for either:
+
+| Variable | Meaning |
+|---|---|
+| `DB_ADMIN_USER` | a MariaDB account with INSERT on `items` and `rooms`, for example the account used for `scripts/setup_database.sh` (in Docker: `root`) |
+| `MYSQL_PWD` | that account's password (in Docker: the value of `MARIADB_ROOT_PASSWORD` in `.env`) |
+
+If either is missing the script stops before connecting (exit code 2); it never falls back to root.
+Do **not** use `campus_app`: the web application account has no INSERT privilege on `items` or
+`rooms` by design, the script refuses that name, and the privilege must not be granted to make
+this work. `DB_HOST`, `DB_PORT` and `DB_NAME` are taken from the environment or from the
+repository's `.env` (defaults `127.0.0.1`, `3306`, `university_resources`); variables that are
+already set win over `.env`.
+
+**Supplying the password on Windows.** Type it at a hidden prompt into the current PowerShell
+session only. Do not write it into a script, a `.cmd` file or the command line, and do not `echo`
+it. Docker (the web container already has the script, its dependencies and the right `DB_HOST` /
+`DB_PORT`):
+
+```powershell
+$env:DB_ADMIN_USER = 'root'
+$secure = Read-Host 'Password of the maintenance account' -AsSecureString
+$env:MYSQL_PWD = [System.Net.NetworkCredential]::new('', $secure).Password
+try {
+    docker compose exec -T -e DB_ADMIN_USER -e MYSQL_PWD web python seed.py
+} finally {
+    Remove-Item Env:MYSQL_PWD, Env:DB_ADMIN_USER -ErrorAction SilentlyContinue
+    Remove-Variable secure
+}
+```
+
+`-e NAME` without a value forwards the variable from the session, so the password appears neither
+in the command nor in the output. Without Docker, replace the `docker compose` line by
+`Push-Location frontend; try { python seed.py } finally { Pop-Location }` (Python with
+`frontend/requirements.txt` installed; set `DB_PORT` if the server does not listen on 3306). In Git
+Bash the same is:
+
+```bash
+read -r -s -p 'Password of the maintenance account: ' MYSQL_PWD; echo
+export MYSQL_PWD DB_ADMIN_USER=root
+(cd frontend && python seed.py); unset MYSQL_PWD DB_ADMIN_USER
+```
+
+**Running it again.** The script is not idempotent, but a second run is harmless: both INSERTs are
+one transaction, the first one fails on the unique `items.asset_tag` (MariaDB error 1062), the
+transaction is rolled back, and the script reports "Seeding failed (MariaDB error 1062); nothing was
+changed. The catalogue seems to be loaded already." with exit code 1. It never duplicates the
+catalogue and never changes existing rows; do not treat that exit code as a broken installation.
+Exit codes: 0 loaded, 1 database error (nothing changed), 2 configuration refused.
+
+The inserted rows pass through the `items` and `rooms` triggers like any other change: the history
+shows them with the maintenance account as `database_user`, no application user and
+`event_source = direct_sql`.
 
 ### Run the Audit File Checks
 

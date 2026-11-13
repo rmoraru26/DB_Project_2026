@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Unexpected error
+{% endblock %}
+
+{% block body %}
+    <div class="alert alert-danger" role="alert">
+        <h1 class="h4">Something went wrong on our side</h1>
+        <p class="mb-0">The error was logged with its full traceback (<code>docker compose logs web</code>).
+            Please try again; if it keeps happening, run <code>make doctor</code>.</p>
+    </div>
+    <p><a href="{{ url_for('index') }}">Back to the homepage</a></p>
+{% endblock %}

@@ -1,0 +1,5 @@
+# Pinned dependencies for the host-side browser tests in frontend/tests/browser/.
+# Preferred setup: make browser-setup (creates .venv-browser and installs Chromium).
+# The Makefile uses this file automatically when make test-browser is run for the first time.
+pytest==9.1.1
+playwright==1.55.0

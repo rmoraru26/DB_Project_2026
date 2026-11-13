@@ -37,6 +37,7 @@
 
             <!-- Booking Form (sends to verify page) -->
             <form method="POST" action="{{ url_for('verify_room_booking', room_name=room_name) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="row g-3 align-items-end">
                     
                     <!-- Date -->
