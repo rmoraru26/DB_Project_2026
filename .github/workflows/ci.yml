@@ -178,7 +178,15 @@ jobs:
           # server started by an earlier step was gone when this step began
           # (ERROR 2002 on 127.0.0.1:3306, no shutdown in its log).
           mdb=/c/mdb/mariadb-13.0.2-winx64
-          "$mdb/bin/mariadb-install-db.exe" --datadir=C:/mdbdata --port=3306
+          # The administrator scripts refuse to run without a root password
+          # (scripts/mariadb_admin_auth.sh), so the server gets a random one for
+          # this run.  Every client below reads it from MYSQL_PWD; it is masked in
+          # the log and never printed.
+          MYSQL_PWD=$(openssl rand -hex 16)
+          if [ "${#MYSQL_PWD}" -ne 32 ]; then echo "could not generate a root password"; exit 1; fi
+          echo "::add-mask::$MYSQL_PWD"
+          export MYSQL_PWD
+          "$mdb/bin/mariadb-install-db.exe" --datadir=C:/mdbdata --port=3306 --password="$MYSQL_PWD"
           printf '\n[mysqld]\nplugin_maturity=beta\nbind-address=127.0.0.1\n' >> /c/mdbdata/my.ini
           "$mdb/bin/mariadbd.exe" --defaults-file=C:/mdbdata/my.ini --console \
             < /dev/null > /c/mdbdata/server.out 2> /c/mdbdata/server.log &

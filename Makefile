@@ -144,7 +144,7 @@ test-browser: .env  ## run the Audit Lab browser tests (sets up the isolated Pla
 	  $(MAKE) --no-print-directory browser-setup; \
 	fi
 	@set -a; . ./.env; set +a; RUN_BROWSER_TESTS=1 LAB_BASE_URL="http://127.0.0.1:$${WEB_PORT:-5080}" \
-	  "$(BROWSER_PYTHON)" -m pytest -q frontend/tests/browser
+	  "$(BROWSER_PYTHON)" -m pytest -q --confcutdir=frontend/tests/browser frontend/tests/browser
 
 mutation:  ## inject bugs into the plugin code and check that the unit tests notice (g++, ~1.5 min in CI)
 	python3 scripts/mutation_check.py
