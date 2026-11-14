@@ -1,0 +1,106 @@
+# 2026-11-03T12:25:47Z  Linux 6.18.44-fc-v230 x86_64  g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+$ make -C plugin test
+make: Entering directory '/home/claude/work/DB_Project_2026/plugin'
+mkdir -p build
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+== test_record_format
+PASS: JSON plain string
+PASS: JSON quotes and backslashes escaped
+PASS: JSON newline/tab/CR escaped
+PASS: JSON control characters escaped
+PASS: JSON embedded NUL escaped, length respected
+PASS: JSON valid UTF-8 kept as is
+PASS: JSON invalid UTF-8 replaced by U+FFFD
+PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+PASS: JSON overlong encoding rejected
+PASS: JSON NULL pointer becomes null
+PASS: JSON empty string stays empty string
+PASS: JSON overflow detected instead of writing past the buffer
+PASS: JSON overflow keeps buffer NUL-terminated
+PASS: bounded field cut before a multi-byte character
+PASS: JSON numbers, booleans and null
+PASS: digest masks string and number literals
+PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+PASS: digest hides passwords given as literals
+PASS: digest hides password hashes
+PASS: digest masks hex, bit, national and introducer literals
+PASS: digest masks decimals and exponents
+PASS: digest keeps identifiers containing digits and backtick identifiers
+PASS: digest keeps doubled backticks inside identifiers
+PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+PASS: digest removes all comment styles including executable comments
+PASS: digest collapses whitespace
+PASS: '--' without trailing space is not a comment
+PASS: digest of empty statement
+PASS: digest handles an unterminated string
+PASS: digest handles an unterminated comment
+PASS: digest keeps variable names but masks quoted ones
+PASS: digest truncates at max length and reports it
+PASS: digest never ends inside a UTF-8 sequence
+PASS: digest with max length 0 is empty and marked truncated
+PASS: 100 kB literal collapses to one '?'
+PASS: digest of a NULL statement
+PASS: database list parsed and trimmed
+PASS: database match is case-insensitive
+PASS: database match needs the whole name
+PASS: NULL database never matches
+PASS: empty database list watches nothing
+PASS: empty list matches nothing
+PASS: '*' accepted for databases
+PASS: '*' matches user schemas
+PASS: '*' never matches system schemas
+PASS: empty element rejected
+PASS: trailing comma rejected
+PASS: space inside a name rejected
+PASS: punctuation rejected
+PASS: '*' cannot be mixed with names
+PASS: '*' rejected for users
+PASS: more than 16 names rejected
+PASS: name longer than 128 characters rejected
+PASS: user list with '.', '-' and '@' accepted
+PASS: user match is exact and case-sensitive
+PASS: user match needs the whole name
+PASS: user match: a login that is only a prefix of an excluded name is still audited
+PASS: timestamp of the epoch
+PASS: timestamp 2026-10-25
+PASS: timestamp on a leap day
+PASS: timestamp one second before the epoch
+PASS: timestamp exactly one day before the epoch
+PASS: bounded_length stops at the limit and accepts NULL
+Failures: 0
+== test_log_sink
+PASS: NULL path rejected
+PASS: empty path rejected
+PASS: directory-like path rejected
+PASS: directory-like path ending in a backslash rejected
+PASS: control character in path rejected
+PASS: over-long path rejected
+PASS: missing directory reported as open_Failed
+PASS: open failure message carries errno
+PASS: sink stays closed after failed open
+PASS: write on closed sink fails
+PASS: valid path opened
+PASS: first record written
+PASS: failed re-open keeps the previous file open
+PASS: previous file still writable
+PASS: re-opened file is appended to
+PASS: file holds all records in order
+PASS: a newly created log file has no permission bits for others
+PASS: opened for EBADF test
+PASS: write on a dead descriptor reported as write_Failed
+PASS: write failure message carries errno
+PASS: /dev/full write reported as write_Failed (ENOSPC)
+Failures: 0
+== test_automatic_errors
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+Failures: 0
+== test_error_reporter
+Reported: Cannot open audit log
+PASS: all reporter checks
+All unit test programs passed.
+make: Leaving directory '/home/claude/work/DB_Project_2026/plugin'

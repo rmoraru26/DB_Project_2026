@@ -1,0 +1,10 @@
+### make demo equivalent with a regenerated root password
+
+=== Server version
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+exit=1
+
+### make test-e2e equivalent with a regenerated root password
+== campus_audit integration tests (run 1793718715_273)
+Cannot connect to the server: ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+exit=2

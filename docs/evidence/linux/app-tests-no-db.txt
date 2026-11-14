@@ -1,0 +1,67 @@
+# 2026-11-03T12:29:09Z  Linux 6.18.44-fc-v230 x86_64  Python 3.13.18  Flask 3.1.3
+# NOTE: the sandbox could not install PyMySQL, so a stand-in module that cannot connect was on PYTHONPATH.
+#       The 10 database tests are skipped (RUN_DB_TESTS unset); they were NOT run in this environment.
+$ python -m pytest -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python3
+rootdir: /home/claude/work/DB_Project_2026/frontend
+configfile: pytest.ini
+testpaths: tests
+plugins: platformdirs-4.13.3, anyio-4.15.1
+collecting ... collected 53 items
+
+tests/test_app.py::test_missing_secret_key_is_refused PASSED             [  1%]
+tests/test_app.py::test_parse_slot_accepts_offered_future_slot PASSED    [  3%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[not-a-date-10:00 - 11:00] PASSED [  5%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[None-10:00 - 11:00] PASSED [  7%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2030-01-01-10:00 - 13:00] PASSED [  9%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2030-01-01-'; DROP TABLE bookings; --] PASSED [ 11%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2000-01-01-10:00 - 11:00] PASSED [ 13%]
+tests/test_app.py::test_parse_people_rejects_bad_input[0] PASSED         [ 15%]
+tests/test_app.py::test_parse_people_rejects_bad_input[-1] PASSED        [ 16%]
+tests/test_app.py::test_parse_people_rejects_bad_input[abc] PASSED       [ 18%]
+tests/test_app.py::test_parse_people_rejects_bad_input[None] PASSED      [ 20%]
+tests/test_app.py::test_parse_people_rejects_bad_input[1.5] PASSED       [ 22%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[0] PASSED      [ 24%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[15] PASSED     [ 26%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[x] PASSED      [ 28%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[None] PASSED   [ 30%]
+tests/test_app.py::test_pages_require_login[/roomsHome] PASSED           [ 32%]
+tests/test_app.py::test_pages_require_login[/itemsHome] PASSED           [ 33%]
+tests/test_app.py::test_pages_require_login[/myBookings] PASSED          [ 35%]
+tests/test_app.py::test_pages_require_login[/admin/audit] PASSED         [ 37%]
+tests/test_app.py::test_pages_require_login[/rooms/1] PASSED             [ 39%]
+tests/test_app.py::test_admin_page_forbidden_for_students PASSED         [ 41%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form0-name] PASSED [ 43%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form1-valid email] PASSED [ 45%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form2-8 characters] PASSED [ 47%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form3-do not match] PASSED [ 49%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/login] PASSED [ 50%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/register] PASSED [ 52%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/rooms/1/verifyBooking] PASSED [ 54%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/rooms/1/confirmBooking] PASSED [ 56%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/items/1/verifyBooking] PASSED [ 58%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/items/1/confirmBooking] PASSED [ 60%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/bookings/1/cancel] PASSED [ 62%]
+tests/test_app.py::test_post_without_csrf_token_is_rejected[/loans/1/return] PASSED [ 64%]
+tests/test_app.py::test_post_with_wrong_csrf_token_is_rejected PASSED    [ 66%]
+tests/test_app.py::test_csrf_token_of_another_session_is_rejected PASSED [ 67%]
+tests/test_app.py::test_csrf_token_in_header_is_accepted PASSED          [ 69%]
+tests/test_app.py::test_rendered_forms_carry_the_session_token[/login] PASSED [ 71%]
+tests/test_app.py::test_rendered_forms_carry_the_session_token[/register] PASSED [ 73%]
+tests/test_app.py::test_every_post_form_template_contains_the_token_field PASSED [ 75%]
+tests/test_app.py::test_session_cookie_is_httponly_and_samesite PASSED   [ 77%]
+tests/test_app.py::test_login_throttle_blocks_after_repeated_failures_and_recovers PASSED [ 79%]
+tests/test_app.py::test_login_is_refused_with_429_before_any_database_access PASSED [ 81%]
+tests/test_app.py::test_login_with_seed_user SKIPPED (set RUN_DB_TES...) [ 83%]
+tests/test_app.py::test_register_then_login SKIPPED (set RUN_DB_TEST...) [ 84%]
+tests/test_app.py::test_room_booking_overlap_and_capacity SKIPPED (s...) [ 86%]
+tests/test_app.py::test_concurrent_bookings_of_one_slot_create_one_booking SKIPPED [ 88%]
+tests/test_app.py::test_borrow_return_and_single_active_loan SKIPPED     [ 90%]
+tests/test_app.py::test_cancel_own_future_booking SKIPPED (set RUN_D...) [ 92%]
+tests/test_app.py::test_triggers_record_application_identity SKIPPED     [ 94%]
+tests/test_app.py::test_password_hash_never_copied_into_history SKIPPED  [ 96%]
+tests/test_app.py::test_application_account_cannot_delete_or_forge_history SKIPPED [ 98%]
+tests/test_app.py::test_admin_page_renders_for_admin SKIPPED (set RU...) [100%]
+
+======================== 43 passed, 10 skipped in 0.41s ========================

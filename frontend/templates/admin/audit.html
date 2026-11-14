@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Change History
+{% endblock %}
+
+{% block body %}
+    <!-- Intro Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 bg-white lab-card">
+        <div class="card-body p-0">
+            <h1 class="text-dark mb-3">Change History</h1>
+            <p class="fs-5 text-secondary mb-0 card-description">
+                Read-only. Row changes come from the SQL triggers (what changed); table access and
+                statement outcomes come from the <code>campus_audit</code> server plugin (which account
+                touched which table, and whether the statement succeeded).
+            </p>
+        </div>
+    </div>
+
+    <!-- Plugin Status -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card-body p-0">
+            <h2 class="h4 fw-bold text-dark mb-3">Audit plugin status</h2>
+            {% if plugin_status %}
+                <div class="table-responsive">
+                    <table class="table table-sm w-auto mb-0">
+                        {% for row in plugin_status %}
+                            <tr><td>{{ row.Variable_name }}</td><td>{{ row.Value }}</td></tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning mb-0">The campus_audit plugin is not installed or not active on this server.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Row Changes -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card-body p-0">
+            <h2 class="h4 fw-bold text-dark mb-3">Row changes (SQL triggers)</h2>
+            {% if history_error %}
+                <div class="alert alert-warning mb-0">{{ history_error }}</div>
+            {% elif not row_changes %}
+                <p class="text-secondary mb-0">No row changes on this page.</p>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-top">
+                        <thead>
+                            <tr><th>Time</th><th>Action</th><th>Table</th><th>Id</th><th>DB account</th>
+                                <th>App user</th><th>Source</th><th>Connection</th><th>Old values</th><th>New values</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for r in row_changes %}
+                            <tr>
+                                <td>{{ r.event_time }}</td><td>{{ r.action }}</td><td>{{ r.entity_table }}</td><td>{{ r.entity_id }}</td>
+                                <td>{{ r.database_user or "unknown" }}</td><td>{{ r.application_user_id or "unknown" }}</td>
+                                <td>{{ r.event_source }}</td><td>{{ r.connection_id or "" }}</td>
+                                <td><pre class="small mb-0"><code>{{ r.old_text }}</code></pre></td>
+                                <td><pre class="small mb-0"><code>{{ r.new_text }}</code></pre></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Plugin Records -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card-body p-0">
+            <h2 class="h4 fw-bold text-dark mb-3">Table access (audit plugin)</h2>
+            {% if plugin_error %}
+                <div class="alert alert-warning mb-0">{{ plugin_error }}</div>
+            {% elif not plugin_events %}
+                <p class="text-secondary mb-0">No imported plugin records on this page.</p>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr><th>Time</th><th>Event</th><th>Table</th><th>DB account</th><th>Connection</th>
+                                <th>Query</th><th>Error</th><th>Statement digest</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for e in plugin_events %}
+                            <tr>
+                                <td>{{ e.event_time }}</td><td>{{ e.event_type }}</td><td>{{ e.schema_name }}.{{ e.table_name }}</td>
+                                <td>{{ e.db_user or "unknown" }}</td><td>{{ e.connection_id }}</td><td>{{ e.query_id }}</td>
+                                <td>{{ e.statement_error_code if e.statement_error_code is not none else "" }}</td>
+                                <td><code>{{ e.sql_digest or "" }}</code></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="d-flex justify-content-between align-items-center" aria-label="Change history pages">
+        {% if page > 1 %}
+            <a class="btn custom-grey-btn" href="{{ url_for('admin_audit', page=page - 1) }}">Newer</a>
+        {% else %}
+            <span></span>
+        {% endif %}
+        <span class="text-secondary small">Page {{ page }}</span>
+        {% if has_next %}
+            <a class="btn custom-brand-btn" href="{{ url_for('admin_audit', page=page + 1) }}">Older</a>
+        {% else %}
+            <span></span>
+        {% endif %}
+    </nav>
+{% endblock %}

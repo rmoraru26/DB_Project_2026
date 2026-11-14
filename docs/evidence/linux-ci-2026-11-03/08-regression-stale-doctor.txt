@@ -1,0 +1,16 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# regression step: make doctor in that state (must name the root 1045)
+
+campus_audit doctor
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T19:40:20Z; .env last changed 2026-11-03 19:43:02 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [FAIL] root login with the password from .env: ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+         The volume was initialised with another root password (passwords are applied only to an EMPTY volume).
+         Keep the data:  make repair-credentials      Start over:  make reset && make up  (deletes all data)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+
+1 check(s) failed.
+make: *** [Makefile:54: doctor] Error 1

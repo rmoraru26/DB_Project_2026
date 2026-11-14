@@ -1,0 +1,106 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# fresh checkout: make up (creates .env, builds both images, migrates, installs the plugin), make doctor
+# (BuildKit progress lines removed)
+
+$ make up
+make up
+Created .env with random secrets (mode 600). Never commit it.
+docker compose up -d --build --wait mariadb
+
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 12552 files and directories currently installed.)
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 12552 files and directories currently installed.)
+
+ mariadb  Built
+
+ Network campus-audit_default  Creating
+ Network campus-audit_default  Created
+ Volume "campus-audit_mariadb-data"  Creating
+ Volume "campus-audit_mariadb-data"  Created
+ Volume "campus-audit_audit-logs"  Creating
+ Volume "campus-audit_audit-logs"  Created
+ Container campus-audit-mariadb-1  Creating
+ Container campus-audit-mariadb-1  Created
+ Container campus-audit-mariadb-1  Starting
+ Container campus-audit-mariadb-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+-> schema is current
+-> application account campus_app (password from .env)
+-> installing the campus_audit plugin
+-> campus_audit plugin: ACTIVE
+
+ mariadb  Built
+ web  Built
+
+ Container campus-audit-mariadb-1  Recreate
+ Container campus-audit-mariadb-1  Recreated
+ Container campus-audit-web-1  Creating
+ Container campus-audit-web-1  Created
+ Container campus-audit-mariadb-1  Starting
+ Container campus-audit-mariadb-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Starting
+ Container campus-audit-web-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-web-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Healthy
+
+Web app:      http://127.0.0.1:5080
+Guided tour:  http://127.0.0.1:5080/lab   (demo login alice.student@example.edu / campus-demo-2026)
+Next:         make demo
+$ make doctor
+make doctor
+campus_audit doctor
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T19:40:20Z; .env last changed 2026-11-03 19:39:24 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+
+All checks passed. Web app: http://127.0.0.1:5080  (guided tour: /lab)

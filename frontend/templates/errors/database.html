@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Database unavailable
+{% endblock %}
+
+{% block body %}
+    <div class="alert alert-warning" role="alert">
+        <h1 class="h4">The web app cannot reach its database</h1>
+        <p class="mb-2">{{ hint }}</p>
+        <p class="mb-0 small text-body-secondary">MariaDB error {{ code if code is not none else "unknown" }} ·
+            details are in the web app's log (<code>docker compose logs web</code>).</p>
+    </div>
+    <p><a href="{{ url_for('index') }}">Back to the homepage</a></p>
+{% endblock %}

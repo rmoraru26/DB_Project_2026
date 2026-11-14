@@ -1,0 +1,21 @@
+# Browser tests against python app.py (waitress 3.0.2, Server header 'campus-audit' checked before and after the run),
+# app connected to the clean server of 10-clean-environment-run.txt; headless Microsoft Edge via Playwright 1.55.0.
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.7.0 -- <scratch>\venv\Scripts\python.exe
+rootdir: <repo>\frontend
+configfile: pytest.ini
+collecting ... collected 11 items
+
+frontend\tests\browser\test_lab_browser.py::test_register_then_log_in_through_the_forms PASSED [  9%]
+frontend\tests\browser\test_lab_browser.py::test_wrong_password_is_refused_without_an_error_page PASSED [ 18%]
+frontend\tests\browser\test_lab_browser.py::test_newcomer_finds_the_tour_from_the_homepage PASSED [ 27%]
+frontend\tests\browser\test_lab_browser.py::test_logged_out_visitors_get_the_public_steps_and_a_login_prompt PASSED [ 36%]
+frontend\tests\browser\test_lab_browser.py::test_next_back_skip_restart_keyboard_and_persistence PASSED [ 45%]
+frontend\tests\browser\test_lab_browser.py::test_plugin_state_comes_from_the_server PASSED [ 54%]
+frontend\tests\browser\test_lab_browser.py::test_insert_shows_plugin_records_and_the_trigger_row PASSED [ 63%]
+frontend\tests\browser\test_lab_browser.py::test_check_violation_is_recorded_without_row_history PASSED [ 72%]
+frontend\tests\browser\test_lab_browser.py::test_explorer_filters_by_event_type PASSED [ 81%]
+frontend\tests\browser\test_lab_browser.py::test_finish_summarises_the_tour PASSED [ 90%]
+frontend\tests\browser\test_lab_browser.py::test_phone_width_has_no_horizontal_scroll PASSED [100%]
+
+============================= 11 passed in 22.14s =============================

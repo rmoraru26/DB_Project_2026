@@ -1,0 +1,7 @@
+; Exports for MinGW/Zig builds of skeleton_audit.dll (MSVC exports them through
+; MYSQL_PLUGIN_EXPORT in mysql/plugin.h).  No services are used, so no service symbols.
+LIBRARY skeleton_audit
+EXPORTS
+    _maria_plugin_interface_version_ DATA
+    _maria_sizeof_struct_st_plugin_ DATA
+    _maria_plugin_declarations_ DATA
