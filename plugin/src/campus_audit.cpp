@@ -1,7 +1,8 @@
 // campus_audit: a MariaDB audit plugin for the university resource system.
 //
 // It subscribes to three audit event classes of the MariaDB audit API
-// (include/mysql/plugin_audit.h, MYSQL_AUDIT_INTERFACE_VERSION 0x0303):
+// (include/mysql/plugin_audit.h, MYSQL_AUDIT_INTERFACE_VERSION 0x0303; it also
+// builds against 0x0302, see the version check below):
 //
 //   CONNECTION  connect / failed connect / disconnect / change user
 //   TABLE       per-statement table access (LOCK) and DDL on watched schemas
@@ -36,8 +37,13 @@
 #ifndef MARIA_PLUGIN_INTERFACE_VERSION
 #error "campus_audit must be compiled against MariaDB server headers (maria_declare_plugin is missing; MySQL headers are not supported)"
 #endif
-#if !defined(MYSQL_AUDIT_INTERFACE_VERSION) || MYSQL_AUDIT_INTERFACE_VERSION < 0x0303
-#error "campus_audit needs audit API 0x0303 or newer (mysql_event_general.database/port, mysql_event_table.query_id)"
+// Audit API 0x0302 (MariaDB 10.11, 11.4, 11.8) already has what the plugin
+// needs: mysql_event_general.database and query_id, mysql_event_table.query_id.
+// 0x0303 (MariaDB 12.0 and later) adds the client port and the TLS version to
+// the connection event; with older headers those two fields are recorded as
+// null (on_connection).
+#if !defined(MYSQL_AUDIT_INTERFACE_VERSION) || MYSQL_AUDIT_INTERFACE_VERSION < 0x0302
+#error "campus_audit needs audit API 0x0302 or newer (mysql_event_general.database and query_id, mysql_event_table.query_id)"
 #endif
 
 #include "audit_error.h"
@@ -400,9 +406,17 @@ void on_connection(const mysql_event_connection* e) {
     field_sized(w, "proxy_user", e->proxy_user, e->proxy_user_length);
     field_sized(w, "host", e->host, e->host_length);
     field_sized(w, "ip", e->ip, e->ip_length);
+#if MYSQL_AUDIT_INTERFACE_VERSION >= 0x0303
     w.field_uint("port", e->port);
+#else
+    w.field_null("port");          // not in the connection event before audit API 0x0303
+#endif
     field_lex(w, "db", e->database);
+#if MYSQL_AUDIT_INTERFACE_VERSION >= 0x0303
     field_sized(w, "tls_version", e->tls_version, e->tls_version_length);
+#else
+    w.field_null("tls_version");   // not in the connection event before audit API 0x0303
+#endif
     if (e->event_subclass == MYSQL_AUDIT_CONNECTION_CHANGE_USER) {
         // sql_audit.h fills CHANGE_USER events from the security context
         // that was active *before* the change.

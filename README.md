@@ -12,7 +12,7 @@ read the plugin's real records next to the row history written by SQL triggers.
 | | |
 |---|---|
 | Assignment | MariaDB student database projects 2026-09, **area 11: write a server plugin** |
-| Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip) |
+| Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip). Also built and tested against **11.8.9** (audit API `0x0302`; harness 134/134, thread pool 30/30; [experiment 31](docs/experiments.md)) |
 | Plugin | `campus_audit` **1.2.0**, maturity Beta, 9 system variables, 11 status variables |
 | Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions (Linux and native Windows jobs) ran green for the Phase 1 commit `5d48de0`, plugin 1.2.0 included, for its merge into `main` (`abdfa3a`) and for the baseline `19fd0a2` ([Tests](#tests)) |
 | Status | Complete: plugin, database, web application, guided tour, tests and documentation |

@@ -238,6 +238,19 @@ moved out of the test tree.
 | Native Windows: DLL, harness, database scripts | `ACTIVE 1.2.0`; 125/0/1 (`/dev/full` only); all nine pass |
 | Native Windows: `build_windows.ps1` unit programs | Smart App Control **blocked** `test_automatic_errors.exe` (not counted; CI runs all seven) |
 
+## Improvement cycles 2 and 3 (17 November 2026)
+
+Cycle 2 (`docs/evidence/cycle2/`): the README's Linux path without Docker run in full on Ubuntu with the
+MariaDB 13.0.2 packages in a plain container: build, install, restart, setup, demo, verification SQL,
+harness 134/0/0, web application (`/healthz` 200).
+
+Cycle 3 (`docs/evidence/cycle3/`): the plugin built against MariaDB 11.8.9 (audit API `0x0302`) after
+relaxing its version check; on a running 11.8.9 server the harness passed 134/0/0 and the thread-pool
+test 30/30. The full Linux suite on 13.0.2 for the same tree: 187 unit checks, 67 of 67 mutants,
+`make test` 8 of 8 (harness 134/0/0, database 18, 22, 24, 36, 24, 16, 3, 10, application 332/1),
+integration 19, 8, 13, 30, `make test-app` 331/2. Not run: 10.11 and 11.4; native Windows for this
+tree (CI runs it on push).
+
 ## Windows validation source ZIP
 
 From the maintainer checkout, run `python3 scripts/package_windows_source.py` to create

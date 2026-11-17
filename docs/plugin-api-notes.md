@@ -1,6 +1,7 @@
 # MariaDB audit plugin API: what campus_audit relies on
 
-Target: **MariaDB 13.0.2**, audit API `MYSQL_AUDIT_INTERFACE_VERSION 0x0303`,
+Target: **MariaDB 13.0.2**, audit API `MYSQL_AUDIT_INTERFACE_VERSION 0x0303` (the plugin also builds
+against `0x0302`, MariaDB 10.11 to 11.8; run on 11.8.9, see "Audit API versions" below),
 plugin API `MARIA_PLUGIN_INTERFACE_VERSION 0x010f`.
 
 Every statement below is labelled by where it comes from:
@@ -353,6 +354,23 @@ which the header has no value. Since 1.2.0 `campus_audit` and the tutorial plugi
 does not change the terms in `LICENSE`, and this project makes no statement about the licence
 terms of a binary that combines its code with the server's headers, which carry a GPL version 2
 notice.
+
+## 7a. Audit API versions
+
+[header] The official `include/mysql/plugin_audit.h` of five releases (`docs/evidence/cycle3/01-audit-header-fields.txt`, script `docs/evidence/cycle3/scripts/compare_audit_headers.sh`):
+
+| Release | `MYSQL_AUDIT_INTERFACE_VERSION` | Fields campus_audit reads that are not in every release |
+|---|---|---|
+| 10.11.15, 11.4.9, 11.8.9 | `0x0302` | connection event without `port` and `tls_version` |
+| 12.0.2, 13.0.2 | `0x0303` | adds `port` and `tls_version` to the connection event (and `port` to the GENERAL and TABLE events, which campus_audit does not read) |
+
+Everything the correlation needs (`database` and `query_id` of the GENERAL event, `query_id` of the TABLE
+event) is in both. `plugin/src/campus_audit.cpp` therefore refuses only headers older than `0x0302` and
+records `port` and `tls_version` as `null` when it is built against `0x0302`.
+
+[observed] Built against 11.8.9 and loaded into an 11.8.9 server, the plugin passed the whole harness
+(134 checks) and the thread-pool test (30 checks); every server behaviour listed above was the same as on
+13.0.2 (`docs/evidence/cycle3/`, experiment 31). 10.11 and 11.4 were not run.
 
 ## 7. Platform notes
 
