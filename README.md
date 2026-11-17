@@ -19,6 +19,14 @@ read the plugin's real records next to the row history written by SQL triggers.
 
 ![The Audit Lab: the plugin's records of one INSERT, read back from the server](docs/screenshots/05-plugin-records.png)
 
+**Start here**, depending on the time you have:
+
+| Time | Path |
+|---|---|
+| 5 minutes | What the plugin adds to the server and why it has to be a plugin: [Why a MariaDB server plugin](#why-a-mariadb-server-plugin), [What the plugin records](#what-the-plugin-records), the screenshot above |
+| 15 minutes | Run it: [Quick start](#quick-start) (`make up`, `make demo`), then the guided tour at `/lab` ([Demonstration and Audit Lab](#demonstration-and-audit-lab)) |
+| 1 hour | Learn the plugin API: the [skeleton plugin](examples/skeleton_plugin/README.md) (about 50 lines of code), the [SQL examples](examples/README.md), [docs/plugin-api-notes.md](docs/plugin-api-notes.md) (every fact labelled by its source) and the 31 measured [experiments](docs/experiments.md) |
+
 ## Contents
 
 [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) ·
@@ -429,7 +437,7 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 
 | Suite | Result | Where it ran |
 |---|---|---|
-| Plugin unit tests, 7 programs | 187 checks pass | Linux (g++ in the image build and the test runner) |
+| Plugin unit tests, 7 programs | 184 checks pass (after the removal of an unused function and its three cases) | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
 | Mutation check | 67 of 67 injected bugs detected | Linux |
 | End-to-end plugin harness | 134 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol (first improvement cycle) | Linux container, MariaDB 13.0.2 |

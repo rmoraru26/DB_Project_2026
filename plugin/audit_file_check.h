@@ -5,10 +5,6 @@
 
 #include "audit_error.h"
 
-// Checks that the path can be opened for appending by actually opening it
-// (std::ofstream), so the file is created when it does not exist.
-AuditResult try_open_log(const std::string& path);
-
 namespace campus_audit {
 
 // Lexical check of an audit log path.  Never touches the filesystem: it does

@@ -181,9 +181,10 @@ use triggers (as for row history) or stop the service when `Campus_audit_state` 
 
 `AuditResult`/`AuditError` (`plugin/audit_error.h`) is the result type of every fallible plugin
 operation; `report_audit_error()` routes failures to the right sink (server error service outside
-callbacks, stderr inside callbacks); `validate_log_path()` was added next to the original
-`try_open_log()` in `audit_file_check.cpp` and is used by the log sink.  The original tests still
-build and pass.
+callbacks, stderr inside callbacks); `validate_log_path()` in `audit_file_check.cpp`
+is the lexical path check the log sink uses.  The team's first file-open check, `try_open_log()`,
+was never called by the plugin; it was removed after the first merge and survives as
+`plugin/exploratory/interactive_open_log.cpp`.
 
 ## 10. Refused statements are recorded (plugin 1.1.0)
 

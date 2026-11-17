@@ -58,16 +58,25 @@ loses; a record that does not fit its buffer is reported each time.
 
 ## The first file-open check
 
-`try_open_log()` in `plugin/audit_file_check.cpp` is the team's first file-open check
-(`std::ofstream` in append mode). The plugin itself does not call it: the plugin opens its log
-through `LogSink::open()`, which uses `validate_log_path()` and the operating system's `open()`.
-`try_open_log()` is kept with its unit tests in `plugin/tests/test_automatic_errors.cpp`.
+The team's first file-open check, `try_open_log()` (`std::ofstream` in append mode), was never
+called by the plugin, which opens its log through `LogSink::open()` with `validate_log_path()` and
+the operating system's `open()`. It was removed from `plugin/audit_file_check.cpp` after the first
+merge, together with its three unit-test cases; the original program is
+`plugin/exploratory/interactive_open_log.cpp`.
+
+## A side effect of the file-path check
+
+To refuse an unwritable path with the reason, the check function of `campus_audit_file_path`
+opens the new file once, which creates it if it did not exist. If the update that follows then
+fails, that empty file stays. It is deliberately not deleted: removing a file from inside the
+server after an existence check could remove a file another process created in between, which is
+worse than an empty file.
 
 ## Tests
 
 | What | Where |
 |---|---|
-| `validate_log_path()`, `try_open_log()` | `plugin/tests/test_automatic_errors.cpp` |
+| `validate_log_path()` | `plugin/tests/test_automatic_errors.cpp` |
 | `report_audit_error()` | `plugin/tests/test_error_reporter.cpp` |
 | open and write failures of `LogSink`, file modes | `plugin/tests/test_log_sink.cpp` |
 | outage accounting (`audit_gap` counts) | `plugin/tests/test_gap_accounting.cpp` |

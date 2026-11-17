@@ -355,7 +355,19 @@ does not change the terms in `LICENSE`, and this project makes no statement abou
 terms of a binary that combines its code with the server's headers, which carry a GPL version 2
 notice.
 
-## 7a. Audit API versions
+## 7. Platform notes
+
+- Linux: the official image's MariaDB apt repository provides `libmariadbd-dev` (headers in
+  `/usr/include/mariadb/server`) and `libmariadb-dev` (`libmysqlservices.a`) in exactly the server's
+  version (checked in the repository's `Contents-amd64` index). The Docker build compiles and loads
+  the plugin against them; it ran in CI on GitHub's `ubuntu-24.04` runners [observed,
+  `docs/evidence/linux-ci-2026-11-03/`].
+- Windows: the official zip/MSI ships `include/mysql/server` (incl. `private/service_versions.h`) and
+  `lib/mysqlservices.lib`. A DLL built with Zig 0.16 (`x86_64-windows-gnu`) loads into the official
+  MSVC-built `mariadbd.exe` 13.0.2 [observed]; the plugin interface is plain C structs.
+- A Linux `.so` cannot be loaded by Windows MariaDB and vice versa; each platform needs its own build.
+
+## 8. Audit API versions
 
 [header] The official `include/mysql/plugin_audit.h` of five releases (`docs/evidence/cycle3/01-audit-header-fields.txt`, script `docs/evidence/cycle3/scripts/compare_audit_headers.sh`):
 
@@ -371,15 +383,3 @@ records `port` and `tls_version` as `null` when it is built against `0x0302`.
 [observed] Built against 11.8.9 and loaded into an 11.8.9 server, the plugin passed the whole harness
 (134 checks) and the thread-pool test (30 checks); every server behaviour listed above was the same as on
 13.0.2 (`docs/evidence/cycle3/`, experiment 31). 10.11 and 11.4 were not run.
-
-## 7. Platform notes
-
-- Linux: the official image's MariaDB apt repository provides `libmariadbd-dev` (headers in
-  `/usr/include/mariadb/server`) and `libmariadb-dev` (`libmysqlservices.a`) in exactly the server's
-  version (checked in the repository's `Contents-amd64` index). The Docker build compiles and loads
-  the plugin against them; it ran in CI on GitHub's `ubuntu-24.04` runners [observed,
-  `docs/evidence/linux-ci-2026-11-03/`].
-- Windows: the official zip/MSI ships `include/mysql/server` (incl. `private/service_versions.h`) and
-  `lib/mysqlservices.lib`. A DLL built with Zig 0.16 (`x86_64-windows-gnu`) loads into the official
-  MSVC-built `mariadbd.exe` 13.0.2 [observed]; the plugin interface is plain C structs.
-- A Linux `.so` cannot be loaded by Windows MariaDB and vice versa; each platform needs its own build.

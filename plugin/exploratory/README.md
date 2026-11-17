@@ -12,6 +12,6 @@ outside the test tree altogether, so that nothing under `plugin/tests/` is a pro
 | File | Was (former path, removed) | Shows |
 |---|---|---|
 | `demo_audit_result.cpp` | `plugin/tests/test_auditerror.cpp` | how a success and a failure look as `AuditResult` |
-| `interactive_open_log.cpp` | `plugin/tests/test_open_error.cpp` | the first version of `try_open_log()` (now in `plugin/audit_file_check.cpp`) |
+| `interactive_open_log.cpp` | `plugin/tests/test_open_error.cpp` | the first version of `try_open_log()` (never called by the plugin; removed from `plugin/audit_file_check.cpp` after the first merge) |
 
 Build one by hand, e.g. `g++ -std=c++11 demo_audit_result.cpp -o demo && ./demo`.
