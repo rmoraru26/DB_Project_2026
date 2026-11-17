@@ -572,7 +572,7 @@ Makefile, frantastic.cmd, frantastic.ps1, compose.yaml, .env.example, .github/wo
 ## Team
 
 Team **FRANtastic**, four students of the Databases course at Constructor University:
-Ruxandra Moraru, Furkan Sacmaci, Norman Viet Casasola Pham and Ahmad Garba (names as in
+Ruxandra Moraru, Furkan Sacmaci, Norman Viet Casasola Pham and Ahmed Maina Garba (names as in
 [`LICENSE`](LICENSE)).
 
 ## Documentation
