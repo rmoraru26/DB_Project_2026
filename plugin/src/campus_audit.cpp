@@ -67,7 +67,7 @@ using campus_audit::RwLock;
 
 namespace {
 
-const char kPluginVersion[] = "1.2.2";
+const char kPluginVersion[] = "1.2.3";
 const unsigned int kErUnknownError = 1105;      // ER_UNKNOWN_ERROR (mysqld_error.h)
 const size_t kMaxPathLength = 512;
 const long long kReopenIntervalSeconds = 5;
@@ -257,7 +257,9 @@ bool leave_degraded_state_locked() {
 // writing.  If they waited for a write that is stuck (a stalled file system),
 // everything that needs those locks would stop as well; for the first one
 // that includes new logins (experiment 32).  They give up instead.  Since
-// 1.2.2 update functions also do no log I/O of their own: the check
+// 1.2.2 update functions normally do no log I/O of their own (the exceptions:
+// the audit_gap record after a recovery, and an open when another statement
+// replaced the staged file): the check
 // functions open files, and configuration records are written by the
 // statement's STATUS event (see log_config_change).
 const unsigned kUpdateLockWaitMs = 2000;
@@ -425,7 +427,17 @@ void track_unrecorded_table_event(MYSQL_THD thd, const mysql_event_table* e) {
 
 // ------------------------------------------------------------ event handlers
 
+void flush_pending_config();
+
 void on_connection(const mysql_event_connection* e) {
+    if (e->event_subclass == MYSQL_AUDIT_CONNECTION_DISCONNECT) {
+        // The connection's thread is about to serve another connection (thread
+        // cache, thread pool): nothing of this one's statements may be left
+        // in the thread-local state, e.g. if its last SET never reached a
+        // STATUS event.
+        flush_pending_config();
+        log_this_statement = false;
+    }
     const char* name;
     bool failure = e->status != 0;
     switch (e->event_subclass) {
@@ -547,7 +559,6 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
 }
 
 void write_statement_record(const mysql_event_general* e, bool access_denied, bool session_scope);
-void flush_pending_config();
 
 void on_general(MYSQL_THD thd, const mysql_event_general* e) {
     // LOG, ERROR, RESULT and WARNING are ignored by design: STATUS already
@@ -733,6 +744,14 @@ bool take_staged_sink(MYSQL_THD thd, const char* path, LogSink& out) {
     out.swap(staged_sink);
     staged_by = nullptr;
     return true;
+}
+
+// Closes the file this statement staged, when its update function gives up.
+void discard_staged_sink(MYSQL_THD thd) {
+    LockGuard<Mutex> guard(staged_lock);
+    if (staged_by != thd) return;
+    staged_sink.close();
+    staged_by = nullptr;
 }
 
 // Reads a string sysvar value into memory owned by the statement.
@@ -928,6 +947,7 @@ void update_reopen_now(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, c
     {
         TimedLockGuard<Mutex> guard(sink_lock, kUpdateLockWaitMs);
         if (!guard.owns()) {
+            discard_staged_sink(thd);    // the file the check function opened
             report_to_server({AuditError::write_Failed, std::string(kLogBusy) + "; the log was not reopened"});
             return;
         }

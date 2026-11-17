@@ -416,11 +416,16 @@ a new `file_path` is not taken, and the log is not reopened. A status function s
 (`make test-stalled-log`, part of `make test-integration` and of the 11.8.9 CI job) repeats the
 experiment. On 1.2.0 it gives 7 passed, 10 failed; on 1.2.1, 17 of 17.
 
-Since 1.2.2 update functions do no log I/O at all. The file a new `campus_audit_file_path` or
+Since 1.2.2 update functions normally do no log I/O. The file a new `campus_audit_file_path` or
 `campus_audit_reopen_now = ON` needs is opened by the **check** function, before the server's lock,
 and the update function only swaps it in. A `config_change` record is formatted in the update
 function and written by the same statement's STATUS event, in the same thread (the mechanism
 `log_this_statement` already relies on, `test_thread_pool.sh`). A change made while the log is stalled
 therefore takes effect at once, and its record is written, not dropped, once the log accepts data
-again. One write remains in an update function. When a new file replaces a degraded one, the
-`audit_gap` record is written into the file the check function has just opened.
+again. Two kinds of log I/O remain in update functions. When a new file replaces a degraded one,
+the `audit_gap` record is written into the file the check function has just opened. And if another
+statement staged a different file between this statement's check and update functions, the update
+function opens the file itself. A file staged by a SET whose update then gives up is closed at once;
+one staged by a SET that fails later stays open until the next SET of the two variables or `UNINSTALL`.
+Pending configuration records of a connection that ends before its STATUS event are written by its
+DISCONNECT event, in the same thread (1.2.3).

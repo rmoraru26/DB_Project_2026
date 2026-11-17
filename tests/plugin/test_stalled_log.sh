@@ -14,7 +14,7 @@
 # logins, SELECT @@GLOBAL..., SET GLOBAL and SHOW VARIABLES all waited too.
 # Since 1.2.1 the update functions and the status functions wait for the log
 # mutex at most 2 s and 0.2 s and then give up with a warning; since 1.2.2
-# update functions do no log I/O at all (files are opened by the check
+# update functions normally do no log I/O (files are opened by the check
 # functions, configuration records written by the statement's STATUS event).
 #
 # What it does: starts a throw-away MariaDB container from the image of the
