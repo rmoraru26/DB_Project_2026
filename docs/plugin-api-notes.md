@@ -21,7 +21,7 @@ Every statement below is labelled by where it comes from:
 - **[header]**: comments and declarations in the installed headers
   `include/mysql/plugin.h`, `include/mysql/plugin_audit.h` and `include/mysql/service_*.h`
   (the same files ship in the Windows zip and in `libmariadbd-dev`).
-- **[source]**: the server source at tag `mariadb-13.0.2`
+- **[source]**: the server source at tag `mariadb-13.0.2` (each claim links the file and line on GitHub at that tag)
   (`sql/sql_audit.h`, `sql/sql_audit.cc`, `sql/sql_plugin.cc`, `sql/mysqld.cc`, `sql/set_var.cc`,
   `sql/sql_class.cc`, `sql/sql_parse.cc` and the server_audit plugin's `server_audit.cc`).
   This is implementation behaviour, not an API promise; it can change between versions.
@@ -54,7 +54,7 @@ MYSQL_AUDIT_TABLE_CLASSMASK`.
 |---|---|---|---|
 | CONNECTION CONNECT | after authentication; `status` = error code of the failed login, 0 on success | thread_id, user, priv_user, proxy_user, host, ip, port, database, tls_version | the password (never passed), client program name |
 | CONNECTION DISCONNECT | after the connection ends; `status` = disconnect error code | same | session duration |
-| CONNECTION CHANGE_USER | after COM_CHANGE_USER, also when it fails (`status` = 1045); fields come from the **old** security context (`sql_audit.h`, `mysql_audit_notify_connection_change_user(thd, old_ctx)`) [source]; confirmed on 13.0.2 with `mysql_change_user()` from `tests/plugin/change_user.c`: a switch a→b is recorded with `user: a`, a failed switch b→a with `user: b` [observed] | same | the account switched **to** (neither on success nor on failure) |
+| CONNECTION CHANGE_USER | after COM_CHANGE_USER, also when it fails (`status` = 1045); fields come from the **old** security context (`sql_audit.h`, `mysql_audit_notify_connection_change_user(thd, old_ctx)`) [source: [sql_audit.h:282](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L282)]; confirmed on 13.0.2 with `mysql_change_user()` from `tests/plugin/change_user.c`: a switch a→b is recorded with `user: a`, a failed switch b→a with `user: b` [observed] | same | the account switched **to** (neither on success nor on failure) |
 | TABLE LOCK | at the start of each statement, per table it opens, `read_only` = 1 for reads; **not while `LOCK TABLES` is in effect** [header, quoted in 2a] | thread_id, query_id, user, priv_user, priv_host, host, ip, database, table | **rows**, column values, number of rows, whether the statement later succeeded, the SQL command |
 | TABLE CREATE / DROP / RENAME / ALTER | DDL on a table; RENAME adds new_database / new_table [header] | same | the DDL text (comes with GENERAL STATUS) |
 | GENERAL STATUS | after the result or error was sent to the client [header] | general_thread_id, query_id, general_user (formatted `priv[user] @ host [ip]`), database, general_command, general_error_code, general_query | rows affected (see below), row images, the tables touched |
@@ -66,7 +66,7 @@ Important consequences:
   row data at all [header]. campus_audit therefore never claims to record *what* changed in a row.
   Row-level before/after values are captured by SQL triggers instead (`database/triggers.sql`).
 - **`general_rows` is not "rows affected".** For STATUS events it is
-  `thd->get_stmt_da()->current_row_for_warning()` [source], so campus_audit does not record it.
+  `thd->get_stmt_da()->current_row_for_warning()` [source: [sql_audit.h:192](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L192)], so campus_audit does not record it.
 - **TABLE LOCK means "opened for reading/writing", not "changed".** A failed INSERT (CHECK
   constraint error 4025) still produces `table_write` for the table and for `audit_events`, which
   the trigger would have written [observed]. Only the statement record says whether it succeeded.
@@ -78,14 +78,14 @@ Important consequences:
   correlated. The built-in server_audit additionally logs each trigger body statement as its own
   QUERY record [observed, `docs/evidence/exp-server-audit.txt`].
 - **`database` is the session's default schema** (`thd->db`), not the schema of the table
-  [source]; `INSERT INTO exp_db.t ...` without `USE` gives a statement record with `"db": null`
+  [source: [sql_audit.h:193](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L193)]; `INSERT INTO exp_db.t ...` without `USE` gives a statement record with `"db": null`
   while the table record says `"db": "exp_db"` [observed].
 - **Identifiers and timestamps.** `thread_id` equals `CONNECTION_ID()`; `query_id` is a server-wide
   counter, so `(instance, conn, query_id)` identifies a statement [observed, harness check
   "table and statement records share query_id"]. Connection ids restart after a server restart.
-  `general_time` has one-second resolution (`my_time(0)`) [source], so campus_audit takes its own
+  `general_time` has one-second resolution (`my_time(0)`) [source: [sql_audit.h:180](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L180)], so campus_audit takes its own
   microsecond UTC timestamp.
-- **SQL text** is `thd->query_string` in the client character set [source]. Client libraries such
+- **SQL text** is `thd->query_string` in the client character set [source: [sql_audit.h:189-191](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L189-L191)]. Client libraries such
   as PyMySQL interpolate parameters before sending, so the server sees literal values (emails, booking
   times, password hashes). campus_audit only writes a digest with literals replaced by `?`.
 - **Refused statements raise no TABLE event.** The privilege check runs before the server opens a
@@ -95,7 +95,7 @@ Important consequences:
   watched; a refused statement that names a watched table from another default schema stays
   invisible, because GENERAL events do not name tables [observed, harness "refused statements"].
 - **GENERAL STATUS comes after the client has its answer** (it is raised after
-  `end_statement()` [source]). A reader on *another* connection can therefore look at the log
+  `end_statement()` [source: [sql_parse.cc:2448-2458](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_parse.cc#L2448-L2458)]). A reader on *another* connection can therefore look at the log
   before the statement record is written. The same connection cannot: the server finishes the
   callback before it reads the next command, which is why the Audit Lab imports the log on the
   request's own connection.
@@ -186,7 +186,7 @@ statement of the connection is recorded.
   an audit plugin can observe but not veto or fail a statement. campus_audit is therefore
   necessarily **fail-open** for runtime errors.
 - The event structures are local variables of the dispatching function (`mysql_event_general event;`
-  in `sql_audit.h`) [source], so their pointers are only valid during the call; campus_audit formats
+  in `sql_audit.h`) [source: [sql_audit.h:176](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L176)], so their pointers are only valid during the call; campus_audit formats
   everything before returning and keeps no pointers.
 - Callbacks run concurrently in many connection threads; the plugin must do its own locking.
 - `release_thd` may be NULL; campus_audit holds no per-THD resources.
@@ -204,24 +204,27 @@ statement of the connection is recorded.
 `event_notify`. But `my_message_sql()` (`sql/mysqld.cc`) treats `ME_ERROR_LOG_ONLY` as "no THD" and
 then calls `mysql_audit_general(0, MYSQL_AUDIT_GENERAL_ERROR, ...)`, which dispatches to **all audit
 plugins through `plugin_foreach()`** (`sql/sql_audit.cc`, `mysql_audit_notify` with `thd == NULL`)
-[source]. Reporting from the callback would therefore re-enter audit plugins. campus_audit uses
+[source: [mysqld.cc:3539](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/mysqld.cc#L3539), [sql_audit.cc:424](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.cc#L424)]. Reporting from the callback would therefore re-enter audit plugins. campus_audit uses
 `my_printf_error` only from init, deinit and SET GLOBAL handlers (never while holding its own locks),
-and writes a single rate-limited line to stderr (the server's error log) from inside callbacks.
+and writes a line to stderr (the server's error log) from inside callbacks: once per I/O outage
+(when it starts and when it ends), and once for each record that does not fit its buffer
+(`plugin/docs/error_handling.md`).
 
 ### Deadlock trap: a THDVAR inside a system-variable update callback (found on Linux)
 
 - `SET GLOBAL` of a plugin variable runs the plugin's `update` callback with
   `LOCK_global_system_variables` held: `sys_var::update()` takes it for every GLOBAL update
   (`sql/set_var.cc`), and `sys_var_pluginvar::global_update()` asserts that it owns it before calling
-  `plugin_var->update` (`sql/sql_plugin.cc`) [source].
+  `plugin_var->update` (`sql/sql_plugin.cc`) [source: [set_var.cc:242](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/set_var.cc#L242), [sql_plugin.cc:3723](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3723), [sql_plugin.cc:3731](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3731)].
 - `THDVAR(thd, x)` resolves through `intern_sys_var_ptr(thd, offset, true)`. A connection starts
   without its own copy of the plugins' session variables (`plugin_thdvar_init()`, also after
-  COM_CHANGE_USER); the first access makes it with `sync_dynamic_session_variables(thd, true)`, which
-  locks `LOCK_global_system_variables` itself [source].
+  COM_CHANGE_USER); the first access makes it: `intern_sys_var_ptr(thd, offset, true)` calls
+  `sync_dynamic_session_variables(thd, global_lock)` with `global_lock` true, which
+  locks `LOCK_global_system_variables` itself [source: [sql_plugin.cc:3297](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3297), [sql_plugin.cc:3221-3237](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3221-L3237)].
 - So the first THDVAR access of a connection must not happen inside an update callback. On Linux
   the mutex is a plain pthread mutex (`MY_MUTEX_INIT_FAST`, `sql/mysqld.cc`): the thread waits for
   itself, and every new connection waits behind it, because `THD::init()` takes the same mutex
-  (`sql/sql_class.cc`) [source]. On Windows `pthread_mutex_t` is a `CRITICAL_SECTION`
+  (`sql/sql_class.cc`) [source: [mysqld.cc:4672-4673](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/mysqld.cc#L4672-L4673), [sql_class.cc:1382](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_class.cc#L1382)]. On Windows `pthread_mutex_t` is a `CRITICAL_SECTION`
   (`include/mysql/server/my_pthread.h`), which its owner may lock again [header], so nothing happens.
 - campus_audit 1.1.0 did exactly that: `log_config_change()` set `THDVAR(thd, stmt_query_id)` to have
   the SET statement logged, and its event handler returned before reading the THDVAR for every GENERAL
@@ -232,7 +235,7 @@ and writes a single rate-limited line to stderr (the server's error log) from in
 - `server_audit` makes the same kind of THDVAR access in its update callbacks (`mark_always_logged()`,
   `log_current_query()`), but its `auditing()` reads the THDVAR at the start of every event, and the
   GENERAL LOG event of a COM_QUERY comes before parsing (`dispatch_command()` in `sql/sql_parse.cc`), so
-  the copy already exists when SET GLOBAL runs [source]. campus_audit 1.1.1 does not depend on that
+  the copy already exists when SET GLOBAL runs [source: [sql_parse.cc:1875](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_parse.cc#L1875)]. campus_audit 1.1.1 does not depend on that
   order: the mark is a `thread_local` flag, which the statement's own STATUS event reads. This
   relies on a statement running on one OS thread from the update callback to its STATUS event, also
   with the thread pool. The header does not promise that; it is **observed** on 13.0.2 and checked
@@ -243,7 +246,7 @@ and writes a single rate-limited line to stderr (the server's error log) from in
 
 - `Item_load_file::val_str` (`sql/item_strfunc.cc`) returns NULL unless the caller has FILE, the
   path is inside `secure_file_priv`, the file is smaller than `max_allowed_packet` **and its mode has
-  `S_IROTH`** [source]. The plugin creates its log `0660` and the server's umask applies, so on Linux
+  `S_IROTH`** [source: [item_strfunc.cc:4240](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/item_strfunc.cc#L4240)]. The plugin creates its log `0660` and the server's umask applies, so on Linux
   every import returned NULL: `make demo` failed with ER 1644 from `import_plugin_log`, and 42
   end-to-end checks, 8 app tests and 3 browser tests failed in the Docker CI runs for that reason only
   [observed]. On Windows the check passed in every run.
@@ -294,7 +297,7 @@ a stable API guarantee for other MariaDB releases.
 
 More facts about variables:
 
-- Status variables are registered only after `init` succeeded (`plugin_do_initialize`) [source].
+- Status variables are registered only after `init` succeeded (`plugin_do_initialize`) [source: [sql_plugin.cc:1455-1489](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L1455-L1489)].
 - The check functions are documented for SET [header]; campus_audit does not rely on them running
   for values from `my.cnf` or the command line and validates everything again in `init`. With
   `loose_campus_audit_databases=bad name` in `my.ini`, it was `init` that rejected the value and the
@@ -309,7 +312,7 @@ More facts about variables:
 - A dynamic plugin reaches server functions through *services*: each `service_*.h` declares a pointer
   such as `my_print_error_service`; the plugin binary must **define** a variable with that name whose
   initial value is the service version, and the server overwrites it at load time
-  (`libservices/*.c`, `sql/sql_plugin.cc` `plugin_dl_add`) [source].
+  (`libservices/*.c`, `sql/sql_plugin.cc` `plugin_dl_add`) [source: [sql_plugin.cc:817-824](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L817-L824)].
 - Normally this comes from linking `libmysqlservices.a` (Linux, package `libmariadb-dev`) or
   `mysqlservices.lib` (Windows). The MSVC-built `mysqlservices.lib` cannot be linked by a GNU
   toolchain (it carries `/DEFAULTLIB:MSVCRT` directives) [observed], so the Zig build compiles
@@ -332,7 +335,7 @@ More facts about variables:
   (`max_sql_length=999999` becomes 8192) [observed].
 - Status variables use `SHOW_SIMPLE_FUNC` so that counters are read atomically and strings are
   copied under the plugin's lock. MariaDB prefixes nothing itself when the names already start with
-  the plugin name (`plugin_do_initialize`) [source]; they appear as `Campus_audit_*`.
+  the plugin name (`plugin_do_initialize`) [source: [sql_plugin.cc:1489](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L1489)]; they appear as `Campus_audit_*`.
 
 ## 6a. The licence field of the declaration
 

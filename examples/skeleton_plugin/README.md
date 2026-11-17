@@ -15,7 +15,8 @@ the same three parts plus filtering, records, a log file and failure handling. S
 
 The status variables are a plain table of `{name, address, SHOW_ULONGLONG}`; the server reads the
 counters whenever someone runs `SHOW GLOBAL STATUS`. The callback runs in many threads at once, so the
-counters are incremented atomically.
+counters are incremented atomically (`__atomic_add_fetch`, a builtin of GCC and Clang, so of both
+build commands below; MSVC, which is not used here, would need `InterlockedIncrement64`).
 
 ## 2. Build it
 
@@ -102,6 +103,6 @@ UNINSTALL SONAME 'skeleton_audit';
 | filtering by schema and user, records per table and per statement, joined by `query_id` | `on_table()`, `on_general()`, a per-connection `MYSQL_THDVAR` |
 | JSON Lines records with literal-free SQL digests | `plugin/src/record_format.cpp` |
 | a log file, fail-open on write errors, `audit_gap` records | `plugin/src/log_sink.cpp`, `write_record()` |
-| eight system variables: seven validated and dynamic, one startup option | `MYSQL_SYSVAR_*` with check and update functions, `PLUGIN_VAR_READONLY` |
+| nine system variables: eight dynamic (validated by check functions), one startup option | `MYSQL_SYSVAR_*` with check and update functions, `PLUGIN_VAR_READONLY` |
 | status variables computed on demand | `SHOW_SIMPLE_FUNC` entries |
 | errors reported to the client and the error log | the `my_print_error` service (`plugin/src/service_symbols.cpp` on Windows/Zig) |

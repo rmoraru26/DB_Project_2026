@@ -83,9 +83,13 @@ refused statement or of any statement from GENERAL events alone, the SQL command
 
 ## Not run
 
-- Native Linux without Docker (the README's "Building and installing the plugin yourself") and macOS: neither was run.
+- macOS: not run. The README's "Building and installing the plugin yourself" on Linux was run after the
+  first merge on Ubuntu with the MariaDB 13.0.2 packages, inside a plain container, not on a physical
+  host (`docs/evidence/cycle2/01-native-linux-install.txt`).
 - macOS Docker Desktop: not run. Windows Docker Desktop was manually validated on 2026-11-09; this is distinct from Linux Docker Engine CI and native Windows plugin development. See the [dated evidence summary](evidence/windows-docker-desktop-2026-11-09/README.md).
-- The benchmark on Linux or on a quiet machine: experiment 3b ran on the development laptop only.
+- The benchmark on a quiet machine: experiment 3b and the Phase 1 run in a Linux container
+  (`docs/evidence/phase1/linux/40-benchmark.txt`, Docker Desktop on WSL2) both ran on the
+  development laptop, where the run-to-run noise is larger than any difference between the plugins.
 
 Run since the first version of this list, in CI on 2026-11-03 (`docs/evidence/linux-ci-2026-11-03/`):
 the Docker path (`make up/doctor/demo/test/examples/test-browser`, a server restart, the stale-volume

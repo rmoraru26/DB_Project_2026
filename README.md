@@ -14,7 +14,7 @@ read the plugin's real records next to the row history written by SQL triggers.
 | Assignment | MariaDB student database projects 2026-09, **area 11: write a server plugin** |
 | Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip) |
 | Plugin | `campus_audit` **1.2.0**, maturity Beta, 9 system variables, 11 status variables |
-| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions (Linux and native Windows jobs) ran green for the Phase 1 commit `5d48de0`, plugin 1.2.0 included, as it did for the baseline `19fd0a2` ([Tests](#tests)) |
+| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions (Linux and native Windows jobs) ran green for the Phase 1 commit `5d48de0`, plugin 1.2.0 included, for its merge into `main` (`abdfa3a`) and for the baseline `19fd0a2` ([Tests](#tests)) |
 | Status | Complete: plugin, database, web application, guided tour, tests and documentation |
 
 ![The Audit Lab: the plugin's records of one INSERT, read back from the server](docs/screenshots/05-plugin-records.png)
@@ -102,7 +102,7 @@ anything that is wrong. `make help` lists every target.
   plugin (Linux and native Windows), database tests, 330+ web application tests, browser tests,
   shell and PowerShell tests of the installation scripts, and host-level tests of the credential
   life cycle, log rotation and the thread pool. CI on Linux and Windows.
-- **A tutorial**: a 60-line skeleton audit plugin with a walkthrough, and seven runnable SQL examples.
+- **A tutorial**: a skeleton audit plugin of about 50 lines of code with a walkthrough, and seven runnable SQL examples.
 
 ## Architecture
 
@@ -271,9 +271,12 @@ and never prints a secret. The containers are Linux containers; this path tests 
 
 ### Building and installing the plugin yourself
 
-**Linux, without Docker.** Install the headers of your server's version, then:
+**Linux, without Docker.** Install a compiler and the headers of your server's exact version. On
+Debian or Ubuntu with MariaDB's own package repository (the version string is the one
+`apt-cache policy mariadb-server` shows):
 
 ```bash
+sudo apt-get install gcc g++ libmariadbd-dev=<version> libmariadb-dev=<version> make
 make -C plugin test          # 7 unit-test programs, g++ only, no server needed
 make -C plugin               # plugin/build/campus_audit.so
 ```
@@ -370,7 +373,7 @@ SET GLOBAL campus_audit_statement_scope = 'TABLES';
 ```
 
 **Write your own plugin:** [`examples/skeleton_plugin/`](examples/skeleton_plugin/README.md) is a
-60-line audit plugin that counts the events it receives, with a 15-minute walkthrough.
+short audit plugin (about 50 lines of code) that counts the events it receives, with a 15-minute walkthrough.
 
 ## Experimental findings
 
@@ -415,11 +418,12 @@ make test               # after make up: 8 suites in the test-runner container (
                         #   shell, plugin end-to-end, database, web application)
 make test-integration   # host-level: demo-credential life cycle, log rotation, thread pool
 make test-browser       # Playwright against the running stack
-make mutation           # injects 65 bugs into the plugin code; the unit tests must notice each
+make mutation           # injects 67 bugs into the plugin code; the unit tests must notice each
 ```
 
-Results of the Phase 1 verification (15–17 November 2026) on the working tree based on commit
-`19fd0a2`. **Which run is which matters**, so [docs/testing.md](docs/testing.md) separates local
+Results of the local verification runs of 15–17 November 2026: the Phase 1 tree (based on commit
+`19fd0a2`) and, where a row says so, the first improvement cycle after the merge into `main`. **Which
+run is which matters**, so [docs/testing.md](docs/testing.md) separates local
 runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 [docs/evidence/phase1/](docs/evidence/phase1/README.md) holds the raw outputs.
 
@@ -428,8 +432,8 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Plugin unit tests, 7 programs | 187 checks pass | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
 | Mutation check | 67 of 67 injected bugs detected | Linux |
-| End-to-end plugin harness | 134 passed, 0 failed, 0 skipped (incl. prepared statements over the binary protocol) | Linux container, MariaDB 13.0.2 |
-| | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
+| End-to-end plugin harness | 134 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol (first improvement cycle) | Linux container, MariaDB 13.0.2 |
+| | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only; first improvement cycle) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
 | Database tests (8 scripts) | all pass | Linux container; also native Windows |
 | Web application and Audit Lab | 332 passed, 1 skipped (browser module) | test-runner container, against MariaDB |
 | Demo-credential life cycle; log rotation; log import limits; thread pool | 19 / 8 / 13 / 30 checks pass | Linux host driving the running stack |
@@ -438,7 +442,10 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | GitHub Actions | 3 of 3 jobs successful, twice (push and pull request), 82 of 82 steps | for the Phase 1 commit `5d48de0` (runs 44028367232 and 44028373377); also for the baseline `19fd0a2` |
 
 All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the first improvement cycle after the merge: [docs/evidence/cycle1/](docs/evidence/cycle1/README.md).
-Not verified: macOS; a Linux host without Docker. On the development PC Smart App Control blocks
+This whole path (headers, `make -C plugin test`, the build, install, restart, `setup_database.sh`,
+`demo.sh`, the verification SQL, the harness and the web application with `python frontend/app.py`)
+was run on Ubuntu with the MariaDB 13.0.2 packages, inside a plain container without the project's
+Docker build ([evidence](docs/evidence/cycle2/01-native-linux-install.txt)). Not verified: macOS; a physical Linux host. On the development PC Smart App Control blocks
 some freshly built test executables; the Zig builds of all seven run in the `windows-native` CI job.
 
 ## Security
@@ -536,7 +543,7 @@ The reasoning, alternatives and evidence for each: [docs/design-decisions.md](do
 | `ERROR 1231 Variable 'campus_audit_...' can't be set` | `SHOW WARNINGS` gives the reason |
 | `import_plugin_log: the file is not smaller than max_allowed_packet` | `make rotate-log` (active log) or `make import-log FILE=<path>` (archive): both import an oversized file in parts |
 | `import_plugin_log: LOAD_FILE returned NULL` | needs FILE, a file inside `secure_file_priv` that is readable by all (Linux: `campus_audit_readable_by_all = ON`) |
-| `Campus_audit_state = DEGRADED` | see `Campus_audit_last_error`; recovery is automatic within 5 s, or `SET GLOBAL campus_audit_reopen_now = ON` |
+| `Campus_audit_state = DEGRADED` | see `Campus_audit_last_error`; the plugin retries with the next audited event 5 s or more after the failure (on an idle server it stays `DEGRADED` until then), or at once with `SET GLOBAL campus_audit_reopen_now = ON` |
 | a booking page answers "This item does not exist." | a database set up before the catalogue was part of the installation: `make migrate` |
 
 More: [docs/docker.md](docs/docker.md#troubleshooting).

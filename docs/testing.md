@@ -22,6 +22,10 @@ Chromium in the Playwright container.
 
 ## GitHub Actions
 
+**Merge commit `abdfa3a` on `main`** (PR #5 merged on 17 November 2026): run
+[44034444030](https://github.com/rmoraru26/DB_Project_2026/actions/runs/44034444030) (push to `main`),
+completed, success, 3 of 3 jobs, 41 of 41 steps (GitHub API, read 17 November 2026).
+
 **Phase 1 commit `5d48de0`** (pushed to PR #5 on 17 November 2026), verified through the GitHub
 API (`docs/evidence/phase1/checks/github-actions-runs-for-5d48de0.txt`): run
 [44028367232](https://github.com/rmoraru26/DB_Project_2026/actions/runs/44028367232) (push) and run
@@ -29,7 +33,7 @@ API (`docs/evidence/phase1/checks/github-actions-runs-for-5d48de0.txt`): run
 both completed, success; 3 of 3 jobs each (`ubuntu-24.04`, `ubuntu-24.04`, `windows-2022`), 82 of
 82 steps successful, among them the new Phase 1 steps: the shell and demo-bootstrap tests, the
 fresh-install check, `make test-integration`, the four PowerShell suites, and
-`pluginuild_windows.ps1` with all seven unit-test programs on the hosted Windows runner (the
+`plugin\build_windows.ps1` with all seven unit-test programs on the hosted Windows runner (the
 script stops with an error if any of them fails or cannot run). The job logs themselves were not
 downloaded (they need an authenticated request); this record rests on the job and step results.
 
@@ -57,7 +61,7 @@ What the baseline runs do **not** show:
 | Suite | What it proves | How to run | P1 result | Other sources |
 |---|---|---|---|---|
 | Plugin unit tests, 7 programs: `test_record_format`, `test_log_sink`, `test_automatic_errors`, `test_error_reporter`, `test_runtime_config`, `test_gap_accounting`, `test_statement_scope` | JSON escaping and UTF-8 validation, digest masking incl. `NO_BACKSLASH_ESCAPES`, list parsing, system-schema detection, timestamps, path validation, open and write failures, file modes, privilege-error detection, atomic settings under concurrent readers, outage accounting, and the statement-scope rules with the event sequences observed on the server | `make -C plugin test`; Windows: `plugin\build_windows.ps1` | **PASS (L)**: 184 checks (72, 23, 13, 1, 4, 8, 63); **post-audit: 187** (75, 23, 13, 1, 4, 8, 63; three new system-schema checks; `post-audit/01-unit-tests.txt`). Post-audit, `test_record_format` alone also built and passed natively with MSYS2 g++ 15.2 (75 checks, `post-audit/12-…`). **PASS (native Windows, g++ 15.2)**: 180 checks (72, 19, 13, 1, 4, 8, 63; four are POSIX-only), **aggregated across two build configurations**: no single build ran all seven programs. `-O2` ran six (`test_statement_scope` refused by application control); `-O2 -DNDEBUG` ran four (`test_automatic_errors`, `test_error_reporter`, `test_gap_accounting` refused); so `test_statement_scope` passed only in the NDEBUG build and those three only in the `-O2` build (`windows-native/05-unit-tests-windows-gxx.txt`). The Zig builds of all seven **compile and link**; they were **not run** on the PC, whose application-control policy refuses them | P0: 6 programs pass. CI (`19fd0a2`): the Linux job ran 6 programs, the Windows job 4 (two were missing from the Windows script, and the two built on `assert()` checked nothing in an optimised build; both corrected in Phase 1) |
-| Mutation check `scripts/mutation_check.py` | every one of 65 deliberately injected bugs in the plugin code makes a unit test fail | `make mutation` | **PASS (L)**: 65 of 65 killed; **post-audit: 67 of 67** (N07 and C10 rewritten for the new system-schema code, N12 and N13 added; `post-audit/02-mutation-check.txt`) | CI (`19fd0a2`): 47 of 47 |
+| Mutation check `scripts/mutation_check.py` | every one of the deliberately injected bugs in the plugin code (67 since the post-audit; 65 in Phase 1) makes a unit test fail | `make mutation` | **PASS (L)**: 65 of 65 killed; **post-audit: 67 of 67** (N07 and C10 rewritten for the new system-schema code, N12 and N13 added; `post-audit/02-mutation-check.txt`) | CI (`19fd0a2`): 47 of 47 |
 | End-to-end plugin harness `tests/plugin/run_plugin_tests.sh` | the loaded plugin through SQL only: install, configuration validation, every event type, filters, special input, refused statements, CHANGE_USER via the C API, **statements without table events in both scopes (28 checks)**, concurrency, fail-open, rotation, trigger interplay, uninstall and reinstall | `make test-e2e` | **PASS (L)**: 128 passed, 0 failed, 0 skipped. **PASS (W)**: the same 128. **PASS (N)**: 110 passed, 0 failed, 3 skipped (permission-denied path, `/dev/full`, and CHANGE_USER because its helper was not built). Each SKIP line stands for a whole block, so 18 of the 128 Linux checks did not run natively: CHANGE_USER 8 (switch and wrong password, `change_user`/`change_user_failed` records under `connections=ALL` and `FAILED`, accounts named before and after, no password in the log), the permission-denied path 1, the write failure via `/dev/full` 9 (statement still succeeds, `DEGRADED`, `write_failures`, `last_error`, `audit_gap`, recovery to `ACTIVE`, the failed recovery marker). 110 + 18 = 128; "113" is 110 PASS lines plus 3 SKIP lines (comparison of `linux/20-make-test.txt` with `windows-native/09-plugin-e2e.txt`) | P0: 100 passed. CI (`19fd0a2`): Linux and Windows jobs green |
 | Thread pool `tests/plugin/test_thread_pool.sh` | attribution of `SET GLOBAL`, of table events and of scope `SESSION` when 12 connections share a pool of 2 threads (an observation for 13.0.2, not an API guarantee) | `make test-threadpool` | **PASS (L)**: 30 checks | P0: the first, manual version of phase 1 of this test |
 | Database tests, 8 scripts in `tests/database/` | migration 004 and seed re-run; migration 006; triggers; exact grants of the application account; **migration 007 and its procedures (30)**; **the booking catalogue on a fresh and on a changed database (18)**; **the log import and its error paths (16)**; the password-hash helper; the team's constraint checks | `make test-db` | **PASS (L, W)**: 2 statements, then 18, 22, 24, 30, 18, 16, 3 and 10 checks. **Post-audit (throw-away 13.0.2 server, `post-audit/04-…`)**: 2 statements, then 18, 22, 24, **35**, **24**, 16, 3, 10 — migration 007 gained the open-transaction refusal (4 checks + 1) and the documented `check_constraint_checks` bypass (1), and lost the check that needs an installed demo account (none in a bare server); the catalogue gained 6 concurrency checks | P0: the first five and the last two pass. CI (`19fd0a2`): green |
@@ -133,7 +137,9 @@ requirement. See the [dated evidence summary](evidence/windows-docker-desktop-20
 1. **GitHub Actions job logs.** The Phase 1 commit `5d48de0` ran green in CI (above); its job logs
    were not downloaded, so test counts inside the CI jobs are not recorded here.
 2. **macOS**, in any form. The Linux host scripts use GNU `stat -c` and `mv -T`.
-3. **A Linux machine without Docker** (building against distribution headers and installing by hand).
+3. **A physical Linux machine without Docker.** The by-hand path itself (distribution headers,
+   build, install, restart, setup, demo, harness, web app) was run in cycle 2 on Ubuntu with the
+   MariaDB 13.0.2 packages inside a plain container (`docs/evidence/cycle2/01-native-linux-install.txt`).
 4. **`make` on a real Linux installation.** The P1 "Linux host" is a Linux container with GNU make
    that drives Docker Desktop's engine; the commands and file-system semantics are Linux, the
    kernel and Docker engine are Docker Desktop's.

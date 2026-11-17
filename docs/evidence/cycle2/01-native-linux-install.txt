@@ -1,0 +1,49 @@
+# 2026-11-17T07:38:41Z Ubuntu 26.04.1 LTS, mariadbd  Ver 13.0.2-MariaDB-ubu2604 for debian-linux-gnu on x86_64 (mariadb.org binary distribution), package version 1:13.0.2+maria~ubu2604
+
+######## 1. toolchain and the headers of the server's version
+######## 1: exit status 0; headers: /usr/include/mariadb/server/mysql/plugin_audit.h
+Checks: 63, Failures: 0
+All unit test programs passed.
+make: Leaving directory '/src/plugin'
+######## 2a: exit status 0
+make: Leaving directory '/src/plugin'
+######## 2b: exit status 0
+-rwxr-xr-x 1 root root 682336 Nov 17 07:40 plugin/build/campus_audit.so
+
+######## 3. server: data directory, start, root password
+install-db exit 0
+server up
+copied to /usr/lib/mysql/plugin/
+option file:
+    [mysqld]
+    plugin_maturity = beta
+    loose_campus_audit_readable_by_all = ON
+    loose_campus_audit_file_path = /var/log/campus_audit/campus_audit.jsonl
+server restarted: maturity beta
+-> database/migrations/008_import_plugin_log_errors.sql
+-> application account campus_app
+Database setup complete.
+######## 4a: exit status 0
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
+######## 4b: exit status 0
+
+######## 5. verification SQL from the README
+PLUGIN_NAME	PLUGIN_STATUS	PLUGIN_TYPE	PLUGIN_LIBRARY	PLUGIN_AUTH_VERSION	PLUGIN_MATURITY
+campus_audit	ACTIVE	AUDIT	campus_audit.so	1.2.0	Beta
+system variables: 9
+status variables: 11; Campus_audit_events_dropped=0 Campus_audit_state=ACTIVE 
+log: mysql:mysql 664, 8 records
+== campus_audit integration tests (run 1794901222_1257)
+== 134 passed, 0 failed, 0 skipped
+
+######## 7. web application outside Docker
+pip exit 0
+GET /healthz -> 200  body: {"status":"ok","database":"ok"}
+GET /        -> 200
+GET /lab     -> 200
+
+# done 2026-11-17T07:41:26Z
