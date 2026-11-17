@@ -109,7 +109,14 @@ C runtime's `stat()` reports the owner's read permission for others too), so the
 
 ## Tamper evidence (not tamper proof)
 
-An administrator with SUPER can uninstall the plugin or redirect the log.  Each configuration change
+An administrator with SUPER can uninstall the plugin or redirect the log.  Redirecting it cannot be
+used to write into another file: `SET GLOBAL campus_audit_file_path` needs `SYSTEM_VARIABLES_ADMIN`,
+not `FILE`, so since plugin 1.2.4 the plugin refuses an existing regular file unless it is empty or
+already begins with a campus_audit record (`LogSink::open`, `plugin/src/log_sink.cpp`). Before 1.2.4
+such a user could append JSON to any file the server may write, a table file such as
+`mysql/global_priv.MAD` included, and with `campus_audit_readable_by_all` (on in Docker) make it
+readable by every OS user. A FIFO or a device is still accepted (the tests use both); the check and
+the open are two steps, so a file swapped in between is not detected.  Each configuration change
 is written as a `config_change` record followed by the attributed `SET GLOBAL` statement, and
 uninstall/shutdown writes `plugin_stop` with counters, so changes are visible in the log itself.
 The file is not signed or hash-chained; forwarding it to a separate log host would be the next step.

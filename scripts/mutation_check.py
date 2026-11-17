@@ -129,6 +129,16 @@ MUTANTS = [
      "the log is not opened in append mode (a reopen overwrites it)"),
     ("S03", "src/log_sink.cpp", "O_CLOEXEC, 0660)", "O_CLOEXEC, 0666)",
      "the log file is created world-readable"),
+    # ------------------------------------------------------------ foreign files (1.2.4)
+    ("S04", "src/log_sink.cpp", "if (!existing.ok()) return existing;", "(void)existing;",
+     "LogSink::open appends to an existing file that is not a campus_audit log"),
+    ("S05", "src/log_sink.cpp", "std::memcmp(head + i, kRecordPrefix, want) == 0", "true",
+     "any existing non-empty file counts as a campus_audit log"),
+    ("S06", "src/log_sink.cpp", "if ((st.st_mode & S_IFMT) != S_IFREG || st.st_size == 0) return {AuditError::None, \"\"};",
+     "if ((st.st_mode & S_IFMT) != S_IFREG || st.st_size == 0 || true) return {AuditError::None, \"\"};",
+     "the existing-file check accepts everything"),
+    ("S07", "src/log_sink.cpp", "while (i < n && (head[i] == '\\n' || head[i] == '\\r')) ++i;", "",
+     "a log that begins with the newline of an audit_gap record is refused"),
     # ------------------------------------------------------------ refused statements (1.1.0)
     ("A01", "src/record_format.cpp", "return code == 1044 || code == 1142 ||", "return code == 1044 ||",
      "a refused DELETE/UPDATE/INSERT (ER 1142) is no longer recorded"),

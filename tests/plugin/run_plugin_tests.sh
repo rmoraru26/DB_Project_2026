@@ -172,6 +172,27 @@ else
 fi
 check "rejected paths leave the active file unchanged" \
     "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
+
+# An existing file that is not a campus_audit log (1.2.4).  SET GLOBAL needs
+# SYSTEM_VARIABLES_ADMIN, not FILE: before 1.2.4 it could append to any file
+# the server may write, a table file in the data directory included.  The
+# foreign file is made by the server itself (INTO OUTFILE), in the test
+# directory, so no real data file is put at risk.
+FOREIGN_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.txt')"
+if sql "SET @p = $FOREIGN_EXPR; SET @s = CONCAT('SELECT ''not an audit log'' INTO OUTFILE ''', @p, ''''); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1; then
+    expect_error "an existing file that is not a campus_audit log is refused" 1231 \
+        "SET GLOBAL campus_audit_file_path = $FOREIGN_EXPR;"
+    warn=$(sql_force "SET GLOBAL campus_audit_file_path = $FOREIGN_EXPR; SHOW WARNINGS;" 2>/dev/null)
+    if printf '%s' "$warn" | grep -q "does not begin with a campus_audit record"; then
+        pass "the refusal of a foreign file says why"
+    else
+        fail "the refusal of a foreign file says why" "got: $warn"
+    fi
+    check "the foreign file is unchanged" \
+        "SELECT LOAD_FILE($FOREIGN_EXPR) = 'not an audit log\\n';"
+else
+    skip "foreign-file refusal (SELECT ... INTO OUTFILE is not allowed in the test directory)"
+fi
 expect_error "database list with a space rejected" 1231 "SET GLOBAL campus_audit_databases = 'bad name';"
 expect_error "database list with an empty element rejected" 1231 "SET GLOBAL campus_audit_databases = 'a,,b';"
 expect_error "database list mixing '*' and names rejected" 1231 "SET GLOBAL campus_audit_databases = '*,a';"

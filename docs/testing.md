@@ -280,7 +280,14 @@ Windows; CI runs them on push. CI run 44094440392 for `61a0814`: 4 of 4 jobs suc
 `docs/evidence/cycle7/`, plugin 1.2.3: the DISCONNECT event writes a connection's pending
 configuration records; a staged file is closed when its update gives up; wording and citations
 corrected. 192 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harness 134/0/0, thread pool
-30/0, stalled log 19/0.
+30/0, stalled log 19/0. CI run 44097222910 for `dce0a16`: 4 of 4 jobs successful.
+
+## Improvement cycle 8 (17 November 2026)
+
+`docs/evidence/cycle8/`, plugin 1.2.4: `campus_audit_file_path` refuses an existing file that is not a
+campus_audit log (`docs/security.md`, "Tamper evidence"). New: 7 unit checks, 4 mutants (S04-S07),
+3 harness checks. Local results: 199 unit checks; 71 of 71 mutants; on 13.0.2 and on 11.8.9 the
+harness 137/0/0, thread pool 30/0, stalled log 19/0.
 
 ## Windows validation source ZIP
 

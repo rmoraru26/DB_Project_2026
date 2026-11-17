@@ -31,6 +31,16 @@ static void check(bool condition, const std::string& name) {
     if (!condition) ++failures;
 }
 
+// Records as the plugin writes them: every one begins with {"ts":"
+// (LogSink::open refuses to append to a non-empty file that does not).
+static const char R1[] = "{\"ts\":\"t1\",\"a\":1}\n";
+static const char R2[] = "{\"ts\":\"t2\",\"a\":2}\n";
+static const char R3[] = "{\"ts\":\"t3\",\"a\":3}\n";
+
+static bool write(LogSink& sink, const char* record) {
+    return sink.write_all(record, std::string(record).size()).ok();
+}
+
 static std::string read_file(const char* path) {
     std::ifstream in(path, std::ios::binary);
     return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -62,17 +72,56 @@ int main() {
     {
         LogSink sink;
         check(sink.open(path).ok(), "valid path opened");
-        check(sink.write_all("{\"a\":1}\n", 8).ok(), "first record written");
+        check(write(sink, R1), "first record written");
         AuditResult bad = sink.open("sink_test_missing_dir/y.jsonl");
         check(!bad.ok() && sink.is_open(), "failed re-open keeps the previous file open");
-        check(sink.write_all("{\"a\":2}\n", 8).ok(), "previous file still writable");
+        check(write(sink, R2), "previous file still writable");
     }
     {
         LogSink sink;
-        check(sink.open(path).ok() && sink.write_all("{\"a\":3}\n", 8).ok(),
-              "re-opened file is appended to");
+        check(sink.open(path).ok() && write(sink, R3), "re-opened file is appended to");
     }
-    check(read_file(path) == "{\"a\":1}\n{\"a\":2}\n{\"a\":3}\n", "file holds all records in order");
+    check(read_file(path) == std::string(R1) + R2 + R3, "file holds all records in order");
+
+    {
+        // A foreign file is never appended to: campus_audit_file_path needs
+        // SYSTEM_VARIABLES_ADMIN, not FILE, and must not become a way to write
+        // into (or, with readable_by_all, expose) any file the server can write.
+        const char* foreign = "sink_test_foreign.dat";
+        std::remove(foreign);
+        { std::ofstream out(foreign, std::ios::binary); out << "not an audit log\n"; }
+#ifndef _WIN32
+        chmod(foreign, 0600);
+#endif
+        LogSink sink;
+        sink.set_readable_by_all(true);
+        AuditResult r = sink.open(foreign);
+        check(r.code == AuditError::open_Failed, "an existing foreign file is refused");
+        check(r.message.find("does not begin with a campus_audit record") != std::string::npos,
+              "the refusal says why");
+        check(!sink.is_open(), "nothing is opened for a foreign file");
+        check(read_file(foreign) == "not an audit log\n", "the foreign file is unchanged");
+#ifndef _WIN32
+        struct stat st;
+        check(stat(foreign, &st) == 0 && (st.st_mode & 07777) == 0600,
+              "readable_by_all does not change the permissions of a refused file");
+#endif
+        std::remove(foreign);
+
+        const char* empty = "sink_test_empty.jsonl";
+        std::remove(empty);
+        { std::ofstream out(empty, std::ios::binary); }
+        check(sink.open(empty).ok(), "an existing empty file is accepted");
+        sink.close();
+        std::remove(empty);
+
+        const char* gap_first = "sink_test_gapfirst.jsonl";
+        std::remove(gap_first);
+        { std::ofstream out(gap_first, std::ios::binary); out << "\n" << R1; }
+        check(sink.open(gap_first).ok(), "a log that begins with the newline of an audit_gap record is accepted");
+        sink.close();
+        std::remove(gap_first);
+    }
 
     {
         // swap(): a file opened by one sink (a check function) is taken over by
@@ -82,10 +131,10 @@ int main() {
         LogSink active, staged;
         check(active.open(path).ok() && staged.open(other).ok(), "two sinks opened for swap");
         active.swap(staged);
-        check(active.write_all("{\"s\":1}\n", 8).ok(), "after swap the active sink writes");
+        check(write(active, R1), "after swap the active sink writes");
         check(staged.is_open(), "after swap the other sink holds the previous file");
         staged.close();
-        check(read_file(other) == "{\"s\":1}\n", "the record went to the file that was swapped in");
+        check(read_file(other) == R1, "the record went to the file that was swapped in");
         LogSink empty;
         empty.swap(active);
         check(!active.is_open() && empty.is_open(), "swap with a closed sink moves the file");

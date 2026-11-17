@@ -1,6 +1,7 @@
 #include "log_sink.h"
 
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
 #include <string>
 
@@ -77,6 +78,42 @@ void sys_close(int fd) {
 #endif
 }
 
+// Every campus_audit record starts with these bytes (begin_record() in
+// campus_audit.cpp); an audit_gap record is preceded by a newline.
+const char kRecordPrefix[] = "{\"ts\":\"";
+
+// Refuses an existing regular file that is neither empty nor a campus_audit
+// log.  SET GLOBAL campus_audit_file_path needs SYSTEM_VARIABLES_ADMIN, not
+// FILE; without this check it could append to any file the server may write,
+// a table file in the data directory included, and with readable_by_all also
+// make that file readable by every OS user.  A FIFO or a device (/dev/full in
+// the tests) is not a data file and is left to open().  The check and open()
+// are two steps: a file replaced in between is not detected.
+AuditResult check_existing_file(const char* path) {
+    struct stat st;
+    if (::stat(path, &st) != 0) return {AuditError::None, ""};    // open() creates it or says why not
+    if ((st.st_mode & S_IFMT) != S_IFREG || st.st_size == 0) return {AuditError::None, ""};
+    const std::string refused = std::string("Refusing to append to '") + path + "': ";
+    std::FILE* f = std::fopen(path, "rb");
+    if (f == nullptr) {
+        return {AuditError::open_Failed,
+                refused + "the file exists and cannot be read to check that it is a campus_audit log: " +
+                    describe_errno(errno)};
+    }
+    char head[32];
+    const size_t n = std::fread(head, 1, sizeof(head), f);
+    std::fclose(f);
+    size_t i = 0;
+    while (i < n && (head[i] == '\n' || head[i] == '\r')) ++i;
+    const size_t want = sizeof(kRecordPrefix) - 1;
+    if (i == n || (n - i >= want && std::memcmp(head + i, kRecordPrefix, want) == 0)) {
+        return {AuditError::None, ""};
+    }
+    return {AuditError::open_Failed,
+            refused + "the file exists and does not begin with a campus_audit record (accepted are a new "
+                      "file, an empty one and an earlier campus_audit log)"};
+}
+
 }  // namespace
 
 AuditResult LogSink::open(const char* path) {
@@ -85,6 +122,8 @@ AuditResult LogSink::open(const char* path) {
     }
     AuditResult valid = validate_log_path(path);
     if (!valid.ok()) return valid;
+    AuditResult existing = check_existing_file(path);
+    if (!existing.ok()) return existing;
 
     int fd = sys_open(path);
     if (fd < 0) {

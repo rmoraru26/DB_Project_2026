@@ -1,0 +1,4 @@
+# cycle 8 2026-11-17T14:15:04Z: python3 scripts/check_repo.py && python3 tests/test_source_distribution.py
+Repository checks passed.
+Source distribution checks passed: documented JSONL included, exclusions enforced, frontend test files complete, ZIP extracted in spaced path, frontend test collection not checked (pytest, flask, pymysql, dotenv, werkzeug not installed for this interpreter), and checker detects removal of the sample.
+# exit status: 0

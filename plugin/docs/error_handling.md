@@ -2,7 +2,7 @@
 
 This note began as the team's design notes for the first prototype of the plugin's error handling
 (the `AuditResult` type and the first file-open check). The questions it left open were answered
-while the plugin was built; this version describes the error handling of `campus_audit` 1.2.3 as
+while the plugin was built; this version describes the error handling of `campus_audit` 1.2.4 as
 it is in the source. The earlier text is in the Git history of this file.
 
 ## The result type

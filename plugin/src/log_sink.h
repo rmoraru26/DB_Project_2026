@@ -19,7 +19,9 @@ public:
     ~LogSink() { close(); }
 
     // Validates the path (see validate_log_path) and opens it for appending,
-    // creating it with owner/group read-write permissions if necessary.
+    // creating it with owner/group read-write permissions if necessary.  An
+    // existing regular file is accepted only if it is empty or begins with a
+    // campus_audit record, so the plugin never appends to a foreign file.
     // After set_readable_by_all(true) the file, also an existing one, is made
     // readable by others: the server's LOAD_FILE() reads no other file.  No
     // effect on Windows, where the C runtime's stat() already reports the

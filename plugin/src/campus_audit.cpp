@@ -67,7 +67,7 @@ using campus_audit::RwLock;
 
 namespace {
 
-const char kPluginVersion[] = "1.2.3";
+const char kPluginVersion[] = "1.2.4";
 const unsigned int kErUnknownError = 1105;      // ER_UNKNOWN_ERROR (mysqld_error.h)
 const size_t kMaxPathLength = 512;
 const long long kReopenIntervalSeconds = 5;
