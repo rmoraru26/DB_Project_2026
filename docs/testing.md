@@ -287,7 +287,15 @@ corrected. 192 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harnes
 `docs/evidence/cycle8/`, plugin 1.2.4: `campus_audit_file_path` refuses an existing file that is not a
 campus_audit log (`docs/security.md`, "Tamper evidence"). New: 7 unit checks, 4 mutants (S04-S07),
 3 harness checks. Local results: 199 unit checks; 71 of 71 mutants; on 13.0.2 and on 11.8.9 the
-harness 137/0/0, thread pool 30/0, stalled log 19/0.
+harness 137/0/0, thread pool 30/0, stalled log 19/0. CI run 44121153458 for `d147cdc`: static, Docker
+and 11.8.9 successful, native Windows failed (end-to-end step; log not readable without signing in).
+
+Security review of the same protection (`docs/evidence/cycle8/security-review/`): decisions on the
+opened descriptor or handle; no symbolic or hard links, owner check (Linux), `.jsonl` names only,
+widening only of new files. New `tests/plugin/test_log_path_safety.sh` (`make test-log-path-safety`,
+also in `make test-integration` and `make test-server-version`). 213 unit checks; 75 of 75 mutants; on
+13.0.2 and 11.8.9 the harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 33/0 + 2/0.
+Native Windows: built; loading blocked locally by Smart App Control; CI job `windows-native`.
 
 ## Windows validation source ZIP
 

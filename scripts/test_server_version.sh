@@ -12,8 +12,8 @@
 #   1. starts a throw-away server from it and runs tests/plugin/run_plugin_tests.sh
 #      (with the CHANGE_USER / prepared-statement helper) from a throw-away
 #      test-runner container on a private network;
-#   2. runs tests/plugin/test_thread_pool.sh and tests/plugin/test_stalled_log.sh
-#      against the same image.
+#   2. runs tests/plugin/test_thread_pool.sh, tests/plugin/test_stalled_log.sh and
+#      tests/plugin/test_log_path_safety.sh against the same image.
 #
 # Nothing of the running stack (make up) is used or changed.  Passwords are
 # random, exist only in the throw-away containers and are never printed.  The
@@ -87,5 +87,9 @@ echo "== tests/plugin/test_stalled_log.sh"
 STALL_TEST_IMAGE="$SERVER_IMAGE" bash tests/plugin/test_stalled_log.sh
 stall=$?
 
-echo "== result for $IMAGE: run_plugin_tests.sh exit $harness, test_thread_pool.sh exit $pool, test_stalled_log.sh exit $stall"
-[ "$harness" = 0 ] && [ "$pool" = 0 ] && [ "$stall" = 0 ]
+echo "== tests/plugin/test_log_path_safety.sh"
+STALL_TEST_IMAGE="$SERVER_IMAGE" bash tests/plugin/test_log_path_safety.sh
+paths=$?
+
+echo "== result for $IMAGE: run_plugin_tests.sh exit $harness, test_thread_pool.sh exit $pool, test_stalled_log.sh exit $stall, test_log_path_safety.sh exit $paths"
+[ "$harness" = 0 ] && [ "$pool" = 0 ] && [ "$stall" = 0 ] && [ "$paths" = 0 ]

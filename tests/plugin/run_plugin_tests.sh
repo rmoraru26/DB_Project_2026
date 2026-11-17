@@ -173,26 +173,38 @@ fi
 check "rejected paths leave the active file unchanged" \
     "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
 
-# An existing file that is not a campus_audit log (1.2.4).  SET GLOBAL needs
+# Existing files that are not campus_audit logs (1.2.4).  SET GLOBAL needs
 # SYSTEM_VARIABLES_ADMIN, not FILE: before 1.2.4 it could append to any file
 # the server may write, a table file in the data directory included.  The
-# foreign file is made by the server itself (INTO OUTFILE), in the test
-# directory, so no real data file is put at risk.
-FOREIGN_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.txt')"
-if sql "SET @p = $FOREIGN_EXPR; SET @s = CONCAT('SELECT ''not an audit log'' INTO OUTFILE ''', @p, ''''); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1; then
-    expect_error "an existing file that is not a campus_audit log is refused" 1231 \
-        "SET GLOBAL campus_audit_file_path = $FOREIGN_EXPR;"
-    warn=$(sql_force "SET GLOBAL campus_audit_file_path = $FOREIGN_EXPR; SHOW WARNINGS;" 2>/dev/null)
-    if printf '%s' "$warn" | grep -q "does not begin with a campus_audit record"; then
-        pass "the refusal of a foreign file says why"
+# foreign files are made by the server itself (INTO OUTFILE), in the test
+# directory, so no real data file is put at risk.  Links and files of other
+# OS users: tests/plugin/test_log_path_safety.sh (needs a shell on the server).
+make_outfile() {   # make_outfile <SQL path expression> <content>
+    sql "SET @p = $1; SET @s = CONCAT('SELECT ''$2'' INTO OUTFILE ''', @p, ''''); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1
+}
+expect_refusal() {   # expect_refusal <description> <SQL path expression> <reason text>
+    expect_error "$1" 1231 "SET GLOBAL campus_audit_file_path = $2;"
+    warn=$(sql_force "SET GLOBAL campus_audit_file_path = $2; SHOW WARNINGS;" 2>/dev/null)
+    if printf '%s' "$warn" | grep -q -- "$3"; then
+        pass "$1: the refusal says why"
     else
-        fail "the refusal of a foreign file says why" "got: $warn"
+        fail "$1: the refusal says why" "got: $warn"
     fi
-    check "the foreign file is unchanged" \
-        "SELECT LOAD_FILE($FOREIGN_EXPR) = 'not an audit log\\n';"
+}
+FOREIGN_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.jsonl')"
+OTHER_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.txt')"
+if make_outfile "$FOREIGN_EXPR" "not an audit log" && make_outfile "$OTHER_EXPR" '{\"ts\":\"spoofed\"}'; then
+    expect_refusal "a .jsonl file that is not a campus_audit log is refused" "$FOREIGN_EXPR" \
+        "does not begin with a campus_audit record"
+    check "that file is unchanged" "SELECT LOAD_FILE($FOREIGN_EXPR) = 'not an audit log\\n';"
+    expect_refusal "a log-like file whose name does not end in .jsonl is refused" "$OTHER_EXPR" \
+        "must end in .jsonl"
+    check "that file is unchanged" "SELECT LOAD_FILE($OTHER_EXPR) = '{\"ts\":\"spoofed\"}\\n';"
 else
     skip "foreign-file refusal (SELECT ... INTO OUTFILE is not allowed in the test directory)"
 fi
+check "refused files leave the active file unchanged" \
+    "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
 expect_error "database list with a space rejected" 1231 "SET GLOBAL campus_audit_databases = 'bad name';"
 expect_error "database list with an empty element rejected" 1231 "SET GLOBAL campus_audit_databases = 'a,,b';"
 expect_error "database list mixing '*' and names rejected" 1231 "SET GLOBAL campus_audit_databases = '*,a';"

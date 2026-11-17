@@ -91,6 +91,15 @@ or `SET GLOBAL` then waited as well. `SHOW STATUS` of the plugin waited while ho
 
 `tests/plugin/test_stalled_log.sh` checks all of this against a FIFO whose reader stops reading.
 
+## Files the log may not be
+
+`LogSink::open` refuses a symbolic link, a hard-linked file, a file of another OS user (Linux), a
+regular file whose name does not end in `.jsonl`, and an existing file that is neither empty nor a
+campus_audit log, all decided on the opened descriptor or handle. It widens permissions only on a
+file it has just created. The refusal is an `open_Failed` result with the reason, so it travels
+the same way as any other open failure (ER 1231 for `SET GLOBAL`, no start at `init`). Rules,
+platform differences and limitations: `docs/security.md`, "Which files the audit log may be".
+
 ## A side effect of the file-path check
 
 To refuse an unwritable path with the reason, the check function of `campus_audit_file_path`
@@ -109,6 +118,7 @@ worse than an empty file.
 | outage accounting (`audit_gap` counts) | `plugin/tests/test_gap_accounting.cpp` |
 | the loaded plugin: refused configuration (ER 1231 with reasons), a path the server may not write, a write failure through `/dev/full`, `DEGRADED`, recovery, the `audit_gap` record | `tests/plugin/run_plugin_tests.sh`, sections "configuration validation" and "I/O failure behaviour" |
 | a locked log file on Windows | `docs/experiments.md`, experiment 4 |
+| which files may be opened: links, other owners, wrong names, foreign content; rotation, recovery and restart afterwards | `plugin/tests/test_log_sink.cpp`; `tests/plugin/test_log_path_safety.sh` (`make test-log-path-safety`) |
 | a log that stalls without failing (FIFO), what keeps answering | `tests/plugin/test_stalled_log.sh` (`make test-stalled-log`); experiment 32 |
 
 Run the unit tests with `make -C plugin test` (Linux) or `plugin\build_windows.ps1` (Windows), the

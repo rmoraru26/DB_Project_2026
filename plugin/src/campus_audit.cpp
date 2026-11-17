@@ -1019,8 +1019,10 @@ void guarded_update(MYSQL_THD thd, struct st_mysql_sys_var* var, void* var_ptr,
 
 MYSQL_SYSVAR_STR(file_path, sv_file_path, PLUGIN_VAR_RQCMDARG,
                  "Audit log file (JSON Lines). Relative paths are relative to the data "
-                 "directory. Changing it opens the new file first and keeps the old one "
-                 "if that fails.",
+                 "directory. A regular file must end in .jsonl; an existing one must be "
+                 "the server's own, have one link, no symbolic link, and be empty or a "
+                 "campus_audit log. Changing it opens the new file first and keeps the "
+                 "old one if that fails.",
                  guarded_check<check_file_path>, guarded_update<update_file_path>, "campus_audit.jsonl");
 
 MYSQL_SYSVAR_STR(databases, sv_databases, PLUGIN_VAR_RQCMDARG,

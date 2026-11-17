@@ -125,20 +125,29 @@ MUTANTS = [
      "a path ending in a backslash (Windows directory) is accepted"),
     ("S01", "src/log_sink.cpp", "if (!valid.ok()) return valid;", "(void)valid;",
      "LogSink::open skips path validation"),
-    ("S02", "src/log_sink.cpp", "O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC", "O_WRONLY | O_CREAT | O_CLOEXEC",
+    ("S02", "src/log_sink.cpp", "O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK",
+     "O_WRONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK",
      "the log is not opened in append mode (a reopen overwrites it)"),
     ("S03", "src/log_sink.cpp", "O_CLOEXEC, 0660)", "O_CLOEXEC, 0666)",
      "the log file is created world-readable"),
-    # ------------------------------------------------------------ foreign files (1.2.4)
-    ("S04", "src/log_sink.cpp", "if (!existing.ok()) return existing;", "(void)existing;",
-     "LogSink::open appends to an existing file that is not a campus_audit log"),
+    # ------------------------------------------------------------ which files may be opened (1.2.4)
+    ("S04", "src/log_sink.cpp", "        if (st.st_nlink != 1) {", "        if (false) {",
+     "a hard-linked file is appended to"),
     ("S05", "src/log_sink.cpp", "std::memcmp(head + i, kRecordPrefix, want) == 0", "true",
      "any existing non-empty file counts as a campus_audit log"),
-    ("S06", "src/log_sink.cpp", "if ((st.st_mode & S_IFMT) != S_IFREG || st.st_size == 0) return {AuditError::None, \"\"};",
-     "if ((st.st_mode & S_IFMT) != S_IFREG || st.st_size == 0 || true) return {AuditError::None, \"\"};",
-     "the existing-file check accepts everything"),
+    ("S06", "src/log_sink.cpp", "    if (n < k) return false;\n", "    if (n < k) return true;\n    return true;\n",
+     "a regular file of any name (a table file) is accepted"),
     ("S07", "src/log_sink.cpp", "while (i < n && (head[i] == '\\n' || head[i] == '\\r')) ++i;", "",
      "a log that begins with the newline of an audit_gap record is refused"),
+    ("S08", "src/log_sink.cpp", "} else if (st.st_uid != ::geteuid()) {", "} else if (false) {",
+     "a file of another OS user is appended to"),
+    ("S09", "src/log_sink.cpp", "O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK",
+     "O_WRONLY | O_APPEND | O_CLOEXEC | O_NONBLOCK",
+     "a symbolic link to a log-like file is followed"),
+    ("S10", "src/log_sink.cpp", "if (readable_by_all_ && created) {", "if (readable_by_all_) {",
+     "readable_by_all widens the permissions of an existing file"),
+    ("S11", "src/log_sink.cpp", "flags & ~O_NONBLOCK", "flags",
+     "the log descriptor stays non-blocking (records are lost instead of waiting)"),
     # ------------------------------------------------------------ refused statements (1.1.0)
     ("A01", "src/record_format.cpp", "return code == 1044 || code == 1142 ||", "return code == 1044 ||",
      "a refused DELETE/UPDATE/INSERT (ER 1142) is no longer recorded"),
@@ -206,6 +215,9 @@ MUTANTS = [
     # Not mutated on purpose: LogSink::write_all's `n == 0` branch (a write() that returns 0 for a
     # non-empty buffer).  No real descriptor can be made to do that, so it cannot be tested without
     # fault injection; it is a defensive guard against an endless loop.
+    # Nor LogSink's comparison of device and inode between the descriptor it writes and the one it
+    # reads the first bytes through: it only matters if the file is replaced between the two open()
+    # calls, a race a unit test cannot provoke reliably.
 ]
 
 

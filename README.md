@@ -438,7 +438,7 @@ make test               # after make up: 8 suites in the test-runner container (
 make test-integration   # host-level: demo-credential life cycle, log rotation, thread pool, stalled log
 make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...   # the plugin tests on another server version
 make test-browser       # Playwright against the running stack
-make mutation           # injects 71 bugs into the plugin code; the unit tests must notice each
+make mutation           # injects 75 bugs into the plugin code; the unit tests must notice each
 ```
 
 Results of the local verification runs of 15–17 November 2026. Each row names the tree it ran on:
@@ -449,11 +449,11 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 
 | Suite | Result | Where it ran |
 |---|---|---|
-| Plugin unit tests, 7 programs | 199 checks pass (cycle 8) | Linux (g++ in the image build and the test runner) |
+| Plugin unit tests, 7 programs | 213 checks pass, none skipped (cycle 8, security review) | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
-| Mutation check | 71 of 71 injected bugs detected (cycle 8) | Linux |
-| End-to-end plugin harness | 137 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol and a refused foreign log file; thread pool 30 passed; stalled log 19 passed (cycle 8, plugin 1.2.4, `make test-server-version`) | Linux container, MariaDB 13.0.2 |
-| | the same three: 137 / 30 / 19 passed, 0 failed (cycle 8) | Linux container, MariaDB **11.8.9** |
+| Mutation check | 75 of 75 injected bugs detected (cycle 8, security review) | Linux |
+| End-to-end plugin harness | 141 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol and refused foreign log files; thread pool 30 passed; stalled log 19 passed; log path safety 33 + 2 passed (cycle 8, plugin 1.2.4, `make test-server-version`) | Linux container, MariaDB 13.0.2 |
+| | the same four: 141 / 30 / 19 / 35 passed, 0 failed (cycle 8) | Linux container, MariaDB **11.8.9** |
 | | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only; cycle 1) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
 | Stalled log (a FIFO that stops being read) | 19 passed (cycle 8, plugin 1.2.4); its cycle-5 version gave 17 passed on 1.2.1 and 7 passed, 10 failed on 1.2.0 | throw-away container, MariaDB 13.0.2 |
 | Database tests (8 scripts) | all pass | Linux container; also native Windows |
@@ -463,7 +463,7 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Windows launcher (PowerShell 5.1) | 10 + 98 + 14 + 37 checks pass, ACL test 8 pass; `frantastic.cmd test` 8 of 8 suites | Windows 11 |
 | GitHub Actions | every job successful for each commit of the improvement branch so far, latest recorded `dce0a16` (plugin 1.2.3; run 44097222910, 4 of 4 jobs incl. MariaDB 11.8.9 and native Windows); for the Phase 1 commit `5d48de0` 3 of 3 jobs twice (runs 44028367232 and 44028373377) | GitHub-hosted runners |
 
-All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the improvement cycles after the merge: [cycle 1](docs/evidence/cycle1/README.md), [cycle 3](docs/evidence/cycle3/README.md), [cycle 5](docs/evidence/cycle5/README.md), [cycle 6](docs/evidence/cycle6/README.md), [cycle 7](docs/evidence/cycle7/README.md), [cycle 8](docs/evidence/cycle8/README.md).
+All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the improvement cycles after the merge: [cycle 1](docs/evidence/cycle1/README.md), [cycle 3](docs/evidence/cycle3/README.md), [cycle 5](docs/evidence/cycle5/README.md), [cycle 6](docs/evidence/cycle6/README.md), [cycle 7](docs/evidence/cycle7/README.md), [cycle 8](docs/evidence/cycle8/README.md) and its [security review](docs/evidence/cycle8/security-review/README.md).
 This whole path (headers, `make -C plugin test`, the build, install, restart, `setup_database.sh`,
 `demo.sh`, the verification SQL, the harness and the web application with `python frontend/app.py`)
 was run on Ubuntu with the MariaDB 13.0.2 packages, inside a plain container without the project's
@@ -522,6 +522,11 @@ Details, including what the log *does* contain and the threat model: [docs/secur
   16 entries of at most 128 characters; the digest lexer assumes an ASCII-compatible character set.
 - **Platforms.** macOS is untested, and the Linux host scripts use GNU `stat` and `mv`. The
   generated accounts are created by the Docker launchers only.
+- **Where the log may be.** A regular log file must end in `.jsonl`; an existing one must be the
+  server's own (Linux), have a single link, not be a symbolic link and be empty or a campus_audit
+  log. Permissions are widened only on a file the plugin creates. A symbolic link in a directory
+  component is still followed, and Windows does not check the owner
+  ([docs/security.md](docs/security.md#which-files-the-audit-log-may-be)).
 - **The demo is for one machine.** Login throttling is per process, and the web application is
   meant to be reached on `127.0.0.1`.
 

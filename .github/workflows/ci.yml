@@ -95,7 +95,7 @@ jobs:
           items=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.items WHERE asset_tag LIKE CONCAT(name, ' _')")
           test "$items" = 54
 
-      - name: Host-level integration tests (demo credential life cycle, log rotation, log import limits, thread pool, stalled log)
+      - name: Host-level integration tests (demo credential life cycle, log rotation, log import limits, thread pool, stalled log, log path safety)
         run: make test-integration 2>&1 | tee integration.txt
 
       - uses: actions/setup-python@v5
@@ -168,7 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build FROM the official 11.8.9 image, run the end-to-end harness and the thread-pool test
+      - name: Build FROM the official 11.8.9 image, run the end-to-end harness and the thread-pool, stalled-log and log-path-safety tests
         run: make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 2>&1 | tee server-11.8.txt
 
       - name: Keep the output
@@ -250,9 +250,24 @@ jobs:
           export MARIADB_CLIENT="$mdb/bin/mariadb.exe -h127.0.0.1 -P3306 --skip-ssl-verify-server-cert"
           export PATH="$mdb/lib:$PATH"
           export CHANGE_USER_CLIENT=/c/mdb/campus_change_user.exe CU_HOST=127.0.0.1 CU_PORT=3306
-          bash scripts/setup_database.sh
-          bash scripts/demo.sh
-          bash tests/plugin/run_plugin_tests.sh
+          bash scripts/setup_database.sh 2>&1 | tee /c/mdbdata/setup.txt
+          bash scripts/demo.sh 2>&1 | tee /c/mdbdata/demo.txt
+          bash tests/plugin/run_plugin_tests.sh 2>&1 | tee /c/mdbdata/harness.txt
+
+      - name: Report failed checks as annotations (readable without signing in)
+        if: failure()
+        shell: bash
+        run: |
+          # Job logs need a signed-in GitHub account; annotations are public.
+          for f in setup demo harness; do
+            [ -f /c/mdbdata/$f.txt ] || continue
+            grep -E '^(FAIL|ERROR)|^      ' /c/mdbdata/$f.txt | head -n 20 | while IFS= read -r line; do
+              echo "::error title=windows-native $f::${line//%/%25}"
+            done
+            if [ "$f" != harness ]; then
+              tail -n 5 /c/mdbdata/$f.txt | while IFS= read -r line; do echo "::warning title=windows-native $f (last lines)::${line//%/%25}"; done
+            fi
+          done
 
       - name: Server log
         if: always()

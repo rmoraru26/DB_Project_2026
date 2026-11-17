@@ -109,14 +109,8 @@ C runtime's `stat()` reports the owner's read permission for others too), so the
 
 ## Tamper evidence (not tamper proof)
 
-An administrator with SUPER can uninstall the plugin or redirect the log.  Redirecting it cannot be
-used to write into another file: `SET GLOBAL campus_audit_file_path` needs `SYSTEM_VARIABLES_ADMIN`,
-not `FILE`, so since plugin 1.2.4 the plugin refuses an existing regular file unless it is empty or
-already begins with a campus_audit record (`LogSink::open`, `plugin/src/log_sink.cpp`). Before 1.2.4
-such a user could append JSON to any file the server may write, a table file such as
-`mysql/global_priv.MAD` included, and with `campus_audit_readable_by_all` (on in Docker) make it
-readable by every OS user. A FIFO or a device is still accepted (the tests use both); the check and
-the open are two steps, so a file swapped in between is not detected.  Each configuration change
+An administrator with SUPER can uninstall the plugin or redirect the log; redirecting it is
+restricted (next section).  Each configuration change
 is written as a `config_change` record followed by the attributed `SET GLOBAL` statement, and
 uninstall/shutdown writes `plugin_stop` with counters, so changes are visible in the log itself.
 The file is not signed or hash-chained; forwarding it to a separate log host would be the next step.
@@ -138,6 +132,59 @@ experiments 21 to 24):
 An installation that needs these statements in its trail should set both options in the server's
 option file (`loose_campus_audit_statement_scope = SESSION`, `loose_campus_audit_log_reads = ON`)
 and accept the larger log.
+
+## Which files the audit log may be
+
+`SET GLOBAL campus_audit_file_path` needs `SYSTEM_VARIABLES_ADMIN` (or SUPER), not `FILE`. Up to
+plugin 1.2.3 it opened any path the server could write, appended JSON to it and, with
+`campus_audit_readable_by_all` (on in the Docker image), added read permission for every OS user.
+That turned a configuration privilege into a file-write and file-exposure primitive, for example for
+a table file such as `mysql/global_priv.MAD` in the data directory.
+
+Since 1.2.4 `LogSink::open` (`plugin/src/log_sink.cpp`) decides on the file **it has actually opened**
+(its descriptor or handle), not on the path name, so a file swapped in between a check and the open
+cannot slip through. The content of a file is never the deciding proof: anybody who can write a file
+can write `{"ts":"`.
+
+| Rule | Linux | Windows |
+|---|---|---|
+| no symbolic link | `open(..., O_NOFOLLOW)`; also on the descriptor the first bytes are read through | `CreateFile(..., FILE_FLAG_OPEN_REPARSE_POINT)`, refused if the handle is a reparse point (symbolic link, junction) |
+| FIFO or character device accepted as it is, permissions never changed | `fstat`; a FIFO is opened with `O_NONBLOCK`, so one without a reader is refused at once instead of blocking, then blocking is restored | `GetFileType`: character device or pipe |
+| a regular file's name must end in `.jsonl` (no MariaDB data, table or log file does) | yes | yes |
+| new or existing: an `O_EXCL` / `OPEN_ALWAYS` open tells them apart | yes | yes |
+| an existing regular file has exactly one link | `st_nlink` | `nNumberOfLinks` |
+| an existing regular file belongs to the server's own OS user | `st_uid == geteuid()` | **not checked** |
+| an existing regular file is empty or begins with a campus_audit record | read through a second descriptor whose device and inode must equal the written one | read through the same handle |
+| permissions are widened (`readable_by_all`) only on a file this call has just created | `fchmod` on that descriptor | no effect on Windows |
+
+A refusal comes before any write or permission change. `SET GLOBAL` fails with ER 1231, a warning
+gives the reason, and the previous log stays active; at startup the plugin does not start.
+
+Tests:
+- `plugin/tests/test_log_sink.cpp` (unit, Linux and Windows): foreign content, wrong suffix (new
+  and existing, empty), hard link under both names, symbolic link (Windows: skipped without the
+  privilege), another owner (Linux, as root), FIFO with and without a reader, no widening of
+  existing or refused files.
+- `tests/plugin/test_log_path_safety.sh` (a throw-away server container, disposable decoy files
+  only): the same attacks through `SET GLOBAL`, each decoy checked unchanged by content, mode, owner
+  and link count. It also checks that rotation (`campus_audit_reopen_now`), recovery after a write
+  failure and a server restart still work.
+- The harness (`tests/plugin/run_plugin_tests.sh`) refuses two foreign files made with `INTO OUTFILE`.
+- `scripts/mutation_check.py`: S02-S11 break these rules one at a time; the unit tests notice each.
+
+Remaining limitations:
+- A symbolic link or junction in a **directory** component of the path is followed. The directory is
+  the administrator's choice, as for the server's own log files. A complete fix would open every
+  component with `openat(..., O_NOFOLLOW | O_DIRECTORY)`.
+- The owner is not checked on Windows.
+- A `.jsonl` file of the server's own OS user, with one link, that begins with `{"ts":"` is accepted
+  even if another program wrote it. Writing such a file needs file-system access or the `FILE`
+  privilege (`INTO OUTFILE`), which already allows writing files.
+- An existing log that was created without `campus_audit_readable_by_all` is no longer made readable
+  by all when the option is switched on later. `LOAD_FILE()` then cannot import it; rotate the log
+  (`make rotate-log`), and the new file is created readable.
+- The comparison of device and inode is not exercised by a test: the race it guards against (the
+  file replaced between two `open()` calls) cannot be provoked reliably.
 
 ## Secrets in the repository
 
