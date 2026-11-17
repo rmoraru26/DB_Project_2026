@@ -12,9 +12,9 @@ read the plugin's real records next to the row history written by SQL triggers.
 | | |
 |---|---|
 | Assignment | MariaDB student database projects 2026-09, **area 11: write a server plugin** |
-| Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip). Also built and tested against **11.8.9** (audit API `0x0302`; harness 134/134, thread pool 30/30; [experiment 31](docs/experiments.md)) |
-| Plugin | `campus_audit` **1.2.0**, maturity Beta, 9 system variables, 11 status variables |
-| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions (Linux and native Windows jobs) ran green for the Phase 1 commit `5d48de0`, plugin 1.2.0 included, for its merge into `main` (`abdfa3a`) and for the baseline `19fd0a2` ([Tests](#tests)) |
+| Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip). Also built and tested against **11.8.9** (audit API `0x0302`; harness 134/134, thread pool 30/30; [experiment 31](docs/experiments.md)), repeated by the CI job `server-11-8` on every push |
+| Plugin | `campus_audit` **1.2.1**, maturity Beta, 9 system variables, 11 status variables |
+| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions runs a Linux Docker job, a MariaDB 11.8.9 job and a native Windows job on every push ([Tests](#tests) names the runs) |
 | Status | Complete: plugin, database, web application, guided tour, tests and documentation |
 
 ![The Audit Lab: the plugin's records of one INSERT, read back from the server](docs/screenshots/05-plugin-records.png)
@@ -25,7 +25,7 @@ read the plugin's real records next to the row history written by SQL triggers.
 |---|---|
 | 5 minutes | What the plugin adds to the server and why it has to be a plugin: [Why a MariaDB server plugin](#why-a-mariadb-server-plugin), [What the plugin records](#what-the-plugin-records), the screenshot above |
 | 15 minutes | Run it: [Quick start](#quick-start) (`make up`, `make demo`), then the guided tour at `/lab` ([Demonstration and Audit Lab](#demonstration-and-audit-lab)) |
-| 1 hour | Learn the plugin API: the [skeleton plugin](examples/skeleton_plugin/README.md) (about 50 lines of code), the [SQL examples](examples/README.md), [docs/plugin-api-notes.md](docs/plugin-api-notes.md) (every fact labelled by its source) and the 31 measured [experiments](docs/experiments.md) |
+| 1 hour | Learn the plugin API: the [skeleton plugin](examples/skeleton_plugin/README.md) (about 50 lines of code), the [SQL examples](examples/README.md), [docs/plugin-api-notes.md](docs/plugin-api-notes.md) (every fact labelled by its source) and the 32 measured [experiments](docs/experiments.md) |
 
 ## Contents
 
@@ -318,7 +318,7 @@ by the Docker launchers only; on a native server use `/register`.
 ```sql
 SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_AUTH_VERSION, PLUGIN_MATURITY
   FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';
--- campus_audit | ACTIVE | AUDIT | campus_audit.so | 1.2.0 | Beta
+-- campus_audit | ACTIVE | AUDIT | campus_audit.so | 1.2.1 | Beta
 SHOW GLOBAL VARIABLES LIKE 'campus_audit%';    -- 9 rows
 SHOW GLOBAL STATUS LIKE 'Campus_audit%';       -- 11 rows; Campus_audit_state = ACTIVE, events_dropped = 0
 ```
@@ -410,6 +410,14 @@ Each finding was measured on MariaDB 13.0.2; setup, expectation and observation 
   a pool of 2 and 12 connections, 360 `SET GLOBAL` statements gave 360 attributed records and no
   stray one, and 360 statements under `LOCK TABLES` were attributed to the right connection. This
   is an observation, repeated by `make test-threadpool`, not a promise of the API.
+- **A stalled log stops audited statements, and in 1.2.0 it stopped the whole server.** With
+  the log on a FIFO whose reader stopped reading, recorded `INSERT`s waited, which is inherent
+  in writing the record before the statement answers. Then a `SET GLOBAL campus_audit_*` waited
+  for the log mutex while the server held `LOCK_global_system_variables`, and new logins and
+  every global-variable access stopped as well. Since 1.2.1 update functions wait at most 2 s and
+  status functions 0.2 s, and the rest of the server keeps answering (experiment 32,
+  `make test-stalled-log`). Under 32 concurrent writers the plugin's cost stayed within the
+  run-to-run spread; the commit dominates.
 - **Two bugs only Linux could show** (found by CI, fixed in 1.1.1): a self-deadlock on
   `LOCK_global_system_variables` from a session variable access inside a `SET GLOBAL` callback,
   and `LOAD_FILE()` refusing files that are not readable by all.
@@ -424,32 +432,35 @@ Each finding was measured on MariaDB 13.0.2; setup, expectation and observation 
 ```bash
 make test               # after make up: 8 suites in the test-runner container (unit, repository,
                         #   shell, plugin end-to-end, database, web application)
-make test-integration   # host-level: demo-credential life cycle, log rotation, thread pool
+make test-integration   # host-level: demo-credential life cycle, log rotation, thread pool, stalled log
+make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...   # the plugin tests on another server version
 make test-browser       # Playwright against the running stack
 make mutation           # injects 67 bugs into the plugin code; the unit tests must notice each
 ```
 
-Results of the local verification runs of 15–17 November 2026: the Phase 1 tree (based on commit
-`19fd0a2`) and, where a row says so, the first improvement cycle after the merge into `main`. **Which
-run is which matters**, so [docs/testing.md](docs/testing.md) separates local
+Results of the local verification runs of 15–17 November 2026. Each row names the tree it ran on:
+the Phase 1 tree (based on commit `19fd0a2`), or an improvement cycle after the merge into `main`
+(cycle 1, 3 or 5; raw outputs in `docs/evidence/cycle<N>/`). **Which run is which matters**, so [docs/testing.md](docs/testing.md) separates local
 runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 [docs/evidence/phase1/](docs/evidence/phase1/README.md) holds the raw outputs.
 
 | Suite | Result | Where it ran |
 |---|---|---|
-| Plugin unit tests, 7 programs | 184 checks pass (after the removal of an unused function and its three cases) | Linux (g++ in the image build and the test runner) |
+| Plugin unit tests, 7 programs | 184 checks pass (cycle 5) | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
 | Mutation check | 67 of 67 injected bugs detected | Linux |
-| End-to-end plugin harness | 134 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol (first improvement cycle) | Linux container, MariaDB 13.0.2 |
-| | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only; first improvement cycle) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
+| End-to-end plugin harness | 134 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol (cycle 3) | Linux container, MariaDB 13.0.2 |
+| | 134 passed, 0 failed, 0 skipped; thread pool 30 passed; stalled log 17 passed (cycle 5, `make test-server-version`) | Linux container, MariaDB **11.8.9** |
+| | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only; cycle 1) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
+| Stalled log (a FIFO that stops being read) | 17 passed (cycle 5); on plugin 1.2.0 the same test gives 7 passed, 10 failed | throw-away container, MariaDB 13.0.2 |
 | Database tests (8 scripts) | all pass | Linux container; also native Windows |
 | Web application and Audit Lab | 332 passed, 1 skipped (browser module) | test-runner container, against MariaDB |
 | Demo-credential life cycle; log rotation; log import limits; thread pool | 19 / 8 / 13 / 30 checks pass | Linux host driving the running stack |
 | Browser tests; every page at three widths | 11 passed; 48 page views, 0 px overflow, 0 console errors | Playwright container |
 | Windows launcher (PowerShell 5.1) | 10 + 98 + 14 + 37 checks pass, ACL test 8 pass; `frantastic.cmd test` 8 of 8 suites | Windows 11 |
-| GitHub Actions | 3 of 3 jobs successful, twice (push and pull request), 82 of 82 steps | for the Phase 1 commit `5d48de0` (runs 44028367232 and 44028373377); also for the baseline `19fd0a2` |
+| GitHub Actions | every job successful for each commit of the improvement branch so far, latest recorded `3208c75` (run 44071525891, 3 of 3 jobs); for the Phase 1 commit `5d48de0` 3 of 3 jobs twice (runs 44028367232 and 44028373377) | GitHub-hosted runners; the 11.8.9 job is new in cycle 5 |
 
-All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the first improvement cycle after the merge: [docs/evidence/cycle1/](docs/evidence/cycle1/README.md).
+All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the improvement cycles after the merge: [cycle 1](docs/evidence/cycle1/README.md), [cycle 3](docs/evidence/cycle3/README.md), [cycle 5](docs/evidence/cycle5/README.md).
 This whole path (headers, `make -C plugin test`, the build, install, restart, `setup_database.sh`,
 `demo.sh`, the verification SQL, the harness and the web application with `python frontend/app.py`)
 was run on Ubuntu with the MariaDB 13.0.2 packages, inside a plain container without the project's
@@ -500,6 +511,10 @@ Details, including what the log *does* contain and the threat model: [docs/secur
   no automatic rotation. On Linux the log must be readable by all for `LOAD_FILE()`, so the directory protects it.
 - **One unbuffered `write()` per record, no `fsync`.** About three times the log volume of
   `server_audit` per audited `INSERT`.
+- **A stalled log stalls audited statements.** The record is written before the statement
+  answers, so a destination that hangs without failing (a hung network file system) makes every
+  recorded statement wait until it accepts data again. The rest of the server keeps answering
+  (experiment 32).
 - **Names and digests.** Filter names are limited to `A-Z a-z 0-9 _ $ -` (plus `. @` for users),
   16 entries of at most 128 characters; the digest lexer assumes an ASCII-compatible character set.
 - **Platforms.** macOS is untested, and the Linux host scripts use GNU `stat` and `mv`. The

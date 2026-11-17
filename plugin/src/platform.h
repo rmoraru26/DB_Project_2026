@@ -3,7 +3,8 @@
 // The plugin is built both as a Linux shared object (loaded by the official
 // MariaDB Docker image) and as a Windows DLL (loaded by the official MariaDB
 // Windows build).  Only the primitives the plugin really needs live here:
-// a mutex, a reader/writer lock, a wall-clock timestamp and the process id.
+// a mutex (with a bounded wait), a reader/writer lock, a wall-clock
+// timestamp and the process id.
 
 #ifndef CAMPUS_AUDIT_PLATFORM_H
 #define CAMPUS_AUDIT_PLATFORM_H
@@ -27,6 +28,7 @@ public:
     Mutex() { InitializeSRWLock(&lock_); }
     void lock() { AcquireSRWLockExclusive(&lock_); }
     void unlock() { ReleaseSRWLockExclusive(&lock_); }
+    bool try_lock() { return TryAcquireSRWLockExclusive(&lock_) != 0; }
 private:
     SRWLOCK lock_;
 #else
@@ -34,6 +36,7 @@ private:
     ~Mutex() { pthread_mutex_destroy(&lock_); }
     void lock() { pthread_mutex_lock(&lock_); }
     void unlock() { pthread_mutex_unlock(&lock_); }
+    bool try_lock() { return pthread_mutex_trylock(&lock_) == 0; }
 private:
     pthread_mutex_t lock_;
 #endif
@@ -72,6 +75,45 @@ public:
     ~LockGuard() { l_.unlock(); }
 private:
     L& l_;
+};
+
+inline void sleep_ms(unsigned ms) {
+#ifdef _WIN32
+    Sleep(ms);
+#else
+    usleep(static_cast<useconds_t>(ms) * 1000);
+#endif
+}
+
+const unsigned kWaitForever = ~0u;
+
+// Like LockGuard, but gives up after about timeout_ms; owns() says whether
+// the lock was taken.  It polls, because an SRWLOCK has no timed wait.
+// kWaitForever waits like LockGuard.
+template <typename L>
+class TimedLockGuard {
+public:
+    TimedLockGuard(L& l, unsigned timeout_ms) : l_(l), owns_(false) {
+        if (timeout_ms == kWaitForever) {
+            l_.lock();
+            owns_ = true;
+            return;
+        }
+        owns_ = l_.try_lock();
+        for (unsigned waited = 0; !owns_ && waited < timeout_ms; waited += 5) {
+            sleep_ms(5);
+            owns_ = l_.try_lock();
+        }
+    }
+    ~TimedLockGuard() {
+        if (owns_) l_.unlock();
+    }
+    bool owns() const { return owns_; }
+    TimedLockGuard(const TimedLockGuard&) = delete;
+    TimedLockGuard& operator=(const TimedLockGuard&) = delete;
+private:
+    L& l_;
+    bool owns_;
 };
 
 // Seconds and microseconds since the Unix epoch (UTC).

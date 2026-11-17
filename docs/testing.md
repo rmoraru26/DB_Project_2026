@@ -251,6 +251,19 @@ test 30/30. The full Linux suite on 13.0.2 for the same tree: 187 unit checks, 6
 integration 19, 8, 13, 30, `make test-app` 331/2. Not run: 10.11 and 11.4; native Windows for this
 tree (CI runs it on push).
 
+## Improvement cycles 4 and 5 (17 November 2026)
+
+Cycle 4 (`docs/evidence/cycle4/`): the unused `try_open_log()` removed with its three unit-test
+cases; 184 unit checks, 67 of 67 mutants. CI run 44071525891 for `3208c75`: 3 of 3 jobs successful.
+
+Cycle 5 (`docs/evidence/cycle5/`), plugin 1.2.1: guards on every function the server calls; bounded
+waits for the log under server locks (experiment 32). New `tests/plugin/test_stalled_log.sh`
+(`make test-stalled-log`, also in `make test-integration`), 17 checks. On plugin 1.2.0 it gives
+7 passed, 10 failed. New `scripts/test_server_version.sh` (`make test-server-version`), CI job
+`server-11-8`. Local results: 184 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harness
+134/0/0, thread pool 30/0 and stalled log 17/0. Not run locally: the web application, database and
+browser suites, and native Windows; CI runs them on push.
+
 ## Windows validation source ZIP
 
 From the maintainer checkout, run `python3 scripts/package_windows_source.py` to create

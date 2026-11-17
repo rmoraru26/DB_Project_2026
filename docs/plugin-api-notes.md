@@ -383,3 +383,33 @@ records `port` and `tls_version` as `null` when it is built against `0x0302`.
 [observed] Built against 11.8.9 and loaded into an 11.8.9 server, the plugin passed the whole harness
 (134 checks) and the thread-pool test (30 checks); every server behaviour listed above was the same as on
 13.0.2 (`docs/evidence/cycle3/`, experiment 31). 10.11 and 11.4 were not run.
+
+## 9. Which server locks are held while plugin code runs
+
+A plugin function can be called while the server holds one of its own locks. Anything that function
+waits for then holds that lock up as well. campus_audit has one mutex of its own (`sink_lock`, around
+the log file); this is where its functions run:
+
+| Plugin function | Server lock held | Source |
+|---|---|---|
+| event callback (`campus_audit_notify`) | none of the global locks below; the statement itself waits | [source: [sql_audit.h:176](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L176)] dispatches from the statement's own thread |
+| system-variable update function | `LOCK_global_system_variables` | [source: [sql_plugin.cc:3720-3732](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3720-L3732)], `mysql_mutex_assert_owner(&LOCK_global_system_variables)` before `plugin_var->update()` |
+| status function (`SHOW_SIMPLE_FUNC`) | `LOCK_all_status_vars` for reading | [source: [sql_show.cc:8917-8922](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L8917-L8922)] in `fill_status()`; `add_status_vars()` and `remove_status_vars()`, i.e. `INSTALL` and `UNINSTALL` of a plugin with status variables, take it for writing [source: [sql_show.cc:3676](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L3676), [3759](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L3759)]. A `SHOW STATUS LIKE` pattern is applied before a `SHOW_SIMPLE_FUNC` is called, so only matching names call it [source: [sql_show.cc:4063-4068](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L4063-L4068)]; `SHOW GLOBAL STATUS` without a pattern calls all of them |
+
+[observed] Experiment 32 made a log `write()` block without failing: the log was a FIFO whose reader
+stopped reading. Recorded statements waited for it, which the design accepts (one synchronous
+`write()` per record, the record before the statement's answer). Plugin 1.2.0 also let the blockage
+spread. `SET GLOBAL campus_audit_reopen_now = ON` waited for `sink_lock` inside its update function,
+so it held `LOCK_global_system_variables`. From then on `SELECT @@GLOBAL.max_connections`, `SET GLOBAL
+max_connections`, `SHOW GLOBAL VARIABLES` and a new connection's `SELECT 1` got no answer for 5 s either:
+logging in reads global variables. `SHOW GLOBAL STATUS LIKE 'Campus_audit%'` hung as well. Unrecorded
+work went on: an `INSERT` into an unwatched schema took 27 ms. Once the FIFO was read again, a new
+connection answered within 39 ms, and the writer's 1000 rows and 1000 records were all there.
+
+Since 1.2.1 the functions that run under a server lock wait for `sink_lock` for a bounded time only:
+update functions 2 s, status functions 0.2 s (`TimedLockGuard`, `plugin/src/platform.h`). After
+that an update function gives up with a warning. A configuration record is then dropped and counted,
+a new `file_path` is not taken, and the log is not reopened. A status function shows `BUSY` or
+`(busy)`. The event callbacks still wait as long as the write takes. `tests/plugin/test_stalled_log.sh`
+(`make test-stalled-log`, part of `make test-integration` and of the 11.8.9 CI job) repeats the
+experiment. On 1.2.0 it gives 7 passed, 10 failed; on 1.2.1, 17 of 17.

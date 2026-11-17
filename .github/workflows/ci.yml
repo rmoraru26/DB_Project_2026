@@ -160,6 +160,24 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  server-11-8:
+    name: Plugin tests on MariaDB 11.8.9 (audit API 0x0302)
+    runs-on: ubuntu-24.04
+    needs: static
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build FROM the official 11.8.9 image, run the end-to-end harness and the thread-pool test
+        run: make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 2>&1 | tee server-11.8.txt
+
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-11.8-output
+          path: server-11.8.txt
+
   windows-native:
     name: Build the DLL and load it into native Windows MariaDB 13.0.2
     runs-on: windows-2022

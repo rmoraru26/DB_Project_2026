@@ -6,7 +6,8 @@ Area 11 allows an audit plugin, an INFORMATION_SCHEMA table or an aggregate func
 system's open problem was "who changed bookings, loans and resources, and with what result", so an
 audit plugin is the natural fit.  An INFORMATION_SCHEMA plugin would need the private server headers
 (`TABLE`, `Field`) and a matching server build; the audit API is a small, stable C interface
-(`plugin_audit.h`, interface 0x0303) that works with the headers every MariaDB package installs.
+(`plugin_audit.h`: interface 0x0302 in 10.11 to 11.8, 0x0303 from 12.0; the plugin builds against
+both, experiment 31) that works with the headers every MariaDB package installs.
 
 ## 2. Event classes: TABLE + GENERAL STATUS + CONNECTION, filtered by schema
 

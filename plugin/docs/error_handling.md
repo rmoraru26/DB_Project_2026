@@ -2,7 +2,7 @@
 
 This note began as the team's design notes for the first prototype of the plugin's error handling
 (the `AuditResult` type and the first file-open check). The questions it left open were answered
-while the plugin was built; this version describes the error handling of `campus_audit` 1.2.0 as
+while the plugin was built; this version describes the error handling of `campus_audit` 1.2.1 as
 it is in the source. The earlier text is in the Git history of this file.
 
 ## The result type
@@ -22,7 +22,11 @@ server as a return value; it decides what is counted and what is reported.
 
 Anything thrown inside an event callback is caught at the callback boundary
 (`campus_audit_notify`, `plugin/src/campus_audit.cpp`) and counted as a dropped event: an exception
-that crossed the C callback boundary would terminate `mariadbd`.
+that crossed the C callback boundary would terminate `mariadbd`. The other functions the server
+calls directly are guarded the same way since 1.2.1: every system-variable check and update
+function is registered through `guarded_check<>` / `guarded_update<>`, and `init` / `deinit`
+through a wrapper. An exception there is counted in `Campus_audit_events_unexpected` and reported;
+a check function then refuses the value, and `init` reports that the plugin was not started.
 
 ## Fail-open, and how it is announced
 
@@ -64,6 +68,26 @@ the operating system's `open()`. It was removed from `plugin/audit_file_check.cp
 merge, together with its three unit-test cases; the original program is
 `plugin/exploratory/interactive_open_log.cpp`.
 
+## A log that stalls instead of failing
+
+Fail-open covers errors. A destination that stops accepting data without failing, such as a hung
+network file system or a full pipe, makes the `write()` of a record block. The statement that wrote it
+and every later recorded statement then wait: the audit API cannot hand a record over without
+waiting. Unrecorded statements are not affected.
+
+Up to 1.2.0 the blockage spread further (experiment 32). A `SET GLOBAL campus_audit_*` waited for the
+log mutex while the server held `LOCK_global_system_variables`. Logins and every `SELECT @@GLOBAL...`
+or `SET GLOBAL` then waited as well. `SHOW STATUS` of the plugin waited while holding
+`LOCK_all_status_vars` (`docs/plugin-api-notes.md`, section 9). Since 1.2.1:
+
+| Where | Waits for the log | Then |
+|---|---|---|
+| event callback | as long as the write takes | (the statement waits) |
+| system-variable update function | at most 2 s | gives up with a warning naming the busy log. A `config_change` record is dropped and counted, `campus_audit_file_path` keeps the old file, and `campus_audit_reopen_now` does not reopen |
+| status function | at most 0.2 s | `Campus_audit_state` shows `BUSY`; `_file` and `_last_error` show `(busy)` |
+
+`tests/plugin/test_stalled_log.sh` checks all of this against a FIFO whose reader stops reading.
+
 ## A side effect of the file-path check
 
 To refuse an unwritable path with the reason, the check function of `campus_audit_file_path`
@@ -82,6 +106,7 @@ worse than an empty file.
 | outage accounting (`audit_gap` counts) | `plugin/tests/test_gap_accounting.cpp` |
 | the loaded plugin: refused configuration (ER 1231 with reasons), a path the server may not write, a write failure through `/dev/full`, `DEGRADED`, recovery, the `audit_gap` record | `tests/plugin/run_plugin_tests.sh`, sections "configuration validation" and "I/O failure behaviour" |
 | a locked log file on Windows | `docs/experiments.md`, experiment 4 |
+| a log that stalls without failing (FIFO), what keeps answering | `tests/plugin/test_stalled_log.sh` (`make test-stalled-log`); experiment 32 |
 
 Run the unit tests with `make -C plugin test` (Linux) or `plugin\build_windows.ps1` (Windows), the
 harness with `make test-e2e`.
