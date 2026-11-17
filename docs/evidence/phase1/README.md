@@ -26,8 +26,9 @@ test projects without rotating a credential (`linux-rerun-2026-11-17/33-…`, `w
 
 **Who ran it.** All runs here were made locally by the AI assistant that implemented the changes,
 on the project owner's PC. None of them is a GitHub Actions run, and none was repeated by a team
-member. The only CI evidence is for the commit *before* these changes
-(`checks/github-actions-runs-for-19fd0a2.txt`).
+member. When these runs were made, the only CI evidence was for the commit *before* these changes
+(`checks/github-actions-runs-for-19fd0a2.txt`); the committed Phase 1 changes (`5d48de0`) later ran
+green in GitHub Actions (`checks/github-actions-runs-for-5d48de0.txt`).
 
 ## Environments
 

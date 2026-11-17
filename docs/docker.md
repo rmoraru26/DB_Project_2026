@@ -331,8 +331,8 @@ headers + Zig workflow.
 
 `make doctor` and `make repair-credentials` need bash and GNU make; they are not part of the
 Windows launcher. `make up` also runs `scripts/bootstrap_admin.sh` and `scripts/bootstrap_demo.sh`,
-which use GNU coreutils (`stat -c`, `mv -T`): the BSD versions on macOS do not accept those options,
-and macOS was never tested.
+which use GNU coreutils options (`stat -c`, `mv -T`). They have been run on Linux; macOS was not
+tested.
 
 On 2026-11-09, the project owner manually exercised this workflow on Windows 11 Pro build
 `26100.6899`, Windows PowerShell 5.1, Docker Desktop `4.99.0.245822` with its WSL2 backend and

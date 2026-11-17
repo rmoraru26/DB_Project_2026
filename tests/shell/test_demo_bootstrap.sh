@@ -19,8 +19,7 @@
 #
 # Runs in a temporary copy; the working tree is not touched.  Needs a
 # filesystem that enforces POSIX file modes and GNU coreutils (`stat -c`,
-# `mv -T`), i.e. Linux; macOS's BSD stat/mv are not supported and this was
-# never run there.  Under Git Bash on
+# `mv -T`); it has been run on Linux only (macOS not tested).  Under Git Bash on
 # Windows it reports SKIP, the Windows launcher has its own test
 # (tests/windows/test_demo_credentials.ps1).
 set -u

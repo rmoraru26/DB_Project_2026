@@ -14,7 +14,7 @@ read the plugin's real records next to the row history written by SQL triggers.
 | Assignment | MariaDB student database projects 2026-09, **area 11: write a server plugin** |
 | Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip) |
 | Plugin | `campus_audit` **1.2.0**, maturity Beta, 9 system variables, 11 status variables |
-| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions ran green only for the baseline commit `19fd0a2` (Linux and native Windows jobs); the Phase 1 changes, plugin 1.2.0 included, have been tested **locally only** and have not yet run in CI ([Tests](#tests)) |
+| Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows server with a Zig-built DLL; macOS **not tested**. GitHub Actions (Linux and native Windows jobs) ran green for the Phase 1 commit `5d48de0`, plugin 1.2.0 included, as it did for the baseline `19fd0a2` ([Tests](#tests)) |
 | Status | Complete: plugin, database, web application, guided tour, tests and documentation |
 
 ![The Audit Lab: the plugin's records of one INSERT, read back from the server](docs/screenshots/05-plugin-records.png)
@@ -435,7 +435,7 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Demo-credential life cycle; log rotation; log import limits; thread pool | 19 / 8 / 13 / 30 checks pass | Linux host driving the running stack |
 | Browser tests; every page at three widths | 11 passed; 48 page views, 0 px overflow, 0 console errors | Playwright container |
 | Windows launcher (PowerShell 5.1) | 10 + 98 + 14 + 37 checks pass, ACL test 8 pass; `frantastic.cmd test` 8 of 8 suites | Windows 11 |
-| GitHub Actions | 3 jobs successful, twice (push and pull request) | **for commit `19fd0a2`, before the Phase 1 changes**; the Phase 1 commit is checked by the runs on its own push |
+| GitHub Actions | 3 of 3 jobs successful, twice (push and pull request), 82 of 82 steps | for the Phase 1 commit `5d48de0` (runs 44028367232 and 44028373377); also for the baseline `19fd0a2` |
 
 All local runs of the final tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md).
 Not verified: macOS; a Linux host without Docker. On the development PC Smart App Control blocks

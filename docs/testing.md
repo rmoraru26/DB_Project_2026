@@ -7,7 +7,7 @@ run**. Results from different sources are kept apart on purpose:
 |---|---|---|
 | **P1** | Local runs of the Phase 1 verification, 15 and 16 November 2026, by the AI assistant that implemented the Phase 1 changes, on the project owner's PC. Raw outputs: `docs/evidence/phase1/` | commit `19fd0a2` **plus the uncommitted Phase 1 changes** (plugin 1.2.0) |
 | **P0** | Local runs of the baseline assessment, 13 and 14 November 2026, by an AI assistant. Raw outputs: `docs/evidence/phase0-2026-11-13/` | exactly commit `19fd0a2` (plugin 1.1.1) |
-| **CI** | GitHub Actions, workflow `.github/workflows/ci.yml` | see "GitHub Actions" below: the last runs are for `19fd0a2`, **not** for the Phase 1 changes |
+| **CI** | GitHub Actions, workflow `.github/workflows/ci.yml` | see "GitHub Actions" below: green for the Phase 1 commit `5d48de0` and for the baseline `19fd0a2` |
 | **Manual** | Runs by the project owner | as dated |
 | **History** | Earlier dated evidence, kept as recorded: `docs/evidence/*-windows.txt` (2026-10-25, plugin 1.0.0), `docs/evidence/windows-2026-11-03/` (plugin 1.1.0), `docs/evidence/linux-ci-2026-11-03/` (plugin 1.1.1, CI in the private development repository) | older versions; the counts differ because the suites have grown |
 
@@ -22,7 +22,18 @@ Chromium in the Playwright container.
 
 ## GitHub Actions
 
-Verified through the GitHub API on 16 November 2026
+**Phase 1 commit `5d48de0`** (pushed to PR #5 on 17 November 2026), verified through the GitHub
+API (`docs/evidence/phase1/checks/github-actions-runs-for-5d48de0.txt`): run
+[44028367232](https://github.com/rmoraru26/DB_Project_2026/actions/runs/44028367232) (push) and run
+[44028373377](https://github.com/rmoraru26/DB_Project_2026/actions/runs/44028373377) (pull request),
+both completed, success; 3 of 3 jobs each (`ubuntu-24.04`, `ubuntu-24.04`, `windows-2022`), 82 of
+82 steps successful, among them the new Phase 1 steps: the shell and demo-bootstrap tests, the
+fresh-install check, `make test-integration`, the four PowerShell suites, and
+`pluginuild_windows.ps1` with all seven unit-test programs on the hosted Windows runner (the
+script stops with an error if any of them fails or cannot run). The job logs themselves were not
+downloaded (they need an authenticated request); this record rests on the job and step results.
+
+The baseline `19fd0a2`, verified through the GitHub API on 16 November 2026
 (`docs/evidence/phase1/checks/github-actions-runs-for-19fd0a2.txt`):
 
 | Run | Event | Commit | Result | Jobs |
@@ -30,13 +41,9 @@ Verified through the GitHub API on 16 November 2026
 | [43534005238](https://github.com/rmoraru26/DB_Project_2026/actions/runs/43534005238) | push to `submission/frantastic-final-review-isolated` | `19fd0a219930dd986eab5f9d53c1fe18c6ecd698` | completed, success (2026-11-14) | 3 of 3 successful |
 | [43534008497](https://github.com/rmoraru26/DB_Project_2026/actions/runs/43534008497) | pull request | the same commit | completed, success (2026-11-14) | 3 of 3 successful: "Unit tests and static checks (no server)" (`ubuntu-24.04`), "make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)" (`ubuntu-24.04`), "Build the DLL and load it into native Windows MariaDB 13.0.2" (`windows-2022`) |
 
-What these runs do **not** show:
+What the baseline runs do **not** show:
 
-- anything about the Phase 1 changes. They have not been pushed, so no workflow has run for them.
-  The workflow file itself was extended in Phase 1 (shell tests in the static job, a fresh-install
-  check, `make test-integration`, four PowerShell suites in the Windows job); those steps have
-  **never run in GitHub Actions**. All four were run locally (P1), the PowerShell suites in a
-  non-elevated session, which a hosted runner is not;
+- anything about the Phase 1 changes (see the runs for `5d48de0` above);
 - the two administrator tests. Until Phase 1 the `make test` and `make test-app` recipes read the
   administrator credential from standard input instead of from `.admin-credentials`. In CI standard
   input is empty, so `test_generated_local_administrator_can_authenticate` and
@@ -123,8 +130,8 @@ requirement. See the [dated evidence summary](evidence/windows-docker-desktop-20
 
 ## Not run, skipped or not verified
 
-1. **GitHub Actions for the Phase 1 changes.** Nothing has been pushed. The new workflow steps
-   are untested in CI; the PowerShell step in particular has only run in a non-elevated session.
+1. **GitHub Actions job logs.** The Phase 1 commit `5d48de0` ran green in CI (above); its job logs
+   were not downloaded, so test counts inside the CI jobs are not recorded here.
 2. **macOS**, in any form. The Linux host scripts use GNU `stat -c` and `mv -T`.
 3. **A Linux machine without Docker** (building against distribution headers and installing by hand).
 4. **`make` on a real Linux installation.** The P1 "Linux host" is a Linux container with GNU make
