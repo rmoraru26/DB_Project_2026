@@ -1,0 +1,16 @@
+# 2026-11-17T07:08:46Z powershell.exe -NoProfile -ExecutionPolicy Bypass -File plugin/build_windows.ps1 -MariaDBDir <scratch-root>\cycle1\native-work\mariadb-13.0.2-winx64 -Zig <scratch-p1>\win-native\zig\zig-x86_64-windows-0.16.0\zig.exe -OutDir <scratch-root>\cycle1\native-work\build
+Building campus_audit.dll against <scratch-root>\cycle1\native-work\mariadb-13.0.2-winx64\include\mysql\server
+Built <scratch-root>\cycle1\native-work\build\campus_audit.dll
+Program 'test_automatic_errors.exe' failed to run: An Application Control policy has blocked this fileAt C:\Users\USER\
+AppData\Local\Temp\claude\0e737d203691d5d5\5bbd884c-6c21-4741-aef0-72d78966ccf1\scratchpad\cycle1\win-src\plugin\build_
+windows.ps1:72 char:9
++         & $exe
++         ~~~~~~.
+At <scratch-root>\cycle1\win-
+src\plugin\build_windows.ps1:72 char:9
++         & $exe
++         ~~~~~~
+    + CategoryInfo          : ResourceUnavailable: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : NativeCommandFailed
+ 
+# exit status: 1

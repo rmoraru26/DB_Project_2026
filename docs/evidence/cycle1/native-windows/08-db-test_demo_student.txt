@@ -1,0 +1,39 @@
+# 2026-11-17T07:13:36Z bash tests/database/test_demo_student.sh
+PASS: scratch copy of the users table created
+PASS: before the migration the scratch table has no demo constraint
+PASS: a conflicting non-student row stops the migration with a clear message (SQLSTATE 45000)
+PASS: the conflicting row was not demoted or removed by the migration
+PASS: and no constraint was added in that case
+PASS: migration 007 applies
+PASS: the migration adds chk_users_demo_is_student
+PASS: migration 007 re-runs without error
+PASS: re-running does not duplicate the constraint
+PASS: the migration itself creates no account
+PASS: bootstrap on an empty table reports CREATED
+PASS: the created row is an active student named Demo Student
+PASS: a second bootstrap reports EXISTS
+PASS: and leaves the stored hash unchanged (a restart cannot rotate the password)
+PASS: rotate reports ROTATED
+PASS: and replaces only the hash; the row is still the one student
+PASS: bootstrap refuses a value that is not a Werkzeug hash
+PASS: rotate refuses a value that is not a Werkzeug hash
+PASS: rotate refuses NULL
+PASS: a refused call changed nothing
+PASS: bootstrap_local_demo_student refuses inside an open transaction; the caller's transaction is still open with its uncommitted row
+PASS: after the caller's ROLLBACK its row is gone (it was not committed by bootstrap_local_demo_student)
+PASS: rotate_local_demo_student refuses inside an open transaction; the caller's transaction is still open with its uncommitted row
+PASS: after the caller's ROLLBACK its row is gone (it was not committed by rotate_local_demo_student)
+PASS: the refusals inside a transaction changed nothing
+PASS: UPDATE to the administrator role is refused by the CHECK constraint
+PASS: the constraint also covers a differently cased address (the collation is case-insensitive)
+PASS: documented limit: with check_constraint_checks = 0 a session can bypass the constraint (defence in depth, not a barrier against root)
+PASS: other accounts may still be administrators
+PASS: rotate without the demo row: MISSING, no row created, other rows kept
+PASS: installed database: chk_users_demo_is_student exists
+PASS: installed database: both procedures exist (SQL SECURITY DEFINER)
+PASS: installed database: no account was granted EXECUTE on the credential procedures
+NOTE: the installed database has no demo account yet (make up creates it); testing the constraint with an INSERT
+PASS: installed database: the administrator connection cannot give the demo identity the admin role (ER 4025)
+PASS: installed database: the demo account row is exactly as before this test
+== 35 passed, 0 failed
+# exit status: 0

@@ -1,0 +1,27 @@
+# 2026-11-17T07:13:23Z bash tests/database/test_app_account_grants.sh
+PASS: account SQL applies to a fresh account
+PASS: fresh account: exactly the least-privilege grants
+PASS: account SQL applies to an account with old table-wide users grants
+PASS: upgraded account: table-wide users INSERT/UPDATE revoked, column grants kept
+PASS: account SQL re-runs without error
+PASS: re-run: grants unchanged (column grants are not revoked by the refresh)
+PASS: registration: INSERT (full_name, email, password_hash) into users (rolled back)
+PASS: account settings: UPDATE users.full_name
+PASS: account settings: UPDATE users.password_hash
+PASS: UPDATE users.role is refused
+PASS: UPDATE users.is_active is refused
+PASS: UPDATE users.email is refused
+PASS: INSERT users with a role is refused
+PASS: DELETE FROM users is refused
+PASS: INSERT INTO audit_events is refused
+PASS: UPDATE audit_events is refused
+PASS: DELETE FROM audit_events is refused
+PASS: INSERT INTO campus_audit.plugin_events is refused
+PASS: DELETE FROM loans is refused
+PASS: UPDATE loans SET status = 'cancelled' is allowed
+PASS: DELETE FROM audit_lab_notes is allowed
+PASS: CALL import_plugin_log() (needs FILE) is refused
+PASS: CALL import_current_log() is permitted (result: imported)
+PASS: installed campus_app@%: exactly the least-privilege grants
+== 24 passed, 0 failed, 0 skipped
+# exit status: 0

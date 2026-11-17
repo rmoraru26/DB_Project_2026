@@ -21,11 +21,16 @@
 # Every check compares line counts of the files with rows in plugin_events
 # and SHA-256 of the archive.  The passwords exist only in this container.
 set -u
+# Random throw-away passwords, never printed; they exist only in the container
+# this script starts and removes.  (Literal throw-away values were used when the
+# recorded runs were made; replaced afterwards, behaviour unchanged.)
+rand_pw() { printf '%s%s' "$1" "$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"; }
+ROOT_PW=$(rand_pw r); APP_PW=$(rand_pw a)
 IMAGE=$1; OLD=$2; N=frt-closeout-p11-$$
 trap 'docker rm -f -v $N >/dev/null 2>&1' EXIT
-MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD=closeRootPw123 -e CAMPUS_APP_PASSWORD=closeAppPw1234 "$IMAGE" >/dev/null
+MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD="$ROOT_PW" -e CAMPUS_APP_PASSWORD="$APP_PW" "$IMAGE" >/dev/null
 for i in $(seq 1 90); do
-    r=$(docker exec -e MYSQL_PWD=closeRootPw123 $N mariadb -uroot -N -e "SELECT COUNT(*) FROM mysql.user WHERE user='campus_app'" 2>/dev/null | tr -d '\r')
+    r=$(docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -N -e "SELECT COUNT(*) FROM mysql.user WHERE user='campus_app'" 2>/dev/null | tr -d '\r')
     [ "$r" = 1 ] && break; sleep 2
 done
 sleep 8
@@ -36,7 +41,7 @@ put "$OLD" /opt/old/rotate_log.sh
 put scripts/mariadb_admin_auth.sh /opt/old/mariadb_admin_auth.sh
 put database/migrations/008_import_plugin_log_errors.sql /opt/new/008.sql
 
-MSYS_NO_PATHCONV=1 docker exec -i -e MYSQL_PWD=closeRootPw123 $N bash -s 2>&1 <<'EOF'
+MSYS_NO_PATHCONV=1 docker exec -i -e MYSQL_PWD="$ROOT_PW" $N bash -s 2>&1 <<'EOF'
 set -u
 PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "PASS: $1"; }

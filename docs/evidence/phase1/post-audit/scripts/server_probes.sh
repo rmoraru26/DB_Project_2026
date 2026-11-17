@@ -6,16 +6,21 @@
 #      table-less statement?  Probe: after each sequence `SET @<probe>=1` must
 #      be recorded (default schema watched, scope SESSION).
 set -u
+# Random throw-away passwords, never printed; they exist only in the container
+# this script starts and removes.  (Literal throw-away values were used when the
+# recorded runs were made; replaced afterwards, behaviour unchanged.)
+rand_pw() { printf '%s%s' "$1" "$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"; }
+ROOT_PW=$(rand_pw r); APP_PW=$(rand_pw a); USER_PW=$(rand_pw u)
 IMAGE=$1; SO=$2; N=frt-postaudit-probes-$$
 trap 'docker rm -f -v $N >/dev/null 2>&1' EXIT
-MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD=expRootPw12345 -e CAMPUS_APP_PASSWORD=expAppPw123456 "$IMAGE" >/dev/null
+MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD="$ROOT_PW" -e CAMPUS_APP_PASSWORD="$APP_PW" "$IMAGE" >/dev/null
 for i in $(seq 1 90); do
-    r=$(docker exec -e MYSQL_PWD=expRootPw12345 $N mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users WHERE email='alice.student@example.edu'" 2>/dev/null | tr -d '\r')
+    r=$(docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users WHERE email='alice.student@example.edu'" 2>/dev/null | tr -d '\r')
     [ "$r" = 1 ] && break; sleep 2
 done
 sleep 8
 docker cp "$SO" $N:/usr/lib/mysql/plugin/campus_audit.so >/dev/null
-docker exec -i -e MYSQL_PWD=expRootPw12345 $N bash -s 2>&1 <<'EOF'
+docker exec -i -e MYSQL_PWD="$ROOT_PW" -e EXP_USER_PW="$USER_PW" $N bash -s 2>&1 <<'EOF'
 q(){ printf '%s\n' "$1" | mariadb -uroot --batch --skip-column-names --force 2>&1; }
 L=/var/log/campus_audit/campus_audit.jsonl; D=/var/log/campus_audit
 q "INSTALL SONAME 'campus_audit';"
@@ -38,13 +43,13 @@ q "SET GLOBAL max_allowed_packet = 16777216;" >/dev/null
 rm -f $D/a*.txt
 
 echo; echo "== B. check_constraint_checks"
-q "CREATE USER exp_u@'%' IDENTIFIED BY 'expUserPw1234'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, LOCK TABLES, EXECUTE, CREATE ROUTINE, ALTER ROUTINE ON university_resources.* TO exp_u@'%'; GRANT FILE ON *.* TO exp_u@'%';"
+q "CREATE USER exp_u@'%' IDENTIFIED BY '$EXP_USER_PW'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, LOCK TABLES, EXECUTE, CREATE ROUTINE, ALTER ROUTINE ON university_resources.* TO exp_u@'%'; GRANT FILE ON *.* TO exp_u@'%';"
 q "INSERT INTO university_resources.users (full_name, email, password_hash, role) VALUES ('Demo Student', 'demo.student@frantastic.local', 'scrypt:x', 'student');"
 echo "-- root, ordinary UPDATE to admin:"; q "UPDATE university_resources.users SET role = 'admin' WHERE email = 'demo.student@frantastic.local';"
 echo "-- root, with check_constraint_checks = 0 (resulting role):"
 q "SET SESSION check_constraint_checks = 0; UPDATE university_resources.users SET role = 'admin' WHERE email = 'demo.student@frantastic.local'; SELECT role FROM university_resources.users WHERE email = 'demo.student@frantastic.local';"
 echo "-- a non-SUPER account sets it for its session (value read back):"
-printf 'SET SESSION check_constraint_checks = 0; SELECT @@SESSION.check_constraint_checks;\n' | MYSQL_PWD=expUserPw1234 mariadb -uexp_u -N 2>&1
+printf 'SET SESSION check_constraint_checks = 0; SELECT @@SESSION.check_constraint_checks;\n' | MYSQL_PWD="$EXP_USER_PW" mariadb -uexp_u -N 2>&1
 q "DELETE FROM university_resources.users WHERE email = 'demo.student@frantastic.local';" >/dev/null
 
 echo; echo "== C. P2-1 probes (scope SESSION, default schema watched)"
@@ -77,7 +82,7 @@ run p13 "UPDATE exp_t SET v = v + 1 WHERE id = 1; KILL QUERY CONNECTION_ID();" "
 run p14 "START TRANSACTION; INSERT INTO exp_t VALUES (15,15); ROLLBACK;" "rolled-back transaction"
 run p15 "LOCK TABLES exp_t WRITE; INSERT INTO exp_t VALUES (16,16); UNLOCK TABLES;" "LOCK TABLES section"
 q "SET GLOBAL init_connect = 'INSERT INTO university_resources.exp_t VALUES (2,2) ON DUPLICATE KEY UPDATE v=v+1';"
-printf 'USE university_resources;\nSET @p16=1;\n' | MYSQL_PWD=expUserPw1234 mariadb -uexp_u -N >/dev/null 2>&1
+printf 'USE university_resources;\nSET @p16=1;\n' | MYSQL_PWD="$EXP_USER_PW" mariadb -uexp_u -N >/dev/null 2>&1
 q "SET GLOBAL init_connect = '';"
 echo "$(probe p16)  p16: init_connect writing a watched table (non-SUPER account)"
 echo "Not covered: binary-protocol COM_STMT_PREPARE/EXECUTE from a client library (no such client in the image)."

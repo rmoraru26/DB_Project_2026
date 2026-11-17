@@ -158,8 +158,9 @@ requirement. See the [dated evidence summary](evidence/windows-docker-desktop-20
    tests; the demo-credential life cycle and thread-pool tests. None of their code changed except
    comments, the plugin source and the SQL files covered above.
 14. **Post-audit P2-1** (a "pending statement" left set without a STATUS event): 16 event
-   sequences were tried, none left it set (`post-audit/06-…`); binary-protocol
-   `COM_STMT_PREPARE`/`COM_STMT_EXECUTE` from a client library was not tried.
+   sequences were tried, none left it set (`post-audit/06-…`). Prepared statements over the binary
+   protocol (`COM_STMT_PREPARE`/`COM_STMT_EXECUTE` through the C API) were added to the harness
+   after the first merge (6 checks, `docs/evidence/cycle1/`): nothing is left pending there either.
 
 ## Post-audit remediation (17 November 2026)
 
@@ -215,6 +216,21 @@ Two defects were found and fixed during this pass, and the affected tests re-run
 after a failed reopen (above), and `tests/integration/test_log_rotation.sh`, which failed when the
 same plugin instance had been rotated before (it compared all rows of the instance with only the
 two newest files; all records were in fact imported exactly once). The failing runs are kept.
+
+## Improvement cycle 1 after the merge (17 November 2026)
+
+Raw outputs in `docs/evidence/cycle1/`. New: prepared statements over the binary protocol
+(`COM_STMT_PREPARE`/`COM_STMT_EXECUTE` through the C API, 6 harness checks); random passwords in the
+evidence driver scripts (three of them re-run with the same results); the exploratory programs
+moved out of the test tree.
+
+| Suite | Result |
+|---|---|
+| Linux: unit, shell, repository checks, mutation | 187; 31, 35, 21; pass; 67 of 67 |
+| Linux: `make test` | 8 of 8 suites; harness 134/0/0; database 18, 22, 24, 36, 24, 16, 3, 10; application 332 passed, 1 skipped |
+| Linux: `make examples`, `make test-integration`, `make test-app` | pass; 19, 8, 13, 30; 331 passed, 2 skipped |
+| Native Windows: DLL, harness, database scripts | `ACTIVE 1.2.0`; 125/0/1 (`/dev/full` only); all nine pass |
+| Native Windows: `build_windows.ps1` unit programs | Smart App Control **blocked** `test_automatic_errors.exe` (not counted; CI runs all seven) |
 
 ## Windows validation source ZIP
 

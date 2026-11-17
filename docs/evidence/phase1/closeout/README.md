@@ -25,5 +25,7 @@ was recovered (files 06a and 06):
 bash docs/evidence/phase1/closeout/scripts/p1_1_recovery.sh frt-p1-79c0601b-mariadb:13.0.2 <backup>/scripts/rotate_log.sh
 ```
 
-Its passwords exist only inside the throw-away container it creates and removes. The final full
+It generates random passwords for the throw-away container it creates and removes (literal
+throw-away values when files 06a and 06 were recorded; replaced afterwards and re-run with the same
+result, `docs/evidence/cycle1/02-…`). The final full
 verification is in `../final-verification/`.

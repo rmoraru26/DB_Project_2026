@@ -171,6 +171,15 @@ measured on every run by `tests/plugin/test_thread_pool.sh` (`make test-threadpo
 `thread_handling=pool-of-threads`, a pool of 2 threads, 12 connections, 360 rounds in each of two
 phases, every count exact. That is an observation for 13.0.2, not an API guarantee.
 
+**Prepared statements over the binary protocol** (what a driver sends; measured with the C API by
+the harness, `tests/plugin/change_user.c --prepared`). `COM_STMT_PREPARE` leaves no record (there is no
+`statement` record with the command `Prepare`), in either scope. Every `COM_STMT_EXECUTE` is its own statement: its TABLE events and its STATUS event
+(command `Execute`) share one query id, different for each execution, so each execution gets its
+own `statement` record with its own error code (a duplicate key: 1062). The query text the server
+passes for an execution goes through the same digest as any other, and no bound value reaches the
+log. After the executions nothing is left pending: in scope `SESSION` the next table-less
+statement of the connection is recorded.
+
 ## 3. Callback contract
 
 - `event_notify(MYSQL_THD, unsigned int event_class, const void *event)` returns **void** [header]:

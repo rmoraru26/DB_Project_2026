@@ -23,7 +23,7 @@
 #   CONCURRENT_CLIENTS / CONCURRENT_STATEMENTS  (default 8 / 50)
 #   CHANGE_USER_CLIENT  command that runs the campus_change_user helper
 #                    (tests/plugin/change_user.c); without it the CHANGE_USER
-#                    checks are skipped.  Docker: built into the server image.
+#                    and binary-protocol (--prepared) checks are skipped.  Docker: built into the server image.
 #                    Native: compile it, set CU_HOST/CU_PORT for TCP.
 #
 # Exit status: 0 if every executed check passed.  Skipped checks are listed.
@@ -600,6 +600,55 @@ check "scope SESSION: an excluded user's table-less statements are not recorded,
 sql "SET GLOBAL campus_audit_statement_scope = 'TABLES';"
 LE=$(sql "USE audit_test_watched; SET @frt_scope_off = 1; CREATE VIEW lock_v2 AS SELECT id FROM lock_t; DROP VIEW lock_v2; SELECT CONNECTION_ID();" | tail -1)
 check "back to scope TABLES: table-less statements are no longer recorded" "SELECT $(count_where "$(ev conn)=${LE:-0}") = 0;"
+
+# Prepared statements over the binary protocol (COM_STMT_PREPARE /
+# COM_STMT_EXECUTE).  The mariadb client sends PREPARE/EXECUTE as SQL text
+# (COM_QUERY, tested above); a real driver uses the binary protocol, which
+# only the C API can send.  The helper prepares an INSERT, executes it twice,
+# once more with a duplicate key, and then sends one table-less COM_QUERY.
+echo "-- prepared statements over the binary protocol (C API)"
+run_prepared() {   # run_prepared -> helper output; the password travels in the environment
+    if command -v timeout >/dev/null 2>&1; then
+        CU_PW1="$TEST_PW" CU_PW2="" timeout 60 $CHANGE_USER_CLIENT --prepared ca_test_user audit_test_watched lock_t 2>&1
+    else
+        CU_PW1="$TEST_PW" CU_PW2="" $CHANGE_USER_CLIENT --prepared ca_test_user audit_test_watched lock_t 2>&1
+    fi
+}
+if [ -n "${CHANGE_USER_CLIENT:-}" ]; then
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002);"
+    out=$(run_prepared)
+    PS_CONN=$(printf '%s\n' "$out" | awk '$1 == "CONN" {print $2}' | tr -d '\r'); PS_CONN=${PS_CONN:-0}
+    if printf '%s' "$out" | grep -q '^EXEC_OK 9002' && printf '%s' "$out" | grep -q '^EXEC_FAILED 1062' && printf '%s' "$out" | grep -q '^QUERY_OK'; then
+        pass "binary protocol: two executions succeed, the duplicate fails with 1062"
+    else fail "binary protocol: helper run" "got: $out"; fi
+    check "binary protocol: one statement record per execution, command Execute, the duplicate with error_code 1062" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev event)='statement' AND $(ev command)='Execute' AND $(ev status)='ok'") = 2
+            AND $(count_where "$(ev conn)=$PS_CONN AND $(ev event)='statement' AND $(ev command)='Execute' AND $(ev error_code)='1062'") = 1;"
+    check "binary protocol: each execution's statement record shares its query_id with a table_write of lock_t" \
+        "SELECT COUNT(DISTINCT JSON_VALUE(s.line,'\$.query_id')) = 3 FROM campus_audit_test.log_lines s JOIN campus_audit_test.log_lines t
+           ON JSON_VALUE(t.line,'\$.query_id') = JSON_VALUE(s.line,'\$.query_id') AND JSON_VALUE(t.line,'\$.conn') = JSON_VALUE(s.line,'\$.conn')
+              AND JSON_VALUE(t.line,'\$.event') = 'table_write' AND JSON_VALUE(t.line,'\$.table') = 'lock_t'
+         WHERE JSON_VALUE(s.line,'\$.conn') = '$PS_CONN' AND JSON_VALUE(s.line,'\$.command') = 'Execute';"
+    check "binary protocol: the digest of an execution has no bound value (9001, 9002 never appear in this connection's records)" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev command)='Execute' AND $(ev sql_digest) LIKE 'INSERT INTO lock_t VALUES (?, ?)%'") = 3
+            AND $(count_where "$(ev conn)=$PS_CONN AND (line LIKE '%9001%' OR line LIKE '%9002%')") = 0;"
+    check "binary protocol: COM_STMT_PREPARE itself leaves no statement record; scope TABLES leaves the table-less SET unrecorded" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev command)='Prepare'") = 0
+            AND $(count_where "$(ev conn)=$PS_CONN AND $(ev sql_digest) LIKE 'SET @campus_after_prepared%'") = 0;"
+    # Scope SESSION: after the executions no "pending statement" is left over,
+    # so the table-less COM_QUERY that follows is recorded.
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002); SET GLOBAL campus_audit_statement_scope = 'SESSION';"
+    out=$(run_prepared)
+    sql "SET GLOBAL campus_audit_statement_scope = 'TABLES';"
+    PS_CONN2=$(printf '%s\n' "$out" | awk '$1 == "CONN" {print $2}' | tr -d '\r'); PS_CONN2=${PS_CONN2:-0}
+    check "binary protocol, scope SESSION: the executions keep their ordinary records and the following table-less SET is recorded (nothing left pending)" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN2 AND $(ev command)='Execute' AND $(ev scope) IS NULL") = 3
+            AND $(count_where "$(ev conn)=$PS_CONN2 AND $(ev scope)='session' AND $(ev sql_digest) LIKE 'SET @campus_after_prepared%'") = 1
+            AND $(count_where "$(ev conn)=$PS_CONN2 AND $(ev command)='Prepare'") = 0;"
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002);"
+else
+    skip "prepared statements over the binary protocol (set CHANGE_USER_CLIENT to the campus_change_user helper; make test-e2e does)"
+fi
 
 # ---------------------------------------------------------------- concurrency
 

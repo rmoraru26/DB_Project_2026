@@ -428,8 +428,8 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Plugin unit tests, 7 programs | 187 checks pass | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
 | Mutation check | 67 of 67 injected bugs detected | Linux |
-| End-to-end plugin harness | 128 passed, 0 failed, 0 skipped | Linux container, MariaDB 13.0.2 |
-| | 119 passed, 0 failed, 1 skipped (`/dev/full`, Linux only) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
+| End-to-end plugin harness | 134 passed, 0 failed, 0 skipped (incl. prepared statements over the binary protocol) | Linux container, MariaDB 13.0.2 |
+| | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
 | Database tests (8 scripts) | all pass | Linux container; also native Windows |
 | Web application and Audit Lab | 332 passed, 1 skipped (browser module) | test-runner container, against MariaDB |
 | Demo-credential life cycle; log rotation; log import limits; thread pool | 19 / 8 / 13 / 30 checks pass | Linux host driving the running stack |
@@ -437,7 +437,7 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Windows launcher (PowerShell 5.1) | 10 + 98 + 14 + 37 checks pass, ACL test 8 pass; `frantastic.cmd test` 8 of 8 suites | Windows 11 |
 | GitHub Actions | 3 of 3 jobs successful, twice (push and pull request), 82 of 82 steps | for the Phase 1 commit `5d48de0` (runs 44028367232 and 44028373377); also for the baseline `19fd0a2` |
 
-All local runs of the final tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md).
+All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the first improvement cycle after the merge: [docs/evidence/cycle1/](docs/evidence/cycle1/README.md).
 Not verified: macOS; a Linux host without Docker. On the development PC Smart App Control blocks
 some freshly built test executables; the Zig builds of all seven run in the `windows-native` CI job.
 

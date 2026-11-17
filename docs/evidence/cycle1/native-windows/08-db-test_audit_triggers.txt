@@ -1,0 +1,25 @@
+# 2026-11-17T07:13:10Z bash tests/database/test_audit_triggers.sh
+PASS: legacy triggers trg_{bookings,loans}_a{i,u,d}_audit are absent
+PASS: users INSERT: exactly one trigger, trg_users_audit_insert (AFTER)
+PASS: users UPDATE: exactly one trigger, trg_users_audit_update (AFTER)
+PASS: users DELETE: exactly one trigger, trg_users_audit_delete (AFTER)
+PASS: rooms INSERT: exactly one trigger, trg_rooms_audit_insert (AFTER)
+PASS: rooms UPDATE: exactly one trigger, trg_rooms_audit_update (AFTER)
+PASS: rooms DELETE: exactly one trigger, trg_rooms_audit_delete (AFTER)
+PASS: items INSERT: exactly one trigger, trg_items_audit_insert (AFTER)
+PASS: items UPDATE: exactly one trigger, trg_items_audit_update (AFTER)
+PASS: items DELETE: exactly one trigger, trg_items_audit_delete (AFTER)
+PASS: bookings INSERT: exactly one trigger, trg_bookings_audit_insert (AFTER)
+PASS: bookings UPDATE: exactly one trigger, trg_bookings_audit_update (AFTER)
+PASS: bookings DELETE: exactly one trigger, trg_bookings_audit_delete (AFTER)
+PASS: loans INSERT: exactly one trigger, trg_loans_audit_insert (AFTER)
+PASS: loans UPDATE: exactly one trigger, trg_loans_audit_update (AFTER)
+PASS: loans DELETE: exactly one trigger, trg_loans_audit_delete (AFTER)
+PASS: audit_lab_notes INSERT: exactly one trigger, trg_audit_lab_notes_audit_insert (AFTER)
+PASS: audit_lab_notes UPDATE: exactly one trigger, trg_audit_lab_notes_audit_update (AFTER)
+PASS: audit_lab_notes DELETE: exactly one trigger, trg_audit_lab_notes_audit_delete (AFTER)
+PASS: test_audit_triggers.sql: one history row per booking/loan INSERT, UPDATE, DELETE (no duplicates)
+PASS: test_audit_triggers.sql: rows carry database_user, connection_id and event_source=direct_sql
+PASS: application attribution and a loan cancellation, one history row each
+== 22 passed, 0 failed
+# exit status: 0

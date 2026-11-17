@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # Post-audit experiment: case of system schema names (13.0.2, lower_case_table_names=0).
 set -u
+# Random throw-away passwords, never printed; they exist only in the container
+# this script starts and removes.  (Literal throw-away values were used when the
+# recorded runs were made; replaced afterwards, behaviour unchanged.)
+rand_pw() { printf '%s%s' "$1" "$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"; }
+ROOT_PW=$(rand_pw r); APP_PW=$(rand_pw a)
 SO=$1; IMAGE=$2; N=frt-postaudit-schema-$$
 trap 'docker rm -f -v $N >/dev/null 2>&1' EXIT
-MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD=expRootPw12345 -e CAMPUS_APP_PASSWORD=expAppPw123456 "$IMAGE" >/dev/null
-for i in $(seq 1 90); do r=$(docker exec -e MYSQL_PWD=expRootPw12345 $N mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users WHERE email='alice.student@example.edu'" 2>/dev/null | tr -d '\r'); [ "$r" = 1 ] && break; sleep 2; done; sleep 8
+MSYS_NO_PATHCONV=1 docker run -d --name $N -e MARIADB_ROOT_PASSWORD="$ROOT_PW" -e CAMPUS_APP_PASSWORD="$APP_PW" "$IMAGE" >/dev/null
+for i in $(seq 1 90); do r=$(docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users WHERE email='alice.student@example.edu'" 2>/dev/null | tr -d '\r'); [ "$r" = 1 ] && break; sleep 2; done; sleep 8
 run() {
-docker exec -i -e MYSQL_PWD=expRootPw12345 $N bash -s <<'EOF' 2>&1
+docker exec -i -e MYSQL_PWD="$ROOT_PW" $N bash -s <<'EOF' 2>&1
 L=/var/log/campus_audit/campus_audit.jsonl
 q(){ printf '%s\n' "$1" | mariadb -uroot --batch --skip-column-names --force 2>&1; }
 q "SELECT CONCAT('plugin ', PLUGIN_AUTH_VERSION, ', lower_case_table_names=', @@lower_case_table_names, ', ', @@version) FROM information_schema.PLUGINS WHERE PLUGIN_NAME='campus_audit';"
@@ -22,9 +27,9 @@ for db in MySQL Sys university_resources mysql sys performance_schema PERFORMANC
 done
 EOF
 }
-docker exec -e MYSQL_PWD=expRootPw12345 $N mariadb -uroot -e "INSTALL SONAME 'campus_audit';"
+docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -e "INSTALL SONAME 'campus_audit';"
 echo "== 1. plugin from the image (Phase 1 tree before this fix)"; run
-docker exec -e MYSQL_PWD=expRootPw12345 $N mariadb -uroot -e "UNINSTALL SONAME 'campus_audit';"
+docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -e "UNINSTALL SONAME 'campus_audit';"
 docker cp "$SO" $N:/usr/lib/mysql/plugin/campus_audit.so >/dev/null
-docker exec -e MYSQL_PWD=expRootPw12345 $N mariadb -uroot -e "INSTALL SONAME 'campus_audit';"
+docker exec -e MYSQL_PWD="$ROOT_PW" $N mariadb -uroot -e "INSTALL SONAME 'campus_audit';"
 echo; echo "== 2. plugin built from the post-audit working tree"; run
