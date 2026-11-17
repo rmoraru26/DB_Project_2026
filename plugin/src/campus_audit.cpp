@@ -67,7 +67,7 @@ using campus_audit::RwLock;
 
 namespace {
 
-const char kPluginVersion[] = "1.2.1";
+const char kPluginVersion[] = "1.2.2";
 const unsigned int kErUnknownError = 1105;      // ER_UNKNOWN_ERROR (mysqld_error.h)
 const size_t kMaxPathLength = 512;
 const long long kReopenIntervalSeconds = 5;
@@ -87,6 +87,11 @@ const size_t kListBufferSize = NameList::kMaxNames * (NameList::kMaxNameLength +
 // one OS thread up to its STATUS event, also with the thread pool, so a
 // thread-local flag reaches the right event.
 thread_local bool log_this_statement = false;
+
+// Configuration records of the current statement (log_config_change),
+// written by the same thread's next STATUS event; malloc'd, whole lines.
+thread_local char* pending_config = nullptr;
+thread_local size_t pending_config_length = 0;
 
 // ------------------------------------------------------------ system variables
 
@@ -121,6 +126,10 @@ bool degraded = false;
 bool degradation_reported = false;
 long long next_reopen_at = 0;
 campus_audit::GapAccounting gap_dropped;
+// Records lost without an I/O error (a record that did not fit, a failed
+// allocation, an exception).  Counted without sink_lock; write_record_locked()
+// adds them to gap_dropped, so the next audit_gap record announces them.
+std::atomic<unsigned long long> unannounced_drops(0);
 char last_error[256] = "";
 
 RwLock filter_lock;                 // guards the two lists below
@@ -223,6 +232,7 @@ bool write_gap_marker_locked() {
 
 // Called after the sink was (re)opened successfully; caller holds sink_lock.
 bool leave_degraded_state_locked() {
+    gap_dropped.events_lost(unannounced_drops.exchange(0));
     if (degraded || gap_dropped.dropped() > 0) {
         if (!write_gap_marker_locked()) {
             ++st_write_failures;
@@ -239,27 +249,43 @@ bool leave_degraded_state_locked() {
 }
 
 // How long code that runs while the server holds one of its own locks may
-// wait for sink_lock.  An event callback waits as long as the write takes:
-// the statement waits for its record.  But a system-variable update function
+// wait for sink_lock.  An event callback waits as long as the write takes, in
+// the statement's own thread.  But a system-variable update function
 // runs under LOCK_global_system_variables, and a status function inside
 // fill_status() with LOCK_all_status_vars held for reading (sql/sql_show.cc),
 // which INSTALL and UNINSTALL of any plugin with status variables need for
 // writing.  If they waited for a write that is stuck (a stalled file system),
 // everything that needs those locks would stop as well; for the first one
-// that includes new logins (experiment 32).  They give up instead.
+// that includes new logins (experiment 32).  They give up instead.  Since
+// 1.2.2 update functions also do no log I/O of their own: the check
+// functions open files, and configuration records are written by the
+// statement's STATUS event (see log_config_change).
 const unsigned kUpdateLockWaitMs = 2000;
 const unsigned kStatusLockWaitMs = 200;
 const char* const kLogBusy =
     "the audit log has been busy for more than 2 s (a write to it is blocked, e.g. by a stalled file system)";
 
-// The part of write_record() that runs under sink_lock.
-void write_record_locked(const JsonWriter& w, AuditResult* failure, bool* recovered,
-                         unsigned long long* recovered_after) {
+void count_unannounced_drop() {
+    ++st_dropped;
+    unannounced_drops.fetch_add(1, std::memory_order_relaxed);
+}
+
+unsigned long long count_lines(const char* data, size_t size) {
+    unsigned long long n = 0;
+    for (size_t i = 0; i < size; ++i) n += data[i] == '\n';
+    return n;
+}
+
+// The part of write_bytes() that runs under sink_lock.
+void write_bytes_locked(const char* data, size_t size, AuditResult* failure, bool* recovered,
+                        unsigned long long* recovered_after) {
+    const unsigned long long records = count_lines(data, size);
+    gap_dropped.events_lost(unannounced_drops.exchange(0));
     if (degraded) {
         long long now = now_seconds();
         if (now < next_reopen_at) {
-            ++st_dropped;
-            gap_dropped.event_lost_to_io();
+            st_dropped += records;
+            for (unsigned long long i = 0; i < records; ++i) gap_dropped.event_lost_to_io();
             return;
         }
         next_reopen_at = now + kReopenIntervalSeconds;
@@ -271,22 +297,28 @@ void write_record_locked(const JsonWriter& w, AuditResult* failure, bool* recove
             if (!r.ok()) ++st_open_failures;
             else ++st_write_failures;
             sink.close();
-            ++st_dropped;
-            gap_dropped.event_lost_to_io();
+            st_dropped += records;
+            for (unsigned long long i = 0; i < records; ++i) gap_dropped.event_lost_to_io();
             return;
         }
         *recovered = true;
         degraded = false;
         degradation_reported = false;
     }
-    AuditResult r = sink.write_all(w.data(), w.size());
+    AuditResult r = {AuditError::None, ""};
+    if (gap_dropped.dropped() > 0 && !write_gap_marker_locked()) {
+        // records were lost without an I/O error; announcing them failed
+        r = {AuditError::write_Failed, last_error};
+    } else {
+        r = sink.write_all(data, size);
+    }
     if (r.ok()) {
-        ++st_written;
-        st_bytes += w.size();
+        st_written += records;
+        st_bytes += size;
     } else {
         ++st_write_failures;
-        ++st_dropped;
-        gap_dropped.event_lost_to_io();
+        st_dropped += records;
+        for (unsigned long long i = 0; i < records; ++i) gap_dropped.event_lost_to_io();
         degraded = true;
         sink.close();
         next_reopen_at = now_seconds() + kReopenIntervalSeconds;
@@ -299,30 +331,15 @@ void write_record_locked(const JsonWriter& w, AuditResult* failure, bool* recove
     }
 }
 
-// Appends one finished record.  Fail-open: errors are counted and reported
-// once per outage, the caller's statement is never affected.  lock_wait_ms:
-// see kUpdateLockWaitMs.  Returns false when the record was dropped because
-// the log stayed busy for lock_wait_ms.
-bool write_record(const JsonWriter& w, bool from_callback, unsigned lock_wait_ms = kWaitForever) {
-    if (!w.ok()) {
-        ++st_dropped;
-        AuditResult r = {AuditError::format_Failed, "record did not fit its buffer; dropped"};
-        report_audit_error(r, from_callback ? report_from_callback : report_to_server);
-        return true;
-    }
-    bool busy = false;
+// Appends finished records (whole lines).  Fail-open: errors are counted and
+// reported once per outage, the caller's statement is never affected.
+void write_bytes(const char* data, size_t size, bool from_callback) {
     AuditResult failure = {AuditError::None, ""};
     bool recovered = false;
     unsigned long long recovered_after = 0;
     {
-        TimedLockGuard<Mutex> guard(sink_lock, lock_wait_ms);
-        if (guard.owns()) {
-            write_record_locked(w, &failure, &recovered, &recovered_after);
-        } else {
-            busy = true;
-            ++st_dropped;
-            failure = {AuditError::write_Failed, std::string(kLogBusy) + "; this record was dropped"};
-        }
+        LockGuard<Mutex> guard(sink_lock);
+        write_bytes_locked(data, size, &failure, &recovered, &recovered_after);
     }
     AuditErrorSink report = from_callback ? report_from_callback : report_to_server;
     report_audit_error(failure, report);
@@ -332,7 +349,16 @@ bool write_record(const JsonWriter& w, bool from_callback, unsigned lock_wait_ms
                             " event(s) were lost, see the audit_gap record"};
         report(note);
     }
-    return !busy;
+}
+
+void write_record(const JsonWriter& w, bool from_callback) {
+    if (!w.ok()) {
+        count_unannounced_drop();
+        AuditResult r = {AuditError::format_Failed, "record did not fit its buffer; dropped"};
+        report_audit_error(r, from_callback ? report_from_callback : report_to_server);
+        return;
+    }
+    write_bytes(w.data(), w.size(), from_callback);
 }
 
 // Allocates a record buffer large enough for any record plus the digest.
@@ -426,7 +452,7 @@ void on_connection(const mysql_event_connection* e) {
 
     RecordBuffer buf(0);
     if (!buf.data) {
-        ++st_dropped;
+        count_unannounced_drop();
         return;
     }
     JsonWriter w(buf.data, buf.size);
@@ -498,7 +524,7 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
 
     RecordBuffer buf(0);
     if (!buf.data) {
-        ++st_dropped;
+        count_unannounced_drop();
         return;
     }
     JsonWriter w(buf.data, buf.size);
@@ -521,11 +547,13 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
 }
 
 void write_statement_record(const mysql_event_general* e, bool access_denied, bool session_scope);
+void flush_pending_config();
 
 void on_general(MYSQL_THD thd, const mysql_event_general* e) {
     // LOG, ERROR, RESULT and WARNING are ignored by design: STATUS already
     // carries the final error code and fires once per statement.
     if (e->event_subclass != MYSQL_AUDIT_GENERAL_STATUS || thd == nullptr) return;
+    flush_pending_config();
     bool config_change = log_this_statement;
     log_this_statement = false;
     unsigned long long pending = THDVAR(thd, stmt_query_id);
@@ -582,7 +610,7 @@ void write_statement_record(const mysql_event_general* e, bool access_denied, bo
     char* digest = max_sql > 0 ? static_cast<char*>(std::malloc(max_sql + 1)) : nullptr;
     if (!buf.data || (max_sql > 0 && !digest)) {
         std::free(digest);
-        ++st_dropped;
+        count_unannounced_drop();
         return;
     }
     JsonWriter w(buf.data, buf.size);
@@ -633,7 +661,7 @@ void campus_audit_notify(MYSQL_THD thd, unsigned int event_class, const void* ev
             break;
         }
     } catch (...) {
-        ++st_dropped;
+        count_unannounced_drop();
     }
 }
 
@@ -648,10 +676,63 @@ void log_config_change(MYSQL_THD thd, const char* variable, const char* value) {
     w.field_cstring("variable", variable);
     w.field_cstring("value", value, 2048);
     w.end_object();
-    // When the log is busy the record is dropped, and the SET statement is not
-    // marked either: its own record would make it wait for the log after all.
-    if (write_record(w, false, kUpdateLockWaitMs) && thd)
-        log_this_statement = true;    // never THDVAR here, see log_this_statement
+    if (thd == nullptr || !w.ok()) {
+        write_record(w, false);
+        return;
+    }
+    // Not written here: an update function runs under
+    // LOCK_global_system_variables, and a write that blocks (a stalled log)
+    // would stop every connection that needs that lock (experiment 32).  The
+    // record waits in pending_config and is written by the statement's
+    // STATUS event, before the statement's own record.
+    char* grown = static_cast<char*>(std::realloc(pending_config, pending_config_length + w.size()));
+    if (grown == nullptr) {
+        count_unannounced_drop();
+        return;
+    }
+    std::memcpy(grown + pending_config_length, w.data(), w.size());
+    pending_config = grown;
+    pending_config_length += w.size();
+    log_this_statement = true;    // never THDVAR here, see log_this_statement
+}
+
+// Writes the configuration records of the statement that just ended.
+void flush_pending_config() {
+    if (pending_config == nullptr) return;
+    char* data = pending_config;
+    const size_t size = pending_config_length;
+    pending_config = nullptr;
+    pending_config_length = 0;
+    write_bytes(data, size, true);
+    std::free(data);
+}
+
+// A log file opened by a check function, taken over by the update function
+// of the same statement.  Opening is I/O that can block (a hung file system);
+// check functions run before the server takes LOCK_global_system_variables
+// (sys_var::check vs. sys_var::update in sql/set_var.cc), update functions
+// under it.  Lock order: sink_lock before staged_lock.
+Mutex staged_lock;
+LogSink staged_sink;
+const void* staged_by = nullptr;           // the THD of the SET statement
+char staged_path[kMaxPathLength + 1];
+
+// Stages `opened`; a file staged earlier and never taken over is handed back
+// in `opened` and closed by its owner.
+void stage_sink(MYSQL_THD thd, LogSink& opened, const char* path) {
+    LockGuard<Mutex> guard(staged_lock);
+    staged_sink.swap(opened);
+    staged_by = thd;
+    copy_bounded(staged_path, sizeof(staged_path), path);
+}
+
+// Takes over the file staged by this statement for `path`, if there is one.
+bool take_staged_sink(MYSQL_THD thd, const char* path, LogSink& out) {
+    LockGuard<Mutex> guard(staged_lock);
+    if (staged_by != thd || !staged_sink.is_open() || std::strcmp(staged_path, path) != 0) return false;
+    out.swap(staged_sink);
+    staged_by = nullptr;
+    return true;
 }
 
 // Reads a string sysvar value into memory owned by the statement.
@@ -677,11 +758,11 @@ int check_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* save,
     LogSink probe;
     probe.set_readable_by_all(sv_readable_by_all != 0);
     AuditResult r = probe.open(s);
-    probe.close();
     if (!r.ok()) {
         report_to_server(r);
         return 1;
     }
+    stage_sink(thd, probe, s);    // update_file_path() takes it over
     *static_cast<const char**>(save) = s;
     return 0;
 }
@@ -691,12 +772,18 @@ void update_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, co
     AuditResult failure = {AuditError::None, ""};
     char previous[kMaxPathLength + 1];
     previous[0] = '\0';
+    LogSink fresh;    // after the swap: the previous file, closed on return
+    const bool staged = take_staged_sink(thd, requested, fresh);
     {
         TimedLockGuard<Mutex> guard(sink_lock, kUpdateLockWaitMs);
         AuditResult r = {AuditError::None, ""};
         if (guard.owns()) {
             copy_bounded(previous, sizeof(previous), active_path);
-            r = sink.open(requested);
+            if (staged) {
+                sink.swap(fresh);
+            } else {
+                r = sink.open(requested);    // another SET replaced the staged file
+            }
         } else {
             r = {AuditError::open_Failed, kLogBusy};
         }
@@ -798,10 +885,46 @@ void update_max_sql_length(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_pt
 
 // SET GLOBAL campus_audit_reopen_now = ON: close and reopen the same path,
 // e.g. after logrotate renamed the file.  The variable always reads OFF.
+// The check function of campus_audit_reopen_now: the server's own check for a
+// boolean (check_func_bool in sql/sql_plugin.cc: "OFF"/"ON" without prefixes,
+// or 0/1), plus, for ON, opening the active path, outside
+// LOCK_global_system_variables.  A failed open is not refused here: the update
+// function opens again and reports it, as before.
+int check_reopen_now(MYSQL_THD thd, struct st_mysql_sys_var*, void* save,
+                     struct st_mysql_value* value) {
+    long long on = 0;
+    if (value->value_type(value) == MYSQL_VALUE_TYPE_STRING) {
+        char local[16];
+        int length = static_cast<int>(sizeof(local));
+        const char* s = value->val_str(value, local, &length);
+        if (s == nullptr) return 1;
+        const std::string v(s, static_cast<size_t>(length));
+        if (v.size() == 2 && (v[0] == 'O' || v[0] == 'o') && (v[1] == 'N' || v[1] == 'n')) on = 1;
+        else if (v.size() == 3 && (v[0] == 'O' || v[0] == 'o') && (v[1] == 'F' || v[1] == 'f') &&
+                 (v[2] == 'F' || v[2] == 'f')) on = 0;
+        else return 1;
+    } else {
+        if (value->val_int(value, &on) < 0 || (on != 0 && on != 1)) return 1;
+    }
+    *static_cast<char*>(save) = on ? 1 : 0;
+    if (!on) return 0;
+    char path[kMaxPathLength + 1];
+    {
+        TimedLockGuard<Mutex> guard(sink_lock, kUpdateLockWaitMs);
+        if (!guard.owns()) return 0;    // the update function reports the busy log
+        copy_bounded(path, sizeof(path), active_path);
+    }
+    LogSink probe;
+    probe.set_readable_by_all(sv_readable_by_all != 0);
+    if (probe.open(path).ok()) stage_sink(thd, probe, path);
+    return 0;
+}
+
 void update_reopen_now(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, const void* save) {
     *static_cast<char*>(var_ptr) = 0;
     if (!*static_cast<const char*>(save)) return;
     AuditResult failure = {AuditError::None, ""};
+    LogSink fresh;    // after the swap: the previous file, closed on return
     {
         TimedLockGuard<Mutex> guard(sink_lock, kUpdateLockWaitMs);
         if (!guard.owns()) {
@@ -809,8 +932,13 @@ void update_reopen_now(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, c
             return;
         }
         ++st_reopens;
-        sink.close();
-        AuditResult r = sink.open(active_path);
+        AuditResult r = {AuditError::None, ""};
+        if (take_staged_sink(thd, active_path, fresh)) {
+            sink.swap(fresh);
+        } else {
+            sink.close();
+            r = sink.open(active_path);
+        }
         if (r.ok()) {
             if (!leave_degraded_state_locked()) {
                 failure = {AuditError::write_Failed,
@@ -909,7 +1037,7 @@ MYSQL_SYSVAR_UINT(max_sql_length, sv_max_sql_length, PLUGIN_VAR_RQCMDARG,
 
 MYSQL_SYSVAR_BOOL(reopen_now, sv_reopen_now, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_NOCMDOPT,
                   "Set to ON to close and reopen the audit log (log rotation)",
-                  nullptr, guarded_update<update_reopen_now>, 0);
+                  guarded_check<check_reopen_now>, guarded_update<update_reopen_now>, 0);
 
 // Startup option.  On Linux, LOAD_FILE() (the project's import of the log)
 // reads only files that are readable by all; the log directory must then keep
@@ -1079,6 +1207,14 @@ int campus_audit_deinit_unguarded() {
     w.field_uint("events_dropped", st_dropped.load());
     w.end_object();
     write_record(w, false);
+    {
+        LockGuard<Mutex> staged_guard(staged_lock);
+        staged_sink.close();
+        staged_by = nullptr;
+    }
+    std::free(pending_config);
+    pending_config = nullptr;
+    pending_config_length = 0;
     LockGuard<Mutex> guard(sink_lock);
     sink.close();
     degraded = false;

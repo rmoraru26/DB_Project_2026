@@ -2,7 +2,7 @@
 
 This note began as the team's design notes for the first prototype of the plugin's error handling
 (the `AuditResult` type and the first file-open check). The questions it left open were answered
-while the plugin was built; this version describes the error handling of `campus_audit` 1.2.1 as
+while the plugin was built; this version describes the error handling of `campus_audit` 1.2.2 as
 it is in the source. The earlier text is in the Git history of this file.
 
 ## The result type
@@ -31,7 +31,9 @@ a check function then refuses the value, and `init` reports that the plugin was 
 ## Fail-open, and how it is announced
 
 The audit API cannot veto a statement, so the plugin is fail-open by design: a statement is never
-affected by a logging problem. What is lost is made visible instead:
+affected by a logging problem. What is lost is made visible instead. Since 1.2.2 that includes
+records lost without an I/O error (a record that did not fit, a failed allocation, an exception):
+they are counted without the log mutex and announced by the next `audit_gap` record.
 
 - status variables: `Campus_audit_state` (`ACTIVE`, `DEGRADED`, `CLOSED`), `_events_dropped`,
   `_write_failures`, `_open_failures`, `_reopens`, `_last_error`;
@@ -83,7 +85,8 @@ or `SET GLOBAL` then waited as well. `SHOW STATUS` of the plugin waited while ho
 | Where | Waits for the log | Then |
 |---|---|---|
 | event callback | as long as the write takes | (the statement waits) |
-| system-variable update function | at most 2 s | gives up with a warning naming the busy log. A `config_change` record is dropped and counted, `campus_audit_file_path` keeps the old file, and `campus_audit_reopen_now` does not reopen |
+| system-variable check function (`file_path`, `reopen_now`) | runs before the server's lock | opens the new file; the update function swaps it in (1.2.2) |
+| system-variable update function | for the log mutex at most 2 s; no log I/O of its own (1.2.2) | gives up with a warning naming the busy log: `campus_audit_file_path` keeps the old file, `campus_audit_reopen_now` does not reopen. Other variables take effect at once; their `config_change` record is written by the statement's STATUS event, when the log accepts data again |
 | status function | at most 0.2 s | `Campus_audit_state` shows `BUSY`; `_file` and `_last_error` show `(busy)` |
 
 `tests/plugin/test_stalled_log.sh` checks all of this against a FIFO whose reader stops reading.

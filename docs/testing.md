@@ -262,7 +262,18 @@ waits for the log under server locks (experiment 32). New `tests/plugin/test_sta
 7 passed, 10 failed. New `scripts/test_server_version.sh` (`make test-server-version`), CI job
 `server-11-8`. Local results: 184 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harness
 134/0/0, thread pool 30/0 and stalled log 17/0. Not run locally: the web application, database and
-browser suites, and native Windows; CI runs them on push.
+browser suites, and native Windows; CI runs them on push. CI run 44090286551 for `3166885`: 4 of 4
+jobs successful (Docker, MariaDB 11.8.9, native Windows, static).
+
+## Improvement cycle 6 (17 November 2026)
+
+`docs/evidence/cycle6/`, plugin 1.2.2: update functions do no log I/O (check functions open the
+files; `config_change` records are written by the statement's STATUS event); records lost without
+an I/O error are announced by the next `audit_gap` record. Local results: 192 unit checks; 67 of 67
+mutants; on 13.0.2 and on 11.8.9 the harness 134/0/0, thread pool 30/0 and stalled log 19/0 (two new
+checks: a `SET GLOBAL campus_audit_log_reads` while the log is stalled returns, and its record is
+written afterwards). Not run locally: the web application, database and browser suites, and native
+Windows; CI runs them on push.
 
 ## Windows validation source ZIP
 

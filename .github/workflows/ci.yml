@@ -95,7 +95,7 @@ jobs:
           items=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.items WHERE asset_tag LIKE CONCAT(name, ' _')")
           test "$items" = 54
 
-      - name: Host-level integration tests (demo credential life cycle, log rotation, thread pool)
+      - name: Host-level integration tests (demo credential life cycle, log rotation, log import limits, thread pool, stalled log)
         run: make test-integration 2>&1 | tee integration.txt
 
       - uses: actions/setup-python@v5

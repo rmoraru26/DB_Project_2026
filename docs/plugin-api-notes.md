@@ -392,13 +392,15 @@ the log file); this is where its functions run:
 
 | Plugin function | Server lock held | Source |
 |---|---|---|
-| event callback (`campus_audit_notify`) | none of the global locks below; the statement itself waits | [source: [sql_audit.h:176](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L176)] dispatches from the statement's own thread |
+| event callback (`campus_audit_notify`) | none of the global locks below | dispatched from the statement's own thread [source: [sql_audit.h:176](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_audit.h#L176)]. A TABLE event comes before the table is used. The GENERAL STATUS event comes **after** `protocol->end_statement()`, so the client already has its answer, and before the connection reads its next statement [source: [sql_parse.cc:1914-1921](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_parse.cc#L1914-L1921)] |
+| system-variable check function | none: `set_var::check()` runs before `sys_var::update()` takes the lock [source: [set_var.cc:231-246](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/set_var.cc#L231-L246)] | |
 | system-variable update function | `LOCK_global_system_variables` | [source: [sql_plugin.cc:3720-3732](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_plugin.cc#L3720-L3732)], `mysql_mutex_assert_owner(&LOCK_global_system_variables)` before `plugin_var->update()` |
 | status function (`SHOW_SIMPLE_FUNC`) | `LOCK_all_status_vars` for reading | [source: [sql_show.cc:8917-8922](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L8917-L8922)] in `fill_status()`; `add_status_vars()` and `remove_status_vars()`, i.e. `INSTALL` and `UNINSTALL` of a plugin with status variables, take it for writing [source: [sql_show.cc:3676](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L3676), [3759](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L3759)]. A `SHOW STATUS LIKE` pattern is applied before a `SHOW_SIMPLE_FUNC` is called, so only matching names call it [source: [sql_show.cc:4063-4068](https://github.com/MariaDB/server/blob/mariadb-13.0.2/sql/sql_show.cc#L4063-L4068)]; `SHOW GLOBAL STATUS` without a pattern calls all of them |
 
 [observed] Experiment 32 made a log `write()` block without failing: the log was a FIFO whose reader
-stopped reading. Recorded statements waited for it, which the design accepts (one synchronous
-`write()` per record, the record before the statement's answer). Plugin 1.2.0 also let the blockage
+stopped reading. Recorded statements waited for it, which the design accepts: one synchronous
+`write()` per record, in the statement's own thread. A TABLE-event record blocks the statement itself.
+A statement record blocks the connection before its next statement. Plugin 1.2.0 also let the blockage
 spread. `SET GLOBAL campus_audit_reopen_now = ON` waited for `sink_lock` inside its update function,
 so it held `LOCK_global_system_variables`. From then on `SELECT @@GLOBAL.max_connections`, `SET GLOBAL
 max_connections`, `SHOW GLOBAL VARIABLES` and a new connection's `SELECT 1` got no answer for 5 s either:
@@ -413,3 +415,12 @@ a new `file_path` is not taken, and the log is not reopened. A status function s
 `(busy)`. The event callbacks still wait as long as the write takes. `tests/plugin/test_stalled_log.sh`
 (`make test-stalled-log`, part of `make test-integration` and of the 11.8.9 CI job) repeats the
 experiment. On 1.2.0 it gives 7 passed, 10 failed; on 1.2.1, 17 of 17.
+
+Since 1.2.2 update functions do no log I/O at all. The file a new `campus_audit_file_path` or
+`campus_audit_reopen_now = ON` needs is opened by the **check** function, before the server's lock,
+and the update function only swaps it in. A `config_change` record is formatted in the update
+function and written by the same statement's STATUS event, in the same thread (the mechanism
+`log_this_statement` already relies on, `test_thread_pool.sh`). A change made while the log is stalled
+therefore takes effect at once, and its record is written, not dropped, once the log accepts data
+again. One write remains in an update function. When a new file replaces a degraded one, the
+`audit_gap` record is written into the file the check function has just opened.

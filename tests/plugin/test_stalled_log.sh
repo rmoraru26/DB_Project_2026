@@ -12,8 +12,10 @@
 # SET GLOBAL campus_audit_* waited for the mutex inside its update function,
 # i.e. while holding LOCK_global_system_variables, and from then on new
 # logins, SELECT @@GLOBAL..., SET GLOBAL and SHOW VARIABLES all waited too.
-# The update functions and the status functions now wait at most 2 s and
-# 0.2 s and then give up with a warning.
+# Since 1.2.1 the update functions and the status functions wait for the log
+# mutex at most 2 s and 0.2 s and then give up with a warning; since 1.2.2
+# update functions do no log I/O at all (files are opened by the check
+# functions, configuration records written by the statement's STATUS event).
 #
 # What it does: starts a throw-away MariaDB container from the image of the
 # running stack (or THREAD_POOL_IMAGE / STALL_TEST_IMAGE), points
@@ -114,7 +116,20 @@ echo "-- with the log stalled, the rest of the server must keep answering"
 answers "INSERT into an unwatched schema"                  5 "INSERT INTO other.t (c) VALUES ('o')"
 answers "SHOW STATUS of the plugin answers BUSY"           5 "SHOW GLOBAL STATUS LIKE 'Campus_audit_state'" "BUSY"
 answers "SET GLOBAL campus_audit_reopen_now gives up"      8 "SET GLOBAL campus_audit_reopen_now = ON" "busy"
-answers "SET GLOBAL campus_audit_log_reads: record dropped" 8 "SET GLOBAL campus_audit_log_reads = ON" "busy"
+# A recorded SET: since 1.2.2 its config_change record is written by the
+# statement's own STATUS event, outside LOCK_global_system_variables.  That
+# event comes after the client has its answer (sql_parse.cc), so the SET
+# returns; its connection's thread then waits for the log, and the record
+# must arrive once the log is read again.
+# (Alone: a second statement on the same connection, such as SHOW WARNINGS,
+# would wait, because the thread is still writing this statement's records.)
+if timeout 8 $CLIENT -e "SET GLOBAL campus_audit_log_reads = ON" >/dev/null 2>&1; then
+    pass "SET GLOBAL campus_audit_log_reads returns"
+else
+    fail "SET GLOBAL campus_audit_log_reads: no answer within 8 s"
+fi
+[ "$(q "SELECT @@GLOBAL.campus_audit_log_reads")" = 1 ] && pass "the new value is in effect" \
+    || fail "campus_audit_log_reads is $(q "SELECT @@GLOBAL.campus_audit_log_reads")"
 answers "SET GLOBAL campus_audit_file_path gives up"       8 "SET GLOBAL campus_audit_file_path = 'other.jsonl'" "busy"
 [ "$(q "SELECT @@GLOBAL.campus_audit_file_path")" = "$FIFO" ] && pass "file_path unchanged after giving up" \
     || fail "file_path changed although the log was busy"
@@ -136,7 +151,10 @@ n=$(grep -c '"event":"table_write"' /var/log/campus_audit/drained.jsonl)
 [ "$n" = 1000 ] && pass "1000 table_write records delivered through the FIFO" || fail "table_write records: $n"
 [ "$(status_of CAMPUS_AUDIT_STATE)" = ACTIVE ] && pass "state ACTIVE after draining" \
     || fail "state $(status_of CAMPUS_AUDIT_STATE)"
-[ "$(status_of CAMPUS_AUDIT_EVENTS_DROPPED)" = 1 ] && pass "exactly one record dropped (the config_change of log_reads)" \
+grep -q '"event":"config_change".*"variable":"campus_audit_log_reads","value":"ON"' /var/log/campus_audit/drained.jsonl \
+    && pass "its config_change record was written, not dropped" \
+    || fail "no config_change record for campus_audit_log_reads"
+[ "$(status_of CAMPUS_AUDIT_EVENTS_DROPPED)" = 0 ] && pass "no record dropped" \
     || fail "events dropped: $(status_of CAMPUS_AUDIT_EVENTS_DROPPED)"
 q "SET GLOBAL campus_audit_file_path = 'campus_audit.jsonl'" >/dev/null
 kill "$READER" "$DRAIN" 2>/dev/null

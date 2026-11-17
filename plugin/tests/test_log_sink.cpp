@@ -74,6 +74,24 @@ int main() {
     }
     check(read_file(path) == "{\"a\":1}\n{\"a\":2}\n{\"a\":3}\n", "file holds all records in order");
 
+    {
+        // swap(): a file opened by one sink (a check function) is taken over by
+        // another (the update function) without being opened twice.
+        const char* other = "sink_test_swap.jsonl";
+        std::remove(other);
+        LogSink active, staged;
+        check(active.open(path).ok() && staged.open(other).ok(), "two sinks opened for swap");
+        active.swap(staged);
+        check(active.write_all("{\"s\":1}\n", 8).ok(), "after swap the active sink writes");
+        check(staged.is_open(), "after swap the other sink holds the previous file");
+        staged.close();
+        check(read_file(other) == "{\"s\":1}\n", "the record went to the file that was swapped in");
+        LogSink empty;
+        empty.swap(active);
+        check(!active.is_open() && empty.is_open(), "swap with a closed sink moves the file");
+        std::remove(other);
+    }
+
 #ifndef _WIN32
     {
         // The log holds account names, hosts and table names: a newly created

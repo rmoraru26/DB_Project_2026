@@ -35,6 +35,15 @@ public:
     void close();
     bool is_open() const { return fd_ >= 0; }
 
+    // Exchanges the open files of two sinks.  Lets a file be opened in one
+    // place (a check function) and taken over in another (the update
+    // function) without opening it twice.
+    void swap(LogSink& other) {
+        const int fd = fd_;
+        fd_ = other.fd_;
+        other.fd_ = fd;
+    }
+
     // For tests only: the raw descriptor, so a test can provoke EBADF.
     int descriptor_for_test() const { return fd_; }
 
