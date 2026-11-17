@@ -1,0 +1,50 @@
+### state before
++--------------+---------------+-----------------+---------------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_MATURITY | PLUGIN_AUTH_VERSION |
++--------------+---------------+-----------------+---------------------+
+| campus_audit | ACTIVE        | Beta            | 1.1.1               |
++--------------+---------------+-----------------+---------------------+
++------------------------------+------------------------------------------+
+| Variable_name                | Value                                    |
++------------------------------+------------------------------------------+
+| campus_audit_connections     | FAILED                                   |
+| campus_audit_databases       | university_resources                     |
+| campus_audit_exclude_users   |                                          |
+| campus_audit_file_path       | /var/log/campus_audit/campus_audit.jsonl |
+| campus_audit_log_reads       | OFF                                      |
+| campus_audit_max_sql_length  | 1024                                     |
+| campus_audit_readable_by_all | ON                                       |
+| campus_audit_reopen_now      | OFF                                      |
++------------------------------+------------------------------------------+
++--------------------+--------+
+| Variable_name      | Value  |
++--------------------+--------+
+| Campus_audit_state | ACTIVE |
++--------------------+--------+
++---------------------------+------------------------+
+| @@thread_handling         | @@version              |
++---------------------------+------------------------+
+| one-thread-per-connection | 13.0.2-MariaDB-ubu2604 |
++---------------------------+------------------------+
+252 /var/log/campus_audit/campus_audit.jsonl
+### experiment script (one connection)
+--------------
+INSERT INTO audit_lab_notes (owner_user_id,label,quantity) VALUES (@u,'p0-locked-insert',2)
+--------------
+
+ERROR 1442 (HY000) at line 8: Can't update table 'audit_events' in stored function/trigger because it is already used by statement which invoked this stored function/trigger
++------+
+| conn |
++------+
+|  750 |
++------+
+--------------
+CALL p0_exp_proc(999999999)
+--------------
+
+ERROR 1452 (23000) at line 27: Cannot add or update a child row: a foreign key constraint fails (`university_resources`.`audit_lab_notes`, CONSTRAINT `fk_lab_notes_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE)
++--------+
+| marker |
++--------+
+| done   |
++--------+

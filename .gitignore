@@ -2,6 +2,16 @@
 .env
 .env.*
 !.env.example
+# Generated local credentials (make up / frantastic.cmd up).  The plain-text
+# administrator and demo-student passwords live only in these files; the
+# ".*" forms cover the .pending and temporary files of an interrupted update.
+.admin-credentials
+.admin-credentials.*
+.demo-credentials
+.demo-credentials.*
+# Staging and rollback files of the Windows launcher's protected file writer.
+.frantastic-*.tmp
+.frantastic-*.bak
 *.pem
 *.key
 secrets/
@@ -12,6 +22,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+.venv-browser/
 venv/
 env/
 .python-version
@@ -64,3 +75,15 @@ temp/
 *.bak
 mariadb-data/
 mysql-data/
+
+# Audit plugin output and test artefacts
+*.jsonl
+sink_test_*.jsonl
+sink_test_*/
+audit_open_test.tmp
+audit_test_missing_directory/
+# Browser-test screenshots written with SCREENSHOT_DIR=screenshots (CI); the
+# published ones are tracked in docs/screenshots/.
+/screenshots/
+# Evidence is tracked on purpose, in docs/evidence/ and its dated subfolders.
+!docs/evidence/**/*.jsonl

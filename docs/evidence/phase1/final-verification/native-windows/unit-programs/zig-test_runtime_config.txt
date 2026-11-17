@@ -1,0 +1,12 @@
+tests/test_runtime_config.cpp:49:68: warning: lambda capture 'writes' is not required to be captured for this use [-Wunused-lambda-capture]
+   49 |         threads.emplace_back([&config, &impossible_values, &reads, writes]() {
+      |                                                                  ~~^~~~~~
+tests/test_runtime_config.cpp:62:34: warning: lambda capture 'writes' is not required to be captured for this use [-Wunused-lambda-capture]
+   62 |     std::thread writer([&config, writes]() {
+      |                                ~~^~~~~~
+2 warnings generated.
+PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+PASS: six reader threads completed 100000 reads each while one thread wrote
+PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+PASS: after the writer finished every setting holds the last value stored
+Checks: 4, Failures: 0

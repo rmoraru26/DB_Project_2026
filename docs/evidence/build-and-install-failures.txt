@@ -1,0 +1,22 @@
+# 1. Headers declaring an older audit API (MYSQL_AUDIT_INTERFACE_VERSION edited to 0x0302 in a copy)
+src/campus_audit.cpp:34:2: error: "campus_audit needs audit API 0x0303 or newer (mysql_event_general.database/port, mysql_event_table.query_id)"
+   34 | #error "campus_audit needs audit API 0x0303 or newer (mysql_event_general.database/port, mysql_event_table.query_id)"
+
+# 2. build_windows.ps1 with a MariaDB directory that has no server headers
+MariaDB server header 'mysql\plugin.h' not found under 'C:\does\not\exist\include\mysql\server'. Pass -MariaDBDir
+
+# 3. INSTALL of a library that does not exist (from the integration tests)
+PASS: INSTALL of a missing library fails cleanly
+
+# 4. Server refuses a plugin whose declared maturity is below plugin_maturity (skeleton declared EXPERIMENTAL, server default gamma)
+ERROR 1126 (HY000) at line 1: Can't open shared library 'skel.dll' (errno: 1, Loading of experimental plugin skel is prohibited by --plugin-maturity=gamma)
+
+# 5. campus_audit (BETA) on a server with the default plugin_maturity=gamma
+## at server start (plugin recorded in mysql.plugin):
+[ERROR] mariadbd.exe: Can't open shared library 'campus_audit.dll' (errno: 1, Loading of beta plugin campus_audit is prohibited by --plugin-maturity=gamma)
+[Warning] mariadbd.exe: unknown variable 'loose_campus_audit_connections=FAILED'   (loose_ options of a plugin that is not loaded: warning only)
+## SQL:
+SELECT @@plugin_maturity;  -> gamma
+ALL_PLUGINS.PLUGIN_STATUS -> NOT INSTALLED
+UNINSTALL SONAME 'campus_audit';  -> ERROR 1305 (42000): SONAME campus_audit.dll does not exist
+INSTALL SONAME 'campus_audit';    -> ERROR 1126 (HY000): Can't open shared library 'campus_audit.dll' (errno: 1, Loading of beta plugin campus_audit is prohibited by --plugin-maturity=gamma)

@@ -1,0 +1,9 @@
+PASS: a new accounting object has lost nothing
+PASS: every lost event is counted
+PASS: a marker that could not be written is reported as not written
+PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+PASS: events lost after the failed marker are added to the same outage
+PASS: a written marker is reported as written
+PASS: only a written marker resets the count
+PASS: a new outage starts counting from zero
+Checks: 8, Failures: 0

@@ -1,0 +1,49 @@
+# 2026-11-03T12:24:50Z  Linux 6.18.44-fc-v230 x86_64  g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0  Python Python 3.13.18
+$ python3 scripts/mutation_check.py
+baseline: unit tests pass; running 43 mutants with 4 workers
+
+D01  killed    single-quoted strings are no longer masked
+D02  killed    double-quoted strings are no longer masked
+D03  killed    numbers are no longer masked
+D04  killed    numbers starting with '.' are no longer masked
+D05  killed    exponent signs end a number early (1.5e-3 leaks '3')
+D06  killed    X'..', B'..', N'..' and _charset'..' literals are no longer masked
+D07  killed    backslash escapes inside strings are ignored (a \' ends the literal early)
+D08  killed    doubled quotes ('it''s') end the literal early
+D09  killed    a backslash is treated as an escape inside `identifiers` too
+D10  killed    # comments are kept (they can carry secrets)
+D11  killed    -- comments are kept
+D12  killed    /* */ and /*! */ comments are kept
+D13  killed    whitespace is not collapsed to one space
+D14  killed    a cut digest is not flagged as truncated
+D15  killed    a truncated digest may end inside a multi-byte UTF-8 character
+J01  killed    backslash is not escaped in JSON
+J02  killed    control characters below 0x20 are not escaped
+J03  killed    DEL (0x7F) is not escaped
+J04  killed    invalid UTF-8 bytes are copied into the JSON line
+J05  killed    off-by-one: the writer stores its NUL one byte past the buffer
+J06  killed    a missing (NULL) value is written as an empty string instead of null
+J07  killed    records are no longer terminated by a newline
+J08  killed    a bounded string cut short is not flagged
+N01  killed    unsupported characters in schema/user names are accepted
+N02  killed    more than 16 names are accepted (buffer overrun)
+N03  killed    names longer than 128 characters are accepted (buffer overrun)
+N04  killed    a trailing comma in a list is accepted
+N05  killed    '*' may be combined with explicit names
+N06  killed    '*' is accepted in the user list
+N07  killed    '*' also audits mysql / information_schema / performance_schema / sys
+N08  killed    schema names are matched case-sensitively
+N09  killed    a schema name matches when it is only a prefix of a watched name
+N10  killed    an excluded user matches when the login is only a prefix of the listed name
+T01  killed    minutes are not reduced modulo 60
+T02  killed    timestamps before 1970 round the wrong way
+T03  killed    January and February get the previous year
+T04  killed    bounded_length reads one byte past its limit
+P01  killed    over-long paths are accepted
+P02  killed    control characters in the log path are accepted
+P03  killed    a path ending in a backslash (Windows directory) is accepted
+S01  killed    LogSink::open skips path validation
+S02  killed    the log is not opened in append mode (a reopen overwrites it)
+S03  killed    the log file is created world-readable
+
+43 of 43 mutants killed; survived: none; invalid: none

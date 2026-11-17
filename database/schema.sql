@@ -120,8 +120,10 @@ CREATE TABLE IF NOT EXISTS loans (
     )
 ) ENGINE=InnoDB;
 
--- Proposed history table for the admin interface.
--- Plugin API, event coverage and storage design still need technical validation.
+-- Row history for the admin interface: one row per changed row, written by
+-- the AFTER triggers of database/triggers.sql (never by the application).
+-- Migration 001 adds connection_id, the key that links a row to the records
+-- of the campus_audit plugin, which are stored separately (migration 002).
 -- old_values/new_values hold JSON-formatted text when available.
 CREATE TABLE IF NOT EXISTS audit_events (
     event_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

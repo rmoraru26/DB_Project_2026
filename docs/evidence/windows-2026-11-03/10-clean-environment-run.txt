@@ -1,0 +1,47 @@
+# Clean environment: a NEW, empty MariaDB 13.0.2 data directory (port 3397), set up only with the
+# repository's scripts, then every suite.  Same machine and tools as environment.txt; local paths -> <scratch>.
+### 1. scripts/setup_database.sh on an empty server (schema, migrations 001-003, triggers, seed, app account)
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+-> database/seed.sql
+-> application account campus_app
+Database setup complete.
+exit=0
+
+### 2. scripts/post_start.sh (what make up runs next)
+-> schema is current
+-> application account campus_app (password from .env)
+-> installing the campus_audit plugin
+-> campus_audit plugin: ACTIVE
+exit=0
+
+### 3. scripts/demo.sh
+exit=0
+| campus_audit | ACTIVE        | AUDIT       | campus_audit.dll | Beta            | 1.1.0               |
+   (expected) ERROR 4025 (23000) at line 1: CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
+   (expected) ERROR 1045 (28000): Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+{"ts":"2026-11-03T16:04:33.693553Z","seq":7,"instance":"65f616b06d236-21e0","event":"statement","conn":22,"query_id":137,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-03T16:04:33.894508Z","seq":8,"instance":"65f616b06d236-21e0","event":"connect_failed","conn":23,"status":1045,"user":"nobody_demo","priv_user":"","proxy_user":"","host":"localhost","ip":"127.0.0.1","port":63518,"db":null,"tls_version":"TLSv1.3"}
+| 2026-11-03 17:04:33.693403 | table_write | audit_events | root    |            22 |      137 | 4025 | INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)  |
+
+### 4. tests/plugin/run_plugin_tests.sh (incl. CHANGE_USER via campus_change_user)
+exit=0
+== campus_audit integration tests (run 1793721891_2413)
+SKIP: permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)
+SKIP: write failure via /dev/full (Linux only; see docs/experiments.md for the Windows lock experiment)
+== 87 passed, 0 failed, 2 skipped
+
+### 5. tests/database/test_native_password_hash.sh
+PASS: hash equals PASSWORD() for 100 random passwords (quotes, backslashes, %, spaces)
+PASS: account created from the hash accepts the plain password
+PASS: a wrong password is still rejected (ER 1045)
+== 3 passed, 0 failed
+
+### 6. web app + Audit Lab tests, RUN_DB_TESTS=1, app account campus_app
+104 passed, 11 skipped in 24.92s
+
+### 7. browser tests against a second app instance on port 5081 (same fresh database)
+11 passed in 25.13s

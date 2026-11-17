@@ -1,0 +1,6 @@
+# First run of plugin\build_windows.ps1 (with unit tests) on the development PC, 2026-11-16.
+# The complete log has 139 648 lines, 7 371 of them -Wnullability-completeness warnings from Zig
+# compiling its bundled libc++ once; it is not kept.  Its script messages and its end:
+69722:Built <scratch>\win-native\build\campus_audit.dll
+139639:Program 'test_automatic_errors.exe' failed to run: An Application Control policy has blocked this fileAt 
+# lines containing ': error:': 0

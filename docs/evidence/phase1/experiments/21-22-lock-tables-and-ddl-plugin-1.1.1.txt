@@ -1,0 +1,28 @@
+### client output (errors only)
+--------------
+INSERT INTO t VALUES (1, 1)
+--------------
+
+ERROR 1062 (23000) at line 7: Duplicate entry '1' for key 'PRIMARY'
+1
+### records
+{"ts":"2026-11-15T19:12:11.509402Z","seq":604,"instance":"66051db820b88-1","event":"config_change","variable":"campus_audit_file_path","value":"/var/log/campus_audit/exp_p1_24280.jsonl (previous: /var/log/campus_audit/campus_audit.jsonl)"}
+{"ts":"2026-11-15T19:12:11.509676Z","seq":605,"instance":"66051db820b88-1","event":"statement","conn":9721,"query_id":34426,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_file_path = ?","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:11.866684Z","seq":606,"instance":"66051db820b88-1","event":"table_create","conn":9722,"query_id":34428,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:11.875528Z","seq":607,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34428,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"CREATE TABLE t (id INT PRIMARY KEY, v INT) ENGINE=InnoDB","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:11.880026Z","seq":608,"instance":"66051db820b88-1","event":"table_write","conn":9722,"query_id":34429,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:11.919813Z","seq":609,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34429,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO t VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:11.920101Z","seq":610,"instance":"66051db820b88-1","event":"table_write","conn":9722,"query_id":34430,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:11.920210Z","seq":611,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34430,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"LOCK TABLES t WRITE","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:11.968528Z","seq":612,"instance":"66051db820b88-1","event":"table_write","conn":9722,"query_id":34437,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:11.976333Z","seq":613,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34437,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO t VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:12.262014Z","seq":614,"instance":"66051db820b88-1","event":"table_alter","conn":9722,"query_id":34444,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:12.407282Z","seq":615,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34444,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"CREATE INDEX ix ON t (v)","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:12.409034Z","seq":616,"instance":"66051db820b88-1","event":"table_write","conn":9722,"query_id":34445,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:12.464490Z","seq":617,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34445,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"TRUNCATE TABLE t","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:12.465255Z","seq":618,"instance":"66051db820b88-1","event":"table_write","conn":9722,"query_id":34447,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t"}
+{"ts":"2026-11-15T19:12:12.465970Z","seq":619,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34447,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO t VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:12.515802Z","seq":620,"instance":"66051db820b88-1","event":"table_rename","conn":9722,"query_id":34450,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t","new_db":"frt_exp","new_table":"t2"}
+{"ts":"2026-11-15T19:12:12.529361Z","seq":621,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34450,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"RENAME TABLE t TO t2","sql_digest_truncated":false}
+{"ts":"2026-11-15T19:12:12.581763Z","seq":622,"instance":"66051db820b88-1","event":"table_drop","conn":9722,"query_id":34451,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"frt_exp","table":"t2"}
+{"ts":"2026-11-15T19:12:12.590362Z","seq":623,"instance":"66051db820b88-1","event":"statement","conn":9722,"query_id":34451,"account":"root[root] @ localhost []","db":"frt_exp","command":"Query","error_code":0,"status":"ok","sql_digest":"DROP TABLE t2","sql_digest_truncated":false}

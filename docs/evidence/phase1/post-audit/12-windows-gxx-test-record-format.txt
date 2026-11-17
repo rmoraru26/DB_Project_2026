@@ -1,0 +1,6 @@
+# post-audit 2026-11-17 2026-11-17T02:37:47Z: test_record_format built natively on Windows with MSYS2 g++.exe (Rev8, Built by MSYS2 project) 15.2.0
+# compile exit status: 0
+PASS: login name is the part of the account before '['
+PASS: account without '[', NULL account and the length bound
+Failures: 0
+# run exit status: 0

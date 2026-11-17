@@ -1,0 +1,5 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# make test-browser: Playwright/Chromium against the web container
+
+...........                                                              [100%]
+11 passed in 10.99s

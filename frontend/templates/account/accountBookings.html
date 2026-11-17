@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Account Bookings
+{% endblock %}
+
+
+{% block body %}
+
+    <h1 class="mb-3">Booking Details</h1>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for booking in bookings %}
+            <div class="col">
+                <div class="card text-decoration-none shadow-sm rounded-4 bg-white" style="max-width: 20rem;">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">{{ booking.title }} {{ booking.icon|safe }}</h5>
+                        <p class="card-text mb-0">{{ booking.details }}</p>
+                        <p class="card-text mb-0">{{ booking.details2 }}</p>
+                        <p class="card-text mb-3">{{ booking.details3 }}</p>
+                        
+                        <form action="/cancelBooking" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                            <input type="hidden" name="kind" value="{{ booking.kind }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                Cancel Booking
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <p>You currently have no active bookings</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

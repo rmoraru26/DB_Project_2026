@@ -1,0 +1,61 @@
+# Same workload under the built-in server_audit (events=CONNECT,QUERY_DML,QUERY_DDL,TABLE)
+## server_audit
+20261025 12:49:22,<host>,root,localhost:64078,4,5,QUERY,,'SET GLOBAL server_audit_logging=ON',0
+20261025 12:49:22,<host>,root,localhost:64078,4,0,DISCONNECT,,,0
+20261025 12:49:22,<host>,root,localhost:64079,5,0,CONNECT,,,0
+20261025 12:49:22,<host>,root,localhost:64079,5,9,QUERY,,'SELECT DATABASE()',0
+20261025 12:49:22,<host>,root,localhost:64079,5,12,WRITE,university_resources,bookings,
+20261025 12:49:22,<host>,root,localhost:64079,5,12,READ,university_resources,users,
+20261025 12:49:22,<host>,root,localhost:64079,5,12,WRITE,university_resources,audit_events,
+20261025 12:49:22,<host>,root,localhost:64079,5,12,READ,mysql,table_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,12,READ,mysql,column_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,12,READ,mysql,index_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,13,QUERY,university_resources,'INSERT INTO audit_events\n    (action, entity_table, entity_id, database_user, application_user_id,\n     client_host, connection_id, old_values, new_values, event_source)\nVALUES\n    (\'INSERT\', \'bookings\', CAST(NEW.booking_id AS CHAR), USER(),\n     (SELECT u.user_id FROM users AS u WHERE u.user_id = @app_user_id),\n     SUBSTRING_INDEX(USER(), \'@\', -1), CONNECTION_ID(),\n     NULL,\n     JSON_OBJECT(\'booking_id\', NEW.booking_id, \'user_id\', NEW.user_id, \'room_id\', NEW.room_id, \'start_time\', NEW.start_time, \'end_time\', NEW.end_time, \'status\', NEW.status),\n     IF(@app_user_id IS NULL, \'direct_sql\', \'application\'))',0
+20261025 12:49:22,<host>,root,localhost:64079,5,12,QUERY,university_resources,'INSERT INTO bookings (user_id, room_id, start_time, end_time) VALUES (2, 1, \'2031-03-01 09:00\', \'2031-03-01 10:00\')',0
+20261025 12:49:22,<host>,root,localhost:64079,5,14,WRITE,university_resources,users,
+20261025 12:49:22,<host>,root,localhost:64079,5,14,READ,university_resources,users,
+20261025 12:49:22,<host>,root,localhost:64079,5,14,WRITE,university_resources,audit_events,
+20261025 12:49:22,<host>,root,localhost:64079,5,15,QUERY,university_resources,'INSERT INTO audit_events\n    (action, entity_table, entity_id, database_user, application_user_id,\n     client_host, connection_id, old_values, new_values, event_source)\nVALUES\n    (\'UPDATE\', \'users\', CAST(NEW.user_id AS CHAR), USER(),\n     (SELECT u.user_id FROM users AS u WHERE u.user_id = @app_user_id),\n     SUBSTRING_INDEX(USER(), \'@\', -1), CONNECTION_ID(),\n     JSON_OBJECT(\'user_id\', OLD.user_id, \'full_name\', OLD.full_name, \'email\', OLD.email, \'role\', OLD.role, \'is_active\', OLD.is_active),\n     JSON_OBJECT(\'user_id\', NEW.user_id, \'full_name\', NEW.full_name, \'email\', NEW.email, \'role\', NEW.role, \'is_active\', NEW.is_active),\n     IF(@app_user_id IS NULL, \'direct_sql\', \'application\'))',0
+20261025 12:49:22,<host>,root,localhost:64079,5,14,QUERY,university_resources,'UPDATE users SET password_hash = \'pbkdf2:sha256:600000$SALTsalt$deadbeef\' WHERE user_id = 2',0
+20261025 12:49:22,<host>,root,localhost:64079,5,16,READ,university_resources,rooms,
+20261025 12:49:22,<host>,root,localhost:64079,5,16,READ,mysql,table_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,16,READ,mysql,column_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,16,READ,mysql,index_stats,
+20261025 12:49:22,<host>,root,localhost:64079,5,16,QUERY,university_resources,'SELECT COUNT(*) FROM rooms',0
+20261025 12:49:22,<host>,root,localhost:64079,5,17,WRITE,university_resources,rooms,
+20261025 12:49:22,<host>,root,localhost:64079,5,17,READ,university_resources,users,
+20261025 12:49:22,<host>,root,localhost:64079,5,17,WRITE,university_resources,audit_events,
+20261025 12:49:22,<host>,root,localhost:64079,5,17,QUERY,university_resources,'INSERT INTO rooms (name, capacity) VALUES (\'bad\', 0)',4025
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,db,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,tables_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,columns_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,procs_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,proxies_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,roles_mapping,
+20261025 12:49:22,<host>,root,localhost:64079,5,18,WRITE,mysql,global_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,db,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,tables_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,columns_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,procs_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,proxies_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,roles_mapping,
+20261025 12:49:22,<host>,root,localhost:64079,5,19,WRITE,mysql,global_priv,
+20261025 12:49:22,<host>,root,localhost:64079,5,0,DISCONNECT,university_resources,,0
+20261025 12:49:23,<host>,root,localhost:64080,6,0,CONNECT,,,0
+20261025 12:49:23,<host>,root,localhost:64080,6,21,QUERY,,'SET GLOBAL server_audit_logging=OFF',0
+
+## campus_audit (databases=university_resources)
+{"ts":"2026-10-25T11:49:22.748310Z","seq":2,"instance":"65ea8cd8677f4-5d70","event":"config_change","variable":"campus_audit_file_path","value":"<scratch>/exp/cmp_campus.jsonl (previous: <scratch>/exp/after_restart.jsonl)"}
+{"ts":"2026-10-25T11:49:22.748494Z","seq":3,"instance":"65ea8cd8677f4-5d70","event":"statement","conn":4,"query_id":6,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_file_path=?","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:49:22.749209Z","seq":4,"instance":"65ea8cd8677f4-5d70","event":"config_change","variable":"campus_audit_databases","value":"university_resources"}
+{"ts":"2026-10-25T11:49:22.749296Z","seq":5,"instance":"65ea8cd8677f4-5d70","event":"statement","conn":4,"query_id":7,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_databases=?","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:49:22.974888Z","seq":6,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":12,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"bookings"}
+{"ts":"2026-10-25T11:49:22.974971Z","seq":7,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":12,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-10-25T11:49:22.981144Z","seq":8,"instance":"65ea8cd8677f4-5d70","event":"statement","conn":5,"query_id":12,"account":"root[root] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) VALUES (?, ?, ?, ?)","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:49:22.982472Z","seq":9,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":14,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"users"}
+{"ts":"2026-10-25T11:49:22.982522Z","seq":10,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":14,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-10-25T11:49:22.984013Z","seq":11,"instance":"65ea8cd8677f4-5d70","event":"statement","conn":5,"query_id":14,"account":"root[root] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"UPDATE users SET password_hash = ? WHERE user_id = ?","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:49:22.986212Z","seq":12,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":17,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"rooms"}
+{"ts":"2026-10-25T11:49:22.986299Z","seq":13,"instance":"65ea8cd8677f4-5d70","event":"table_write","conn":5,"query_id":17,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-10-25T11:49:22.986620Z","seq":14,"instance":"65ea8cd8677f4-5d70","event":"statement","conn":5,"query_id":17,"account":"root[root] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-10-25T11:49:43.715876Z","seq":15,"instance":"65ea8cd8677f4-5d70","event":"plugin_stop","events_written":14,"events_dropped":0}

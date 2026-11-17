@@ -1,0 +1,80 @@
+# Outputs of commands run on 2026-11-03 against the local MariaDB 13.0.2 (see environment.txt).
+# Transcribed from the terminal; local paths replaced by <scratch>.
+
+## scripts/post_start.sh on a database created by the ORIGINAL snapshot (no migration 003)
+# First attempt failed: "DECLARE current_path ..." -> ERROR 1064 (current_path is a reserved word
+# in 13.0.2); renamed to active_log_path.  No data changed by the failed attempt.
+before: users=4 bookings=6 audit_events=26
+-> database objects are older than this checkout: applying migrations (data is kept)
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+(SKIP_SEED=1: seed.sql not loaded)
+-> application account campus_app
+Database setup complete.
+-> campus_audit plugin: ACTIVE
+exit=0
+after:  users=4 bookings=6 audit_events=26
+--- second run:
+-> schema is current
+-> application account campus_app (password from .env)
+-> campus_audit plugin: ACTIVE
+exit=0
+
+## Grants of campus_app afterwards (SHOW GRANTS, hash replaced)
+GRANT USAGE ON *.* TO `campus_app`@`localhost` IDENTIFIED BY PASSWORD '<hash>'
+GRANT SELECT ON `campus_audit`.* TO `campus_app`@`localhost`
+GRANT SELECT, INSERT, UPDATE ON `university_resources`.`loans` TO `campus_app`@`localhost`
+GRANT SELECT, INSERT, UPDATE ON `university_resources`.`users` TO `campus_app`@`localhost`
+GRANT SELECT ON `university_resources`.`items` TO `campus_app`@`localhost`
+GRANT SELECT, INSERT, UPDATE ON `university_resources`.`bookings` TO `campus_app`@`localhost`
+GRANT SELECT, INSERT, UPDATE, DELETE ON `university_resources`.`audit_lab_notes` TO `campus_app`@`localhost`
+GRANT SELECT ON `university_resources`.`rooms` TO `campus_app`@`localhost`
+GRANT SELECT ON `university_resources`.`audit_events` TO `campus_app`@`localhost`
+GRANT EXECUTE ON PROCEDURE `campus_audit`.`import_current_log` TO `campus_app`@`localhost`
+
+## Least privilege of the import (as campus_app)
+--- CALL campus_audit.import_current_log();   (log_file, total_lines, invalid_lines_skipped, newly_imported)
+<scratch>/auditlogs/campus_audit.jsonl	135	0	127
+--- SELECT LOAD_FILE(@@GLOBAL.campus_audit_file_path) IS NULL;   (no FILE privilege)
+1
+--- CALL campus_audit.import_plugin_log('x');
+ERROR 1370 (42000) at line 1: execute command denied to user 'campus_app'@'localhost' for routine 'campus_audit.import_plugin_log'
+
+## Blind spot of plugin 1.0.0: statements refused by the privilege system
+--- DELETE FROM bookings WHERE booking_id = -1;   (as campus_app, connection 562)
+ERROR 1142 (42000) at line 1: DELETE command denied to user 'campus_app'@'localhost' for table `university_resources`.`bookings`
+--- UPDATE rooms SET capacity = capacity WHERE room_id = -1;   (connection 564)
+(grep of the plugin log for "conn":562 and "conn":564: no record at all)
+# Plugin 1.1.0 records such statements; see 05-plugin-e2e-tests.txt, section "refused statements".
+
+## The repair procedure of scripts/repair_credentials.sh, on a throwaway 13.0.2 data directory
+# Server initialised with root/campus_app passwords "A"; .env now holds passwords "B".
+# Same SQL as the script; deviation: on Windows the throwaway server listened on 127.0.0.1
+# instead of --skip-networking.
+with the NEW .env before repair:
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+repair SQL ran
+after repair: root=root@localhost  campus_app=campus_app@%  old root pw: ERROR 1045  rows kept: 3
+
+## tests/database/test_native_password_hash.sh (HASH_TEST_ROUNDS=200)
+PASS: hash equals PASSWORD() for 200 random passwords (quotes, backslashes, %, spaces)
+PASS: account created from the hash accepts the plain password
+PASS: a wrong password is still rejected (ER 1045)
+== 3 passed, 0 failed
+
+## The two mutants added for 1.1.0 (scripts/mutation_check.py, run by hand with zig c++ because
+## make/g++ are not installed here; the full 45-mutant run is part of CI)
+A01 killed - a refused DELETE/UPDATE/INSERT (ER 1142) is no longer recorded | ['FAIL: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)']
+A02 killed - the whole account string is compared with campus_audit_exclude_users, so exclusions stop working | ["FAIL: login name is the part of the account before '['"]
+
+## Unknown account vs. locked decoy account (Audit Lab "failed database login")
+# PyMySQL 1.2.3 against 13.0.2 for Windows:
+audit_lab_intruder (did not exist) -> (2059, "Authentication plugin 'b'auth_gssapi_client'' not configured")
+campus_app (wrong password)        -> (1045, "Access denied for user 'campus_app'@'localhost' (using password: YES)")
+audit_lab_intruder (locked decoy, unknown password) -> (1045, "Access denied for user 'audit_lab_intruder'@'localhost' (using password: YES)")
+# Plugin records of the first and the last attempt (status 1158 = aborted handshake, 1045 = access denied):
+{"ts":"2026-11-03T15:48:54.075500Z","seq":100,"instance":"65f6129b7cefd-76b4","event":"connect_failed","conn":1256,"status":1158,"user":"audit_lab_intruder","priv_user":"","proxy_user":"","host":"localhost",...}
+{"ts":"2026-11-03T15:49:45.497077Z","seq":116,"instance":"65f6129b7cefd-76b4","event":"connect_failed","conn":1288,"status":1045,"user":"audit_lab_intruder","priv_user":"","proxy_user":"","host":"localhost",...}

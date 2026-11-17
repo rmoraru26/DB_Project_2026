@@ -1,0 +1,6 @@
+# 2026-11-17T04:53:54Z Playwright 1.55.0, pytest 9.1.1, Chromium headless, base URL http://web:5000 (the web container on the Compose network frt-final-28f2fc09_default)
+ImportError while loading conftest '/src/frontend/tests/conftest.py'.
+tests/conftest.py:7: in <module>
+    import pymysql
+E   ModuleNotFoundError: No module named 'pymysql'
+# exit status: 4

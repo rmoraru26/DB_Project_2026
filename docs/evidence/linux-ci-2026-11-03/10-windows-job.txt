@@ -1,0 +1,361 @@
+# CI run 8, job 'windows-native' (windows-2022): Zig build of the DLL and the CHANGE_USER helper, unit tests,
+# a fresh MariaDB 13.0.2 from the official zip, setup, demo and the end-to-end tests
+# Removed: 81998 lines of warnings that Zig printed while compiling its own bundled libc++ on the
+# runner's empty cache (all about Zig's headers; none names a file of this project)
+
+$ $zig = (Get-ChildItem C:\zig -Recurse -Filter zig.exe | Select-Object -First 1).FullName
+$zig = (Get-ChildItem C:\zig -Recurse -Filter zig.exe | Select-Object -First 1).FullName
+$mdb = "C:\mdb\mariadb-13.0.2-winx64"
+.\plugin\build_windows.ps1 -MariaDBDir $mdb -Zig $zig
+Copy-Item plugin\build\campus_audit.dll "$mdb\lib\plugin\"
+& $zig cc -target x86_64-windows-gnu -O2 "-I$mdb\include\mysql" tests\plugin\change_user.c "$mdb\lib\libmariadb.lib" -o C:\mdb\campus_change_user.exe
+if ($LASTEXITCODE -ne 0) { throw "change_user helper build failed" }
+Building campus_audit.dll against C:\mdb\mariadb-13.0.2-winx64\include\mysql\server
+Built <repo>\plugin\build\campus_audit.dll
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+Failures: 0
+OK: test_automatic_errors
+Reported: Cannot open audit log
+PASS: all reporter checks
+OK: test_error_reporter
+PASS: NULL path rejected
+PASS: empty path rejected
+PASS: directory-like path rejected
+PASS: directory-like path ending in a backslash rejected
+PASS: control character in path rejected
+PASS: over-long path rejected
+PASS: missing directory reported as open_Failed
+PASS: open failure message carries errno
+PASS: sink stays closed after failed open
+PASS: write on closed sink fails
+PASS: valid path opened
+PASS: first record written
+PASS: failed re-open keeps the previous file open
+PASS: previous file still writable
+PASS: re-opened file is appended to
+PASS: file holds all records in order
+PASS: opened for EBADF test
+PASS: write on a dead descriptor reported as write_Failed
+PASS: write failure message carries errno
+Failures: 0
+OK: test_log_sink
+PASS: JSON plain string
+PASS: JSON quotes and backslashes escaped
+PASS: JSON newline/tab/CR escaped
+PASS: JSON control characters escaped
+PASS: JSON embedded NUL escaped, length respected
+PASS: JSON valid UTF-8 kept as is
+PASS: JSON invalid UTF-8 replaced by U+FFFD
+PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+PASS: JSON overlong encoding rejected
+PASS: JSON NULL pointer becomes null
+PASS: JSON empty string stays empty string
+PASS: JSON overflow detected instead of writing past the buffer
+PASS: JSON overflow keeps buffer NUL-terminated
+PASS: bounded field cut before a multi-byte character
+PASS: JSON numbers, booleans and null
+PASS: digest masks string and number literals
+PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+PASS: the same rule hides the rest of a default-mode escaped quote
+PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+PASS: digest hides passwords given as literals
+PASS: digest hides password hashes
+PASS: digest masks hex, bit, national and introducer literals
+PASS: digest masks decimals and exponents
+PASS: digest keeps identifiers containing digits and backtick identifiers
+PASS: digest keeps doubled backticks inside identifiers
+PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+PASS: digest removes all comment styles including executable comments
+PASS: digest collapses whitespace
+PASS: '--' without trailing space is not a comment
+PASS: digest of empty statement
+PASS: digest handles an unterminated string
+PASS: digest handles an unterminated comment
+PASS: digest keeps variable names but masks quoted ones
+PASS: digest truncates at max length and reports it
+PASS: digest never ends inside a UTF-8 sequence
+PASS: digest with max length 0 is empty and marked truncated
+PASS: 100 kB literal collapses to one '?'
+PASS: digest of a NULL statement
+PASS: database list parsed and trimmed
+PASS: database match is case-insensitive
+PASS: database match needs the whole name
+PASS: NULL database never matches
+PASS: empty database list watches nothing
+PASS: empty list matches nothing
+PASS: '*' accepted for databases
+PASS: '*' matches user schemas
+PASS: '*' never matches system schemas
+PASS: empty element rejected
+PASS: trailing comma rejected
+PASS: space inside a name rejected
+PASS: punctuation rejected
+PASS: '*' cannot be mixed with names
+PASS: '*' rejected for users
+PASS: more than 16 names rejected
+PASS: name longer than 128 characters rejected
+PASS: user list with '.', '-' and '@' accepted
+PASS: user match is exact and case-sensitive
+PASS: user match needs the whole name
+PASS: user match: a login that is only a prefix of an excluded name is still audited
+PASS: timestamp of the epoch
+PASS: timestamp 2026-10-25
+PASS: timestamp on a leap day
+PASS: timestamp one second before the epoch
+PASS: timestamp exactly one day before the epoch
+PASS: bounded_length stops at the limit and accepts NULL
+PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+PASS: login name is the part of the account before '['
+PASS: account without '[', NULL account and the length bound
+Failures: 0
+OK: test_record_format
+All unit test programs passed.
+$ # The server is started in the step that uses it: in the first CI run a
+# The server is started in the step that uses it: in the first CI run a
+# server started by an earlier step was gone when this step began
+# (ERROR 2002 on 127.0.0.1:3306, no shutdown in its log).
+mdb=/c/mdb/mariadb-13.0.2-winx64
+"$mdb/bin/mariadb-install-db.exe" --datadir=C:/mdbdata --port=3306
+printf '\n[mysqld]\nplugin_maturity=beta\nbind-address=127.0.0.1\n' >> /c/mdbdata/my.ini
+"$mdb/bin/mariadbd.exe" --defaults-file=C:/mdbdata/my.ini --console \
+  < /dev/null > /c/mdbdata/server.out 2> /c/mdbdata/server.log &
+# The 13.x client warns on stderr about certificate verification for
+# passwordless TCP logins; the flag keeps that line out of the checks.
+admin="$mdb/bin/mariadb-admin.exe -h127.0.0.1 -P3306 -uroot --skip-ssl-verify-server-cert"
+trap '$admin shutdown > /dev/null 2>&1 || true' EXIT
+for i in $(seq 1 30); do $admin ping > /dev/null 2>&1 && break; sleep 1; done
+$admin ping
+export MARIADB_CLIENT="$mdb/bin/mariadb.exe -h127.0.0.1 -P3306 --skip-ssl-verify-server-cert"
+export PATH="$mdb/lib:$PATH"
+export CHANGE_USER_CLIENT=/c/mdb/campus_change_user.exe CU_HOST=127.0.0.1 CU_PORT=3306
+bash scripts/setup_database.sh
+bash scripts/demo.sh
+bash tests/plugin/run_plugin_tests.sh
+Running bootstrap
+Creating my.ini file
+Removing default user
+Creation of the database was successful
+mysqld is alive
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+-> database/seed.sql
+(CAMPUS_APP_PASSWORD not set: application account not created)
+Database setup complete.
+
+=== Server version
++----------------+-------+-----------------+
++----------------+-------+-----------------+
++----------------+-------+-----------------+
+
+=== 1. Install the plugin (no-op if it is already installed)
++--------------+---------------+-------------+------------------+-----------------+---------------------+
++--------------+---------------+-------------+------------------+-----------------+---------------------+
++--------------+---------------+-------------+------------------+-----------------+---------------------+
++------------------------------+----------------------+
++------------------------------+----------------------+
++------------------------------+----------------------+
+
+=== 2. Cause events: an application booking, a rejected statement, a failed login
++-----------------+----------+
++-----------------+----------+
++-----------------+----------+
+   (expected) --------------
+   (expected) INSERT INTO university_resources.rooms (name, capacity) VALUES ('Broken room', 0)
+   (expected) --------------
+   (expected)
+   (expected) ERROR 4025 (23000) at line 1: CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
+   (expected) ERROR 1045 (28000): Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+
+=== 3. Raw JSON lines written by the plugin (last 6)
+*************************** 1. row ***************************
+tail_of_log: {"ts":"2026-11-03T19:50:48.749162Z","seq":1,"instance":"65f64943e6468-1fbc","event":"plugin_start","version":"1.1.1","file_path":"campus_audit.jsonl","databases":"university_resources","exclude_users":"","log_reads":false,"connections":"FAILED","max_sql_length":1024,"readable_by_all":false}
+{"ts":"2026-11-03T19:50:48.981621Z","seq":2,"instance":"65f64943e6468-1fbc","event":"table_write","conn":15,"query_id":97,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"bookings"}
+{"ts":"2026-11-03T19:50:48.981692Z","seq":3,"instance":"65f64943e6468-1fbc","event":"table_write","conn":15,"query_id":97,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-03T19:50:48.992928Z","seq":4,"instance":"65f64943e6468-1fbc","event":"statement","conn":15,"query_id":97,"account":"root[root] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @app_user_id, room_id, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR FROM rooms WHERE name = ?","sql_digest_truncated":false}
+{"ts":"2026-11-03T19:50:49.063880Z","seq":5,"instance":"65f64943e6468-1fbc","event":"table_write","conn":16,"query_id":101,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"rooms"}
+{"ts":"2026-11-03T19:50:49.063906Z","seq":6,"instance":"65f64943e6468-1fbc","event":"table_write","conn":16,"query_id":101,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-03T19:50:49.064036Z","seq":7,"instance":"65f64943e6468-1fbc","event":"statement","conn":16,"query_id":101,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-03T19:50:49.141350Z","seq":8,"instance":"65f64943e6468-1fbc","event":"connect_failed","conn":17,"status":1045,"user":"nobody_demo","priv_user":"","proxy_user":"","host":"localhost","ip":"127.0.0.1","port":53219,"db":null,"tls_version":"TLSv1.3"}
+
+
+=== 4. Import into campus_audit.plugin_events
++-------------------------------+-------------+-----------------------+----------------+
++-------------------------------+-------------+-----------------------+----------------+
++-------------------------------+-------------+-----------------------+----------------+
+
+=== 5. Table access with statement outcome (campus_audit.v_table_activity)
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+
+=== 6. Row changes (triggers) joined with the plugin's statement (v_row_change_history)
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+
+=== 7. Failed logins
++----------------------------+----------------+-------------+------------+
++----------------------------+----------------+-------------+------------+
++----------------------------+----------------+-------------+------------+
+
+=== 8. Plugin health counters
++--------------------------------+--------------------+
++--------------------------------+--------------------+
++--------------------------------+--------------------+
+== campus_audit integration tests (run 1793735449_154)
+Server: 13.0.2-MariaDB (Win64)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+SKIP: permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+SKIP: write failure via /dev/full (Linux only; see docs/experiments.md for the Windows lock experiment)
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 90 passed, 0 failed, 2 skipped
+$ if (Test-Path C:\mdbdata\server.log) { Get-Content C:\mdbdata\server.log -Tail 100 } else { "no server log, the server was not started" }
+if (Test-Path C:\mdbdata\server.log) { Get-Content C:\mdbdata\server.log -Tail 100 } else { "no server log, the server was not started" }
+2026-11-03 19:50:45 0 [Note] Starting MariaDB 13.0.2-MariaDB source revision 620a4b5624222048fece7fe1789978ae0675cae2 server_uid pp82euZViB9NnyukIwA4jComCQY= as process 8124
+2026-11-03 19:50:45 0 [Note] InnoDB: Compressed tables use zlib 1.3.2
+2026-11-03 19:50:45 0 [Note] InnoDB: Number of transaction pools: 1
+2026-11-03 19:50:45 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+2026-11-03 19:50:45 0 [Note] InnoDB: Using ThreadPool
+2026-11-03 19:50:45 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388614m, innodb_buffer_pool_size=128m
+2026-11-03 19:50:45 0 [Note] InnoDB: Completed initialization of buffer pool
+2026-11-03 19:50:45 0 [Note] InnoDB: File system buffers for log disabled (block size=4096 bytes)
+2026-11-03 19:50:45 0 [Note] InnoDB: End of log at LSN=45434
+2026-11-03 19:50:46 0 [Note] InnoDB: Opened 3 undo tablespaces
+2026-11-03 19:50:46 0 [Note] InnoDB: 128 rollback segments in 3 undo tablespaces are active.
+2026-11-03 19:50:46 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+2026-11-03 19:50:46 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+2026-11-03 19:50:46 0 [Note] InnoDB: log sequence number 45434; transaction id 14
+2026-11-03 19:50:46 0 [Note] Plugin 'FEEDBACK' is disabled.
+2026-11-03 19:50:46 0 [Note] InnoDB: Loading buffer pool(s) from C:\mdbdata\ib_buffer_pool
+2026-11-03 19:50:46 0 [Note] mariadbd.exe: SSPI: using principal name 'localhost', mech 'Negotiate'
+2026-11-03 19:50:46 0 [Note] InnoDB: Buffer pool(s) load completed at 261103 19:50:46
+2026-11-03 19:50:46 0 [Note] Server socket created on IP: '127.0.0.1', port: '3306'.
+2026-11-03 19:50:46 0 [Note] mariadbd.exe: Event Scheduler: Loaded 0 events
+2026-11-03 19:50:46 0 [Note] C:\mdb\mariadb-13.0.2-winx64\bin\mariadbd.exe: ready for connections.
+Version: '13.0.2-MariaDB'  socket: ''  port: 3306  MariaDB Server
+2026-11-03 19:50:48 12 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-03 19:50:49 17 [Warning] Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+2026-11-03 19:50:50 36 [Warning] mariadbd.exe: campus_audit: The audit log path is empty
+2026-11-03 19:50:51 37 [Warning] mariadbd.exe: campus_audit: campus_audit_file_path cannot be NULL
+2026-11-03 19:50:51 38 [Warning] mariadbd.exe: campus_audit: Cannot open audit log 'C:\mdbdata\no_such_dir_1793735449_154/x.jsonl': No such file or directory (errno 2)
+2026-11-03 19:50:51 39 [Warning] mariadbd.exe: campus_audit: The audit log path names a directory: some_dir/
+2026-11-03 19:50:51 40 [Warning] mariadbd.exe: campus_audit: Cannot open audit log 'C:\mdbdata\no_such_dir_1793735449_154/x.jsonl': No such file or directory (errno 2)
+2026-11-03 19:50:51 42 [Warning] mariadbd.exe: campus_audit: unsupported character in database name 'bad name'
+2026-11-03 19:50:51 43 [Warning] mariadbd.exe: campus_audit: empty database name in list
+2026-11-03 19:50:51 44 [Warning] mariadbd.exe: campus_audit: '*' cannot be combined with explicit database names
+2026-11-03 19:50:52 45 [Warning] mariadbd.exe: campus_audit: unsupported character in user name 'x;DROP'
+2026-11-03 19:51:05 188 [Warning] Access denied for user 'ca_test_user'@'localhost' (using password: YES)
+2026-11-03 19:51:07 206 [Warning] Access denied for user 'ca_test_user'@'localhost' (using password: YES)
+2026-11-03 19:51:07 213 [Warning] Access denied for user 'ca_test_user'@'localhost' (using password: YES)
+2026-11-03 19:51:12 230 [Warning] Access denied for user 'ca_test_user'@'localhost' (using password: YES)
+2026-11-03 19:51:20 297 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-03 19:51:21 0 [Note] C:\mdb\mariadb-13.0.2-winx64\bin\mariadbd.exe (initiated by: root[root] @ localhost [127.0.0.1]): Normal shutdown
+2026-11-03 19:51:21 0 [Note] InnoDB: FTS optimize thread exiting.
+2026-11-03 19:51:21 0 [Note] InnoDB: Starting shutdown...
+2026-11-03 19:51:21 0 [Note] InnoDB: Dumping buffer pool(s) to C:\mdbdata\ib_buffer_pool
+2026-11-03 19:51:21 0 [Note] InnoDB: Buffer pool(s) dump completed at 261103 19:51:21

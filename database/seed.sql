@@ -12,14 +12,17 @@ USE university_resources;
 START TRANSACTION;
 
 -- Users
-INSERT INTO users (full_name, email, role)
+-- The role is set only when a row is first inserted.  A re-run never changes
+-- the role of an existing user: migration 004 demotes the shared demo account
+-- dana.admin@example.edu after this seed, and a locally assigned
+-- administrator role must survive as well.
+INSERT INTO users (full_name, email, password_hash, role)
 VALUES
-    ('Alice Student', 'alice.student@example.edu', 'student'),
-    ('Bob Student', 'bob.student@example.edu', 'student'),
-    ('Dana Administrator', 'dana.admin@example.edu', 'admin')
+    ('Alice Student', 'alice.student@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'student'),
+    ('Bob Student', 'bob.student@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'student'),
+    ('Dana Administrator', 'dana.admin@example.edu', 'TEST_HASH_NOT_FOR_LOGIN', 'admin')
 ON DUPLICATE KEY UPDATE
-    full_name = VALUES(full_name),
-    role = VALUES(role);
+    full_name = VALUES(full_name);
 
 -- Rooms
 INSERT INTO rooms (name, building, location_details, capacity, status)

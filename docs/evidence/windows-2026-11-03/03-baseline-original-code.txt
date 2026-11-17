@@ -1,0 +1,19 @@
+# Original snapshot with matching credentials: setup, demo, end-to-end and app tests
+## scripts/setup_database.sh
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/triggers.sql
+-> database/seed.sql
+-> application account campus_app
+Database setup complete.
+
+## tests/plugin/run_plugin_tests.sh (summary)
+== campus_audit integration tests (run 1793718643_1050)
+SKIP: permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)
+SKIP: write failure via /dev/full (Linux only; see docs/experiments.md for the Windows lock experiment)
+== 72 passed, 0 failed, 2 skipped
+
+## frontend tests, RUN_DB_TESTS=1
+.....................................................                    [100%]
+53 passed in 4.98s

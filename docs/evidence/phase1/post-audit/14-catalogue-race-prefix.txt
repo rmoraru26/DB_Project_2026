@@ -1,0 +1,6 @@
+# post-audit 2026-11-17 2026-11-17T02:39:15Z: two concurrent runs of the rooms INSERT of the PRE-FIX database/catalogue.sql (backup) on an empty scratch copy of rooms; session A pauses 4 s before COMMIT, session B starts 1 s later
+  A: 0
+== REPEATABLE READ: rooms=5 distinct names=5
+  A: 0
+== READ COMMITTED: rooms=10 distinct names=5
+# exit status: 0

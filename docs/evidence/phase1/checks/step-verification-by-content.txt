@@ -1,0 +1,30 @@
+# Content-based verification of the recorded steps, 2026-11-17
+#
+# The '# exit status' line that the scratch harness final_regression.sh wrote into linux/*.txt and
+# linux-rerun-2026-11-17/0[1-4]*.txt recorded the status of an 'echo', not of the command: it is 0 in every
+# file and means nothing. Each step was therefore re-checked by its output. OK = the success marker is present
+# and no failure marker is. Only step 03 fails, see the README of this folder.
+
+OK    linux/01-unit-tests.txt                                    All unit test programs passed.
+OK    linux/02-shell-tests.txt                                   == 21 passed, 0 failed
+FAIL  linux/03-repository-checks.txt                             
+OK    linux/04-mutation-check.txt                                65 of 65 mutants killed; survived: none; invalid: none
+OK    linux-rerun-2026-11-17/01-unit-tests.txt                   All unit test programs passed.
+OK    linux-rerun-2026-11-17/02-shell-tests.txt                  == 21 passed, 0 failed
+FAIL  linux-rerun-2026-11-17/03-repository-checks.txt            
+OK    linux-rerun-2026-11-17/04-mutation-check.txt               65 of 65 mutants killed; survived: none; invalid: none
+OK    linux-rerun-2026-11-17/03-repository-checks-clean-export.txt Source distribution checks passed: documented JSONL included, exclusio
+OK    linux/10-make-up-fresh.txt                                 Next:         make demo
+OK    linux/11-make-doctor.txt                                   All checks passed. Web app: http://127.0.0.1:25080  (guided tour: /lab
+OK    linux/12-make-demo.txt                                     | campus_audit | ACTIVE        | AUDIT       | campus_audit.so | Beta 
+OK    linux/20-make-test.txt                                     Overall result: PASS
+OK    linux-rerun-2026-11-17/20-make-test.txt                    Overall result: PASS
+OK    linux-rerun-2026-11-17/33-make-up-after-host-restart.txt   Next:         make demo
+OK    linux/21-make-examples.txt                                 ######## examples/07_what_table_events_miss.sql
+OK    linux/22-make-test-integration.txt                         == 30 passed, 0 failed
+OK    linux/23-make-test-app.txt                                 331 passed, 2 skipped in 38.21s
+OK    linux/30-restart.txt                                       RESULT: both credential files unchanged after the restart
+OK    linux/31-volume-recreated.txt                              RESULT: both credential files unchanged; the accounts were created in 
+OK    linux/32-stale-env.txt                                     PASS: 5 user rows before and after the repair
+OK    linux/40-benchmark.txt                                     Median of 5 runs in ms (min-max); overhead relative to 'none' of the s
+OK    windows-launcher/07-test-final.stdout.txt                  Overall result: PASS

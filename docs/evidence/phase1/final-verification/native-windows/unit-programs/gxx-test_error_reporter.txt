@@ -1,0 +1,1 @@
+<scratch>/native_unit.sh: line 35: <scratch>/native-unit-build/gxx-test_error_reporter.exe: Permission denied

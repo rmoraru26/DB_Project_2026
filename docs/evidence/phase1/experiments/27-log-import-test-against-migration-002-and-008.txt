@@ -1,0 +1,11 @@
+# Mutation check of tests/database/test_log_import.sh: the procedure of migration 002 (before migration 008) is
+# re-applied to the test server; the checks that describe the defects must fail.  Then migration 008 is applied again.
+## with the procedure of migration 002
+FAIL: session state after a failed import (migration 008)
+      state=+00:00|100000000|1
+FAIL: temporary table left behind after a failed import
+FAIL: log larger than max_allowed_packet
+      limit=284672
+== 13 passed, 3 failed, 0 skipped
+## with the procedure of migration 008
+== 16 passed, 0 failed, 0 skipped

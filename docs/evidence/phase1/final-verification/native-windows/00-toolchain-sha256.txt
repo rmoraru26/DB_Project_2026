@@ -1,0 +1,3 @@
+ba9cefd6674b3f2f7bc67334c05305dc7c919643d76836e10767e70db0b5fb74 *<scratch-p1>/win-native/dl-mariadb/mariadb.zip
+68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e *<scratch-p1>/win-native/dl-zig/zig.zip
+zig 0.16.0

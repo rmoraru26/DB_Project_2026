@@ -1,0 +1,11 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# regression step: make_env.sh with an existing volume
+
+Created .env with random secrets (mode 600). Never commit it.
+
+WARNING: the database volume 'campus-audit_mariadb-data' already exists.  It was initialised
+with the passwords of an EARLIER .env, and MariaDB keeps those: the new
+passwords in this .env will be rejected (ERROR 1045) until you either
+  * put the earlier .env back, or
+  * run 'make repair-credentials' (sets the stored passwords to this .env, keeps all data), or
+  * run 'make reset' (DELETES the database and audit logs) and then 'make up'.

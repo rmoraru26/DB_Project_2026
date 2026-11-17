@@ -1,0 +1,1 @@
+<scratch>/native_unit.sh: line 35: <scratch>/native-unit-build/gxx-test_record_format.exe: Permission denied

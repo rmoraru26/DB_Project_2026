@@ -1,15 +1,15 @@
-#include "../audit_error.h"
+#include "../../audit_error.h"
 #include<iostream>
 int main()
 {
-    //simulate a succesful operation 
+    //simulate a succesful operation
      AuditResult success = {
         AuditError::None,
         ""
     };
-    // simulate a problem at opening the file 
+    // simulate a problem at opening the file
     AuditResult failure= {
-        AuditError:: open_Failed, 
+        AuditError:: open_Failed,
         " The audit log cannot be opened"
 
     };

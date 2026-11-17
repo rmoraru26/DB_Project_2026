@@ -1,0 +1,131 @@
+# CI run 8 (all jobs green), 2026-11-03, MariaDB 13.0.2 in the project's Docker image on ubuntu-24.04
+# server restart (the plugin must come back), then the stale-volume regression:
+# new .env against the old volume, refused and explained, repaired without data loss, app tests again
+
+$ docker compose restart mariadb
+docker compose restart mariadb
+make up
+make doctor
+ Container campus-audit-mariadb-1  Restarting
+ Container campus-audit-mariadb-1  Started
+docker compose up -d --build --wait mariadb
+
+ mariadb  Built
+ Container campus-audit-mariadb-1  Running
+
+ Container campus-audit-mariadb-1  Waiting
+
+ Container campus-audit-mariadb-1  Healthy
+-> schema is current
+-> application account campus_app (password from .env)
+-> campus_audit plugin: ACTIVE
+
+ mariadb  Built
+ web  Built
+
+ Container campus-audit-mariadb-1  Running
+ Container campus-audit-web-1  Recreate
+ Container campus-audit-web-1  Recreated
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Starting
+ Container campus-audit-web-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-web-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Healthy
+
+Web app:      http://127.0.0.1:5080
+Guided tour:  http://127.0.0.1:5080/lab   (demo login alice.student@example.edu / campus-demo-2026)
+Next:         make demo
+campus_audit doctor
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T19:40:20Z; .env last changed 2026-11-03 19:39:24 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+
+All checks passed. Web app: http://127.0.0.1:5080  (guided tour: /lab)
+$ # The old .env stays exported in this shell on purpose: Docker Compose would
+# The old .env stays exported in this shell on purpose: Docker Compose would
+# prefer those values over the new .env (the first run of this step failed
+# that way), so this also checks that the Makefile takes the secrets from .env.
+set -a; . ./.env; set +a
+users_before=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users")
+mv .env .env.previous
+bash scripts/make_env.sh 2>&1 | tee make-env.txt
+grep -q "already exists" make-env.txt
+if make up > stale-up.txt 2>&1; then echo "make up should refuse the stale passwords"; exit 1; fi
+grep -q "rejects the root password" stale-up.txt
+if make doctor > stale-doctor.txt 2>&1; then echo "doctor should report the failure"; exit 1; fi
+grep -q "ERROR 1045" stale-doctor.txt
+YES=1 make repair-credentials
+make doctor
+set -a; . ./.env; set +a
+users_after=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.users")
+test "$users_before" = "$users_after"
+make test-app
+Created .env with random secrets (mode 600). Never commit it.
+
+WARNING: the database volume 'campus-audit_mariadb-data' already exists.  It was initialised
+with the passwords of an EARLIER .env, and MariaDB keeps those: the new
+passwords in this .env will be rejected (ERROR 1045) until you either
+  * put the earlier .env back, or
+  * run 'make repair-credentials' (sets the stored passwords to this .env, keeps all data), or
+  * run 'make reset' (DELETES the database and audit logs) and then 'make up'.
+ Container campus-audit-web-1  Stopping
+ Container campus-audit-web-1  Stopped
+ Container campus-audit-mariadb-1  Stopping
+ Container campus-audit-mariadb-1  Stopped
+repair: stored passwords of root and campus_app now match .env
+Done. Start the stack again with: make up
+docker compose up -d --build --wait mariadb
+ mariadb  Built
+
+ Container campus-audit-mariadb-1  Starting
+
+ Container campus-audit-mariadb-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+-> schema is current
+-> application account campus_app (password from .env)
+-> campus_audit plugin: ACTIVE
+
+ mariadb  Built
+ web  Built
+
+ Container campus-audit-mariadb-1  Running
+ Container campus-audit-web-1  Recreate
+ Container campus-audit-web-1  Recreated
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Starting
+ Container campus-audit-web-1  Started
+ Container campus-audit-mariadb-1  Waiting
+ Container campus-audit-web-1  Waiting
+ Container campus-audit-mariadb-1  Healthy
+ Container campus-audit-web-1  Healthy
+
+Web app:      http://127.0.0.1:5080
+Guided tour:  http://127.0.0.1:5080/lab   (demo login alice.student@example.edu / campus-demo-2026)
+Next:         make demo
+campus_audit doctor
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume campus-audit_mariadb-data created 2026-11-03T19:40:20Z; .env last changed 2026-11-03 19:43:02 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+
+All checks passed. Web app: http://127.0.0.1:5080  (guided tour: /lab)
+docker compose exec -T -e RUN_DB_TESTS=1 web python -m pytest -q
+........................................................................ [ 69%]
+................................                                         [100%]
+104 passed, 1 skipped in 2.72s

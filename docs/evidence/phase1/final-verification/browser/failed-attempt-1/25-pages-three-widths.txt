@@ -1,0 +1,3 @@
+# 2026-11-17T04:53:57Z every page at 1280, 768 and 390 px (capture_pages.py from Phase 1), base URL http://web:5000
+python3: can't open file '/src/capture_pages.py': [Errno 2] No such file or directory
+# exit status: 2

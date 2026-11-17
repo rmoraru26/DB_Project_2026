@@ -1,0 +1,45 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.17, pytest-9.1.1, pluggy-1.7.0 -- <scratch>\tools\py\python.exe
+rootdir: <repo>/frontend
+configfile: pytest.ini
+testpaths: tests
+collecting ... collected 36 items
+
+tests/test_app.py::test_missing_secret_key_is_refused PASSED             [  2%]
+tests/test_app.py::test_parse_slot_accepts_offered_future_slot PASSED    [  5%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[not-a-date-10:00 - 11:00] PASSED [  8%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[None-10:00 - 11:00] PASSED [ 11%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2030-01-01-10:00 - 13:00] PASSED [ 13%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2030-01-01-'; DROP TABLE bookings; --] PASSED [ 16%]
+tests/test_app.py::test_parse_slot_rejects_bad_input[2000-01-01-10:00 - 11:00] PASSED [ 19%]
+tests/test_app.py::test_parse_people_rejects_bad_input[0] PASSED         [ 22%]
+tests/test_app.py::test_parse_people_rejects_bad_input[-1] PASSED        [ 25%]
+tests/test_app.py::test_parse_people_rejects_bad_input[abc] PASSED       [ 27%]
+tests/test_app.py::test_parse_people_rejects_bad_input[None] PASSED      [ 30%]
+tests/test_app.py::test_parse_people_rejects_bad_input[1.5] PASSED       [ 33%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[0] PASSED      [ 36%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[15] PASSED     [ 38%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[x] PASSED      [ 41%]
+tests/test_app.py::test_parse_loan_days_rejects_bad_input[None] PASSED   [ 44%]
+tests/test_app.py::test_pages_require_login[/roomsHome] PASSED           [ 47%]
+tests/test_app.py::test_pages_require_login[/itemsHome] PASSED           [ 50%]
+tests/test_app.py::test_pages_require_login[/myBookings] PASSED          [ 52%]
+tests/test_app.py::test_pages_require_login[/admin/audit] PASSED         [ 55%]
+tests/test_app.py::test_pages_require_login[/rooms/1] PASSED             [ 58%]
+tests/test_app.py::test_admin_page_forbidden_for_students PASSED         [ 61%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form0-name] PASSED [ 63%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form1-valid email] PASSED [ 66%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form2-8 characters] PASSED [ 69%]
+tests/test_app.py::test_register_validation_happens_before_database_access[form3-do not match] PASSED [ 72%]
+tests/test_app.py::test_login_with_seed_user PASSED                      [ 75%]
+tests/test_app.py::test_register_then_login PASSED                       [ 77%]
+tests/test_app.py::test_room_booking_overlap_and_capacity PASSED         [ 80%]
+tests/test_app.py::test_concurrent_bookings_of_one_slot_create_one_booking PASSED [ 83%]
+tests/test_app.py::test_borrow_return_and_single_active_loan PASSED      [ 86%]
+tests/test_app.py::test_cancel_own_future_booking PASSED                 [ 88%]
+tests/test_app.py::test_triggers_record_application_identity PASSED      [ 91%]
+tests/test_app.py::test_password_hash_never_copied_into_history PASSED   [ 94%]
+tests/test_app.py::test_application_account_cannot_delete_or_forge_history PASSED [ 97%]
+tests/test_app.py::test_admin_page_renders_for_admin PASSED              [100%]
+
+============================= 36 passed in 4.00s ==============================

@@ -1,0 +1,64 @@
+PASS: TABLES: a statement without any fact is not recorded
+PASS: a statement with a recorded table event is recorded without extra marks
+PASS: an accepted SET GLOBAL campus_audit_* is recorded
+PASS: SESSION: a statement with a recorded table event is not marked scope=session
+PASS: TABLES: a refusal outside a watched default schema is not recorded
+PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+PASS: TABLES: the latch alone records nothing
+PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+PASS: SESSION: a table-less refusal carries both marks
+PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+PASS: SESSION: with both conditions met the statement is recorded
+PASS: Query and Execute are SQL commands
+PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+PASS: the command name must match exactly; NULL and empty names are not SQL commands
+PASS: an unrecorded table event marks the statement as seen, not as recorded
+PASS: a recorded event of the same statement sets the latch
+PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+PASS: and a recorded event sets it again
+PASS: LOCK TABLES on a watched table: one table event, recorded
+PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+PASS: UPDATE under LOCK TABLES: recorded
+PASS: a failing statement under LOCK TABLES: recorded
+PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+PASS: the next statement on another schema is not recorded
+PASS: and ends rule (b): a following table-less statement is not recorded
+PASS: TABLES: LOCK TABLES on a watched table is recorded
+PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+PASS: rule (a): DROP VIEW in a watched default schema is recorded
+PASS: rule (a): COMMIT in a watched default schema is recorded
+PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+PASS: INSERT into a watched table from another default schema is recorded
+PASS: rule (b): the COMMIT that follows it is recorded
+PASS: a statement on other tables is not recorded
+PASS: and the COMMIT after that one is not recorded
+PASS: a statement that touches another schema and a watched table is recorded
+PASS: rule (b) holds after it
+PASS: the order of its table events does not matter
+PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+PASS: the firing statement is recorded once, unmarked
+PASS: the COMMIT after it is recorded: nothing is left open
+PASS: TABLES: the same sequence gives exactly the firing statement
+PASS: a routine's INSERT into a watched table is recorded as its own statement
+PASS: a routine's SELECT from another schema is not recorded
+PASS: the CALL itself raised no table event and is recorded, scope=session
+PASS: a statement on a watched table
+PASS: the Quit command that ends the connection is not recorded as a statement
+PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+PASS: a statement that also touched another user schema is classified and not recorded
+PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+PASS: rule (b): a system-schema event does not clear the latch
+PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+Checks: 63, Failures: 0

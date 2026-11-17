@@ -1,0 +1,215 @@
+# post-audit 2026-11-17: make -C plugin clean test (test-runner image, g++ 15)
+make: Entering directory '/tmp/w/plugin'
+rm -rf build
+mkdir -p build
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+== test_record_format
+PASS: JSON plain string
+PASS: JSON quotes and backslashes escaped
+PASS: JSON newline/tab/CR escaped
+PASS: JSON control characters escaped
+PASS: JSON embedded NUL escaped, length respected
+PASS: JSON valid UTF-8 kept as is
+PASS: JSON invalid UTF-8 replaced by U+FFFD
+PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+PASS: JSON overlong encoding rejected
+PASS: JSON NULL pointer becomes null
+PASS: JSON empty string stays empty string
+PASS: JSON overflow detected instead of writing past the buffer
+PASS: JSON overflow keeps buffer NUL-terminated
+PASS: bounded field cut before a multi-byte character
+PASS: JSON numbers, booleans and null
+PASS: digest masks string and number literals
+PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+PASS: the same rule hides the rest of a default-mode escaped quote
+PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+PASS: digest hides passwords given as literals
+PASS: digest hides password hashes
+PASS: digest masks hex, bit, national and introducer literals
+PASS: digest masks decimals and exponents
+PASS: digest keeps identifiers containing digits and backtick identifiers
+PASS: digest keeps doubled backticks inside identifiers
+PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+PASS: digest removes all comment styles including executable comments
+PASS: digest collapses whitespace
+PASS: '--' without trailing space is not a comment
+PASS: digest of empty statement
+PASS: digest handles an unterminated string
+PASS: digest handles an unterminated comment
+PASS: digest keeps variable names but masks quoted ones
+PASS: digest truncates at max length and reports it
+PASS: digest never ends inside a UTF-8 sequence
+PASS: digest with max length 0 is empty and marked truncated
+PASS: 100 kB literal collapses to one '?'
+PASS: digest of a NULL statement
+PASS: database list parsed and trimmed
+PASS: database match is case-insensitive
+PASS: database match needs the whole name
+PASS: NULL database never matches
+PASS: empty database list watches nothing
+PASS: empty list matches nothing
+PASS: '*' accepted for databases
+PASS: '*' matches user schemas
+PASS: '*' never matches system schemas
+PASS: the four system schemas are recognised
+PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+PASS: user schemas, prefixes and empty names are not system schemas
+PASS: empty element rejected
+PASS: trailing comma rejected
+PASS: space inside a name rejected
+PASS: punctuation rejected
+PASS: '*' cannot be mixed with names
+PASS: '*' rejected for users
+PASS: more than 16 names rejected
+PASS: name longer than 128 characters rejected
+PASS: user list with '.', '-' and '@' accepted
+PASS: user match is exact and case-sensitive
+PASS: user match needs the whole name
+PASS: user match: a login that is only a prefix of an excluded name is still audited
+PASS: timestamp of the epoch
+PASS: timestamp 2026-10-25
+PASS: timestamp on a leap day
+PASS: timestamp one second before the epoch
+PASS: timestamp exactly one day before the epoch
+PASS: bounded_length stops at the limit and accepts NULL
+PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+PASS: login name is the part of the account before '['
+PASS: account without '[', NULL account and the length bound
+Failures: 0
+== test_log_sink
+PASS: NULL path rejected
+PASS: empty path rejected
+PASS: directory-like path rejected
+PASS: directory-like path ending in a backslash rejected
+PASS: control character in path rejected
+PASS: over-long path rejected
+PASS: missing directory reported as open_Failed
+PASS: open failure message carries errno
+PASS: sink stays closed after failed open
+PASS: write on closed sink fails
+PASS: valid path opened
+PASS: first record written
+PASS: failed re-open keeps the previous file open
+PASS: previous file still writable
+PASS: re-opened file is appended to
+PASS: file holds all records in order
+PASS: a newly created log file has no permission bits for others
+PASS: readable_by_all: an existing log file becomes readable by others
+PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+PASS: opened for EBADF test
+PASS: write on a dead descriptor reported as write_Failed
+PASS: write failure message carries errno
+PASS: /dev/full write reported as write_Failed (ENOSPC)
+Failures: 0
+== test_automatic_errors
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+PASS: validate: NULL path
+PASS: validate: empty path
+PASS: validate: trailing forward slash
+PASS: validate: trailing backslash
+PASS: validate: newline in path
+PASS: validate: DEL in path
+PASS: validate: 513-byte path
+PASS: validate: 512-byte path
+PASS: validate: lexically valid path
+PASS: validate: no file is created
+Failures: 0
+== test_error_reporter
+Reported: Cannot open audit log
+PASS: all reporter checks
+== test_runtime_config
+PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+PASS: six reader threads completed 100000 reads each while one thread wrote
+PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+PASS: after the writer finished every setting holds the last value stored
+Checks: 4, Failures: 0
+== test_gap_accounting
+PASS: a new accounting object has lost nothing
+PASS: every lost event is counted
+PASS: a marker that could not be written is reported as not written
+PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+PASS: events lost after the failed marker are added to the same outage
+PASS: a written marker is reported as written
+PASS: only a written marker resets the count
+PASS: a new outage starts counting from zero
+Checks: 8, Failures: 0
+== test_statement_scope
+PASS: TABLES: a statement without any fact is not recorded
+PASS: a statement with a recorded table event is recorded without extra marks
+PASS: an accepted SET GLOBAL campus_audit_* is recorded
+PASS: SESSION: a statement with a recorded table event is not marked scope=session
+PASS: TABLES: a refusal outside a watched default schema is not recorded
+PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+PASS: TABLES: the latch alone records nothing
+PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+PASS: SESSION: a table-less refusal carries both marks
+PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+PASS: SESSION: with both conditions met the statement is recorded
+PASS: Query and Execute are SQL commands
+PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+PASS: the command name must match exactly; NULL and empty names are not SQL commands
+PASS: an unrecorded table event marks the statement as seen, not as recorded
+PASS: a recorded event of the same statement sets the latch
+PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+PASS: and a recorded event sets it again
+PASS: LOCK TABLES on a watched table: one table event, recorded
+PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+PASS: UPDATE under LOCK TABLES: recorded
+PASS: a failing statement under LOCK TABLES: recorded
+PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+PASS: the next statement on another schema is not recorded
+PASS: and ends rule (b): a following table-less statement is not recorded
+PASS: TABLES: LOCK TABLES on a watched table is recorded
+PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+PASS: rule (a): DROP VIEW in a watched default schema is recorded
+PASS: rule (a): COMMIT in a watched default schema is recorded
+PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+PASS: INSERT into a watched table from another default schema is recorded
+PASS: rule (b): the COMMIT that follows it is recorded
+PASS: a statement on other tables is not recorded
+PASS: and the COMMIT after that one is not recorded
+PASS: a statement that touches another schema and a watched table is recorded
+PASS: rule (b) holds after it
+PASS: the order of its table events does not matter
+PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+PASS: the firing statement is recorded once, unmarked
+PASS: the COMMIT after it is recorded: nothing is left open
+PASS: TABLES: the same sequence gives exactly the firing statement
+PASS: a routine's INSERT into a watched table is recorded as its own statement
+PASS: a routine's SELECT from another schema is not recorded
+PASS: the CALL itself raised no table event and is recorded, scope=session
+PASS: a statement on a watched table
+PASS: the Quit command that ends the connection is not recorded as a statement
+PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+PASS: a statement that also touched another user schema is classified and not recorded
+PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+PASS: rule (b): a system-schema event does not clear the latch
+PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+Checks: 63, Failures: 0
+All unit test programs passed.
+make: Leaving directory '/tmp/w/plugin'
+# exit status: 0

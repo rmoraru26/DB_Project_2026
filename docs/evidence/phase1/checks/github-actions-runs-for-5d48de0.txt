@@ -1,0 +1,91 @@
+# 2026-11-17T06:33:32Z GitHub REST API (unauthenticated, read-only): workflow runs, jobs and steps for commit 5d48de0ed62492cc91624bb47985c646c8b2eeb9 (the Phase 1 commit of PR #5)
+run 44028373377 | pull_request | submission/frantastic-final-review-isolated | completed success | 2026-11-17T06:03:16Z -> 2026-11-17T06:10:48Z | https://github.com/rmoraru26/DB_Project_2026/actions/runs/44028373377
+run 44028367232 | push | submission/frantastic-final-review-isolated | completed success | 2026-11-17T06:03:13Z -> 2026-11-17T06:11:38Z | https://github.com/rmoraru26/DB_Project_2026/actions/runs/44028367232
+  run 44028373377 job: Unit tests and static checks (no server) | GitHub Actions 1000000013 | ubuntu-24.04 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Plugin unit tests (g++) -> success
+      step 4 Mutation check (every injected plugin bug must be caught by the unit tests) -> success
+      step 5 Plugin build without server headers fails clearly -> success
+      step 6 Shell scripts parse -> success
+      step 7 Credential bootstrap and installation-order tests (fake client, no server) -> success
+      step 8 Run actions/setup-python@v5 -> success
+      step 9 Web app and Audit Lab tests that need no database -> success
+      step 10 README and repository consistency -> success
+      step 19 Post Run actions/setup-python@v5 -> success
+      step 20 Post Run actions/checkout@v4 -> success
+      step 21 Complete job -> success
+  run 44028373377 job: Build the DLL and load it into native Windows MariaDB 13.0.2 | GitHub Actions 1000000016 | windows-2022 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Download MariaDB 13.0.2 and Zig (checksums verified) -> success
+      step 4 Build plugin DLL, CHANGE_USER helper and run unit tests -> success
+      step 5 Windows launcher tests that need no Docker (Windows PowerShell 5.1, fake docker and simulated database) -> success
+      step 6 Start MariaDB, database setup and end-to-end plugin tests (incl. CHANGE_USER) -> success
+      step 7 Server log -> success
+      step 14 Post Run actions/checkout@v4 -> success
+      step 15 Complete job -> success
+  run 44028373377 job: make up / demo / test / browser tests on MariaDB 13.0.2 (Docker) | GitHub Actions 1000000017 | ubuntu-24.04 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Fresh checkout path - make up (creates .env, builds, migrates, installs the plugin) -> success
+      step 4 make doctor -> success
+      step 5 make demo -> success
+      step 6 make test (unit + end-to-end incl. CHANGE_USER + database + web app) -> success
+      step 7 make examples -> success
+      step 8 Fresh installation - the generated demo student exists, is private and the booking catalogue is loaded -> success
+      step 9 Host-level integration tests (demo credential life cycle, log rotation, thread pool) -> success
+      step 10 Run actions/setup-python@v5 -> success
+      step 11 Audit Lab in a real browser (registration, login, tour, live records) -> success
+      step 12 Restart the server; the plugin must come back -> success
+      step 13 Regression - a new .env against an existing volume is explained and repaired without data loss -> success
+      step 14 Server and web logs -> success
+      step 15 Run actions/upload-artifact@v4 -> success
+      step 16 Clean up (disposable runner) -> success
+      step 31 Post Run actions/setup-python@v5 -> success
+      step 32 Post Run actions/checkout@v4 -> success
+      step 33 Complete job -> success
+  run 44028367232 job: Unit tests and static checks (no server) | GitHub Actions 1000000012 | ubuntu-24.04 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Plugin unit tests (g++) -> success
+      step 4 Mutation check (every injected plugin bug must be caught by the unit tests) -> success
+      step 5 Plugin build without server headers fails clearly -> success
+      step 6 Shell scripts parse -> success
+      step 7 Credential bootstrap and installation-order tests (fake client, no server) -> success
+      step 8 Run actions/setup-python@v5 -> success
+      step 9 Web app and Audit Lab tests that need no database -> success
+      step 10 README and repository consistency -> success
+      step 19 Post Run actions/setup-python@v5 -> success
+      step 20 Post Run actions/checkout@v4 -> success
+      step 21 Complete job -> success
+  run 44028367232 job: make up / demo / test / browser tests on MariaDB 13.0.2 (Docker) | GitHub Actions 1000000015 | ubuntu-24.04 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Fresh checkout path - make up (creates .env, builds, migrates, installs the plugin) -> success
+      step 4 make doctor -> success
+      step 5 make demo -> success
+      step 6 make test (unit + end-to-end incl. CHANGE_USER + database + web app) -> success
+      step 7 make examples -> success
+      step 8 Fresh installation - the generated demo student exists, is private and the booking catalogue is loaded -> success
+      step 9 Host-level integration tests (demo credential life cycle, log rotation, thread pool) -> success
+      step 10 Run actions/setup-python@v5 -> success
+      step 11 Audit Lab in a real browser (registration, login, tour, live records) -> success
+      step 12 Restart the server; the plugin must come back -> success
+      step 13 Regression - a new .env against an existing volume is explained and repaired without data loss -> success
+      step 14 Server and web logs -> success
+      step 15 Run actions/upload-artifact@v4 -> success
+      step 16 Clean up (disposable runner) -> success
+      step 31 Post Run actions/setup-python@v5 -> success
+      step 32 Post Run actions/checkout@v4 -> success
+      step 33 Complete job -> success
+  run 44028367232 job: Build the DLL and load it into native Windows MariaDB 13.0.2 | GitHub Actions 1000000014 | windows-2022 | success
+      step 1 Set up job -> success
+      step 2 Run actions/checkout@v4 -> success
+      step 3 Download MariaDB 13.0.2 and Zig (checksums verified) -> success
+      step 4 Build plugin DLL, CHANGE_USER helper and run unit tests -> success
+      step 5 Windows launcher tests that need no Docker (Windows PowerShell 5.1, fake docker and simulated database) -> success
+      step 6 Start MariaDB, database setup and end-to-end plugin tests (incl. CHANGE_USER) -> success
+      step 7 Server log -> success
+      step 14 Post Run actions/checkout@v4 -> success
+      step 15 Complete job -> success

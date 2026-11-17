@@ -1,0 +1,63 @@
+﻿up (fresh) exit=0
+ACL .env : protected DACL, 3 entries (current user, SYSTEM, Administrators), owner is current user: True
+ACL .demo-credentials : protected DACL, 3 entries (current user, SYSTEM, Administrators), owner is current user: True
+ACL .admin-credentials : protected DACL, 3 entries (current user, SYSTEM, Administrators), owner is current user: True
+demo file: 2 lines, first line demo.student@frantastic.local
+login demo student : login=302 session=yes admin_audit=403 events_scope=mine items_home=200
+login administrator: login=302 session=yes admin_audit=200 events_scope=all items_home=200
+up (second run) exit=0; demo file unchanged: True; admin file unchanged: True
+Local administrator credential is valid; no rotation performed.
+Demo student credential is valid; no rotation performed.
+demo exit=0
+test exit=0
+Launcher hardening tests: 98 checks passed.
+Launcher end-to-end tests: 14 checks passed.
+Demo credential tests: 37 checks passed.
+[PASS] Plugin C++ unit tests
+Repository checks passed.
+Source distribution checks passed: documented JSONL included, exclusions enforced, frontend test files complete, ZIP extracted in spaced path, frontend test collection not checked (pytest, flask, pymysql, dotenv, werkzeug not installed for this interpreter), and checker detects removal of the sample.
+[PASS] Repository checks
+Shell credential tests: 31 passed, 0 failed.
+[PASS] Administrator credential and diagnostic tests
+Demo credential bootstrap tests: 35 passed, 0 failed.
+[PASS] Demo-student credential bootstrap (state machine, no server)
+== 21 passed, 0 failed
+[PASS] Database installation order and account SQL (no server)
+== 128 passed, 0 failed, 0 skipped
+[PASS] Plugin integration tests
+== 18 passed, 0 failed
+== 22 passed, 0 failed
+== 24 passed, 0 failed, 0 skipped
+== 36 passed, 0 failed
+== 24 passed, 0 failed
+== 16 passed, 0 failed, 0 skipped
+== 3 passed, 0 failed
+== 10 passed, 0 failed
+[PASS] Database tests
+332 passed, 1 skipped in 47.38s
+[PASS] Application and Audit Lab tests
+Total suites: 8
+Passed: 8
+Failed: 0
+Skipped suites: 0
+Overall result: PASS
+reset-demo exit=0; demo file changed: True; admin file unchanged: True
+login demo student after reset: login=302 session=yes admin_audit=403 events_scope=mine items_home=200
+ACL of the replaced .demo-credentials still owner-only: True
+powershell.exe : Exception calling "ReadAllText" with "1" argument(s): "The process cannot access the file 
+'C:\Users\USER\AppData\Local\
+At line:1 char:302
++ ... tch {} } }; & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Exception calli...\AppData\Local\:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Temp\claude\0e737d203691d5d5\5bbd884c-6c21-4741-aef0-72d78966ccf1\scratchpad\final\win-launcher\out\10-summary.txt' 
+because it is being used by another process."
+At <scratch>\win_l
+auncher_steps.ps1:41 char:64
++ ... ilter *.txt) { $text = [IO.File]::ReadAllText($file.FullName); foreac ...
++                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : IOException
+ 

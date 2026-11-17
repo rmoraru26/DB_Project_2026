@@ -1,0 +1,38 @@
+### examples/06_skeleton_plugin.sql  (plugin_maturity=beta server, skeleton built with Zig 0.16.0)
++----------------+---------------+-------------+--------------------+-----------------+
+| PLUGIN_NAME    | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY     | PLUGIN_MATURITY |
++----------------+---------------+-------------+--------------------+-----------------+
+| campus_audit   | ACTIVE        | AUDIT       | campus_audit.dll   | Beta            |
+| skeleton_audit | ACTIVE        | AUDIT       | skeleton_audit.dll | Beta            |
++----------------+---------------+-------------+--------------------+-----------------+
++----------------------------------+-------+
+| Variable_name                    | Value |
++----------------------------------+-------+
+| Skeleton_audit_connection_events | 0     |
+| Skeleton_audit_general_events    | 4     |
+| Skeleton_audit_table_events      | 0     |
++----------------------------------+-------+
++-------+
+| rooms |
++-------+
+|     4 |
++-------+
++----------------------------------+-------+
+| Variable_name                    | Value |
++----------------------------------+-------+
+| Skeleton_audit_connection_events | 0     |
+| Skeleton_audit_general_events    | 10    |
+| Skeleton_audit_table_events      | 1     |
++----------------------------------+-------+
+
+### step 5 of the walkthrough: the same code compiled with -DSKELETON_EXPERIMENTAL
+--------------
+INSTALL SONAME 'skeleton_audit_exp'
+--------------
+
+ERROR 1126 (HY000) at line 1: Can't open shared library 'skeleton_audit_exp.dll' (errno: 1, Loading of experimental plugin skeleton_audit is prohibited by --plugin-maturity=beta)
++--------------------+
+| skeleton_installed |
++--------------------+
+|                  0 |
++--------------------+

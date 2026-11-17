@@ -1,0 +1,12 @@
+# final pass 2026-11-17T05:01:05Z: tests/integration/test_log_rotation.sh on the final Linux stack frt-final-28f2fc09 with the fixed rotate_log.sh copied into its mariadb container
+PASS: rotate_log.sh renames the log, reopens it and imports both files
+PASS: the archived file and a new active file exist; the plugin is ACTIVE
+PASS: the new log has the owner and mode of the old one (mysql:mysql 664)
+PASS: the archived file holds every earlier record (272 lines of this plugin instance); the new file starts with the reopen record
+PASS: the statement written before the rotation and the one written after it are both in plugin_events, once each
+FAIL: lines in the files vs rows in plugin_events
+      files 277, table 286
+PASS: a second rotation creates a second archive and keeps the first
+PASS: re-importing the archived files adds nothing
+== 7 passed, 1 failed   (archives kept: /var/log/campus_audit/campus_audit-20261117T050109Z.jsonl /var/log/campus_audit/campus_audit-20261117T050114Z.jsonl)
+# exit status: 1

@@ -1,0 +1,11 @@
+# post-audit 2026-11-17 2026-11-17T02:35:58Z: tests/integration/test_log_rotation.sh against the running Linux-host test stack frt-p1-79c0601b, whose mariadb container was given this tree's scripts/rotate_log.sh (docker exec ... cat >); run from /work/final in the Linux-host container
+PASS: rotate_log.sh renames the log, reopens it and imports both files
+PASS: the archived file and a new active file exist; the plugin is ACTIVE
+PASS: the new log has the owner and mode of the old one (mysql:mysql 664)
+PASS: the archived file holds every earlier record (343 lines of this plugin instance); the new file starts with the reopen record
+PASS: the statement written before the rotation and the one written after it are both in plugin_events, once each
+PASS: no record lost and none duplicated: 348 lines in the two files, 348 rows in plugin_events for this plugin instance
+PASS: a second rotation creates a second archive and keeps the first
+PASS: re-importing the archived files adds nothing
+== 8 passed, 0 failed   (archives kept: /var/log/campus_audit/campus_audit-20261117T023601Z.jsonl /var/log/campus_audit/campus_audit-20261117T023607Z.jsonl)
+# exit status: 0

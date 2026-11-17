@@ -1,0 +1,6 @@
+# What is needed to run the web application.  The versions are pinned in one
+# place, frontend/requirements.txt (the Docker image and CI install from it):
+#
+#     pip install -r requirements.txt
+
+-r frontend/requirements.txt

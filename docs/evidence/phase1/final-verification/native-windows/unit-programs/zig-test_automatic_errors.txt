@@ -1,0 +1,14 @@
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+PASS: validate: NULL path
+PASS: validate: empty path
+PASS: validate: trailing forward slash
+PASS: validate: trailing backslash
+PASS: validate: newline in path
+PASS: validate: DEL in path
+PASS: validate: 513-byte path
+PASS: validate: 512-byte path
+PASS: validate: lexically valid path
+PASS: validate: no file is created
+Failures: 0

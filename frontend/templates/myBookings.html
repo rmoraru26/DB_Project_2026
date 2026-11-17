@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    My bookings
+{% endblock %}
+
+{% block body %}
+<h1 class="mb-4">My bookings</h1>
+
+<h2 class="h4">Rooms</h2>
+{% if bookings %}
+<table class="table table-sm">
+    <thead><tr><th>Room</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for b in bookings %}
+        <tr>
+            <td>{{ b.room }}</td>
+            <td>{{ b.start_time.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td>{{ b.end_time.strftime("%H:%M") }}</td>
+            <td>{{ b.status }}</td>
+            <td>
+                {% if b.can_cancel %}
+                <form method="POST" action="{{ url_for('cancel_booking', booking_id=b.booking_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No room bookings yet.</p>
+{% endif %}
+
+<h2 class="h4">Items</h2>
+{% if loans %}
+<table class="table table-sm">
+    <thead><tr><th>Item</th><th>Asset tag</th><th>Borrowed</th><th>Due</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for l in loans %}
+        <tr>
+            <td>{{ l.item }}</td>
+            <td>{{ l.asset_tag or "" }}</td>
+            <td>{{ l.borrowed_at.strftime("%Y-%m-%d") }}</td>
+            <td>{{ l.due_at.strftime("%Y-%m-%d") if l.due_at else "" }}</td>
+            <td>{{ l.status }}</td>
+            <td>
+                {% if l.status == "active" %}
+                <form method="POST" action="{{ url_for('return_loan', loan_id=l.loan_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Return</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No loans yet.</p>
+{% endif %}
+
+{% endblock %}

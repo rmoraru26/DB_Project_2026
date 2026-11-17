@@ -1,0 +1,21 @@
+# post-audit 2026-11-17 2026-11-17T02:33:21Z: LOG_LIMITS_IMAGE=frt-p1-79c0601b-mariadb:13.0.2 bash tests/integration/test_log_import_limits.sh (this working tree)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+PASS: import_plugin_log() refuses it with ER 1644 and names the remedy (import in parts)
+FAIL: rotation of the oversized log
+      rotate_log: '/var/log/campus_audit/campus_audit-20261117T023341Z.jsonl' exists already; wait a second and retry
+sha256sum: '': No such file or directory
+PASS: no part file is left after the import
+cat: '': No such file or directory
+cat: '': No such file or directory
+FAIL: lines vs rows after the oversized rotation
+      files 513, rows 63
+FAIL: --import of the oversized archive
+      Usage: rotate_log.sh [--import <file>]
+sha256sum: '': No such file or directory
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+stat: cannot statx '': No such file or directory
+bash: line 79: (  / 1024 + 2 ) * 1024 : arithmetic syntax error: operand expected (error token is "/ 1024 + 2 ) * 1024 ")
+bash: line 80: bigger: unbound variable
+# exit status: 1

@@ -1,0 +1,13 @@
+## installing the DLL into the scratch server's plugin directory
+## mariadb-install-db
+exit 0
+## starting mariadbd (127.0.0.1:23399)
+server: 13.0.2-MariaDB on Win64, plugin_maturity=beta
+## INSTALL SONAME 'campus_audit'
+campus_audit | ACTIVE | AUDIT | campus_audit.dll | 1.2.0 | Beta | BSD
+system variables: 9
+status variables: 11
+statement_scope: TABLES
+2026-11-16  2:53:10 5 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+RESULT: the DLL loaded and is ACTIVE
+## server stopped

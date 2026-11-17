@@ -1,0 +1,2 @@
+# 2026-11-17T04:30:06Z <scratch-p1>/win-native/zig/zig-x86_64-windows-0.16.0/zig.exe cc -target x86_64-windows-gnu -O2 -I<scratch>\native-work\mariadb-13.0.2-winx64\include\mysql tests/plugin/change_user.c <scratch>\native-work\mariadb-13.0.2-winx64\lib\libmariadb.lib -o <scratch>\native-work\campus_change_user.exe
+# exit status: 0

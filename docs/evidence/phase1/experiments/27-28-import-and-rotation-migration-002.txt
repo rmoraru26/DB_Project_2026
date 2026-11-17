@@ -1,0 +1,46 @@
+log file: /var/log/campus_audit/campus_audit.jsonl  size: 518550 bytes, lines: 1647
+global max_allowed_packet: 16777216  secure_file_priv: /var/log/campus_audit/
+--- 1. normal import, twice (timing)
+/var/log/campus_audit/campus_audit.jsonl	1647	0	99
+
+real	0m0.224s
+user	0m0.030s
+sys	0m0.011s
+/var/log/campus_audit/campus_audit.jsonl	1647	0	0
+
+real	0m0.244s
+user	0m0.028s
+sys	0m0.012s
+--- 2. missing file: error and diagnostics
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/does_not_exist.jsonl')
+--------------
+
+ERROR 1644 (45000) at line 1: import_plugin_log: LOAD_FILE returned NULL (file missing, not readable by all, no FILE privilege, outside secure_file_priv, or larger than max_allowed_packet)
+--- 3. file larger than max_allowed_packet (global lowered for this test, then restored)
+session max_allowed_packet: 1048576
+LOAD_FILE is NULL: 0
+/var/log/campus_audit/campus_audit.jsonl	1647	0	0
+restored global max_allowed_packet: 16777216
+--- 4. error after the session time zone was switched (lock wait timeout on plugin_events)
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit.jsonl')
+--------------
+
+ERROR 1205 (HY000) at line 1: Lock wait timeout exceeded; try restarting transaction
+--- 5. rotation by rename + reopen_now
+    total 1380
+    drwxr-x--- 2 mysql mysql   4096 Nov 15 19:41 .
+    drwxr-xr-x 1 root  root    4096 Nov 15 19:33 ..
+    -rw-rw-r-- 1 mysql mysql    450 Nov 15 19:41 campus_audit.jsonl
+    -rw-rw-r-- 1 mysql mysql 518550 Nov 15 19:37 campus_audit.jsonl.rotated-exp
+    -rw-rw-r-- 1 mysql mysql 270790 Nov 15 14:47 campus_audit_test_1794754048_3461.jsonl
+    -rw-rw-r-- 1 mysql mysql    596 Nov 15 14:47 campus_audit_test_1794754048_3461_b.jsonl
+    -rw-rw-r-- 1 mysql mysql 287185 Nov 15 19:29 campus_audit_test_1794770801_13514.jsonl
+    -rw-rw-r-- 1 mysql mysql    599 Nov 15 19:29 campus_audit_test_1794770801_13514_b.jsonl
+    -rw-rw-r-- 1 mysql mysql 291188 Nov 15 19:37 campus_audit_test_1794771255_26515.jsonl
+    -rw-rw-r-- 1 mysql mysql    599 Nov 15 19:37 campus_audit_test_1794771255_26515_b.jsonl
+/var/log/campus_audit/campus_audit.jsonl.rotated-exp	1647	0	0
+/var/log/campus_audit/campus_audit.jsonl	2	0	2
+plugin_events before: 1647  after: 1649  state: ACTIVE
+(experiment merged the two files back and reopened; lines now: 1649)

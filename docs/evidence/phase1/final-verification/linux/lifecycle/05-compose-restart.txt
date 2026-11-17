@@ -1,0 +1,4 @@
+ Container frt-final-28f2fc09-mariadb-1  Restarting
+ Container frt-final-28f2fc09-web-1  Restarting
+ Container frt-final-28f2fc09-mariadb-1  Started
+ Container frt-final-28f2fc09-web-1  Started

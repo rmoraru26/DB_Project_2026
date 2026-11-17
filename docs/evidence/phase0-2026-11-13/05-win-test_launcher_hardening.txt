@@ -1,0 +1,109 @@
+﻿PASS: running under Windows PowerShell 5.1.26100.9711
+PASS: generated-style .env is accepted unchanged
+PASS: special characters (without $) are accepted unquoted and not altered
+PASS: the unset-variable fixture is really unset
+PASS: interpolation rejected: unquoted ${ROOT_SECRET}
+PASS: rejection message for 'unquoted ${ROOT_SECRET}' does not echo the value
+PASS: interpolation rejected: double-quoted "${ROOT_SECRET}"
+PASS: rejection message for 'double-quoted "${ROOT_SECRET}"' does not echo the value
+PASS: interpolation rejected: unquoted reference to an unset variable
+PASS: rejection message for 'unquoted reference to an unset variable' does not echo the value
+PASS: interpolation rejected: unquoted $NAME form of an unset variable
+PASS: rejection message for 'unquoted $NAME form of an unset variable' does not echo the value
+PASS: interpolation rejected: double-quoted reference to an unset variable with a comment
+PASS: rejection message for 'double-quoted reference to an unset variable with a comment' does not echo the value
+PASS: interpolation rejected: unquoted $ inside a password
+PASS: rejection message for 'unquoted $ inside a password' does not echo the value
+PASS: single-quoted '${ROOT_SECRET}' is accepted as the literal text (Compose does not interpolate it)
+PASS: a reference in a non-secret key does not block the launcher
+PASS: unquoted value: spaces around it are ignored (as Compose does), inner spaces kept
+PASS: quoted value: intentional leading/trailing whitespace is preserved
+PASS: a single-quoted value is accepted without its quotes
+PASS: VAR="VAL" # comment: the comment after the closing quote is ignored
+PASS: VAR='VAL' # comment: the comment after the closing quote is ignored
+PASS: '#' inside a quoted value is kept
+PASS: VAL#x: '#' without preceding whitespace is part of an unquoted value
+PASS: VAL # comment: an unquoted value ends at a whitespace-preceded #
+PASS: special characters, '#' and spaces inside single quotes are kept literally
+PASS: double-quoted escapes \" and \\ are interpreted
+PASS: an escaped quote inside single quotes is interpreted
+PASS: 'KEY = value' (documented Compose syntax) is accepted
+PASS: 'KEY: value' (documented Compose syntax) is accepted
+PASS: text after a closing quote (other than a comment) is rejected
+PASS: a value that is only a comment counts as empty
+PASS: UTF-8 BOM and CRLF line endings are handled
+PASS: missing .env file is reported
+PASS: missing root secret is rejected
+PASS: empty root secret is rejected
+PASS: whitespace-only root secret is rejected
+PASS: empty quoted root secret is rejected
+PASS: unclosed quote is rejected
+PASS: 'export KEY=value' is rejected with its line number
+PASS: duplicate root secret is rejected
+PASS: other required secrets are checked too
+PASS: process override of a secret is removed before Docker runs
+PASS: override notice names the variable but not its value
+PASS: override is restored afterwards
+PASS: absent variables stay absent
+PASS: stderr with exit 0 is captured, not thrown (ErrorActionPreference=Stop)
+PASS: stderr with a failure exit code keeps the exit code and both streams
+PASS: stdout does not contain stderr lines
+PASS: missing program is reported instead of a stale exit code
+PASS: arguments are quoted for the Windows command line
+PASS: a hanging probe is reported as timed out
+PASS: a hanging probe returns within its time limit (took 2 s for a 2 s limit)
+PASS: the timed-out process was terminated
+PASS: process-tree fixture: the parent started a child and recorded its PID before the timeout
+PASS: process-tree fixture: the parent timed out
+PASS: timed-out parent process was terminated
+PASS: its child process (holding the same output pipe) was terminated too
+PASS: process-tree timeout returned in 6 s for a 6 s limit
+PASS: a real executable: stdout, stderr and exit code are captured separately
+PASS: Invoke-Docker passes stdout through
+out-line
+powershell.exe : err-line 
+At line:1 char:762
++ ... in-$t.txt"; & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (err-line :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+PASS: Invoke-Docker reports the native exit code
+PASS: child process receives the forwarded variable
+PASS: a variable that did not exist before is absent afterwards
+PASS: a pre-existing value is restored afterwards
+PRESENT
+PASS: failing Docker call is reported
+PASS: value is restored after a failing Docker call
+PASS: an empty value is refused instead of forwarding an absent variable
+PASS: a null value is refused
+PASS: a refused call leaves the environment unchanged
+PASS: missing Docker CLI is explained
+PASS: resolved Docker CLI is accepted
+PASS: missing Compose plugin is explained with the Docker message
+PASS: ready engine (with stderr warning and exit 0) passes at once
+PASS: starting engine is retried until it answers
+PASS: starting engine shows concise progress
+PASS: Desktop context without a Docker Desktop process fails at once
+PASS: no waiting when no Docker Desktop process exists
+PASS: engine that never answers times out
+PASS: timeout is bounded by the deadline
+PASS: timeout reports the last Docker message
+PASS: Windows-containers mode is rejected with a fix
+PASS: permanent access error is not retried
+PASS: permanent error causes no waiting
+PASS: DOCKER_HOST engine failure names DOCKER_HOST
+PASS: DOCKER_HOST case does not claim or check Docker Desktop and does not wait
+PASS: non-Desktop context failure names the context
+PASS: non-Desktop context does not claim or check Docker Desktop and does not wait
+PASS: undeterminable context is reported as such
+PASS: hanging probes end in the deadline message
+PASS: each probe is limited to min(probe limit, time left): 4,3 s within a 10 s deadline
+PASS: real hanging processes cannot defeat the overall deadline
+PASS: overall wait with hanging probes stays bounded (took 4 s for a 4 s deadline)
+PASS: launcher no longer discards native output with *> $null
+PASS: launcher forwards no root password from the host
+PASS: launcher uses the bounded readiness wait and the .env-only secret rule
+PASS: no dummy secret appears in any diagnostic
+PASS: no user-level environment variable was changed
+Launcher hardening tests: 98 checks passed.

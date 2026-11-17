@@ -1,0 +1,27 @@
+# post-audit 2026-11-17 2026-11-17T02:37:18Z: shell suites, affected frontend unit tests (no database), bash -n, exploratory programs; test-runner image, Linux file system
+## bash tests/shell/test_admin_auth.sh
+PASS: no password appears in any output
+Shell credential tests: 31 passed, 0 failed.
+# exit status: 0
+## bash tests/shell/test_demo_bootstrap.sh
+PASS: no password hash appears in any output
+Demo credential bootstrap tests: 35 passed, 0 failed.
+# exit status: 0
+## bash tests/shell/test_database_setup.sh
+PASS: table-wide users grants are revoked before, and without touching, the column grants
+== 21 passed, 0 failed
+# exit status: 0
+## pytest frontend/tests/test_seed.py frontend/tests/test_demo_bootstrap.py (no database)
+.......................................                                  [100%]
+39 passed in 2.99s
+# exit status: 0
+## bash -n on the changed shell scripts
+ok scripts/rotate_log.sh
+ok tests/integration/test_log_import_limits.sh
+ok tests/database/test_catalogue.sh
+ok tests/database/test_demo_student.sh
+ok tests/database/test_log_import.sh
+ok tests/shell/test_demo_bootstrap.sh
+## exploratory programs compile from their new folder
+demo_audit_result: built and ran
+interactive_open_log: compiles

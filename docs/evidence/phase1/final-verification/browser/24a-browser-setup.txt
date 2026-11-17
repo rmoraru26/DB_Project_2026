@@ -1,0 +1,5 @@
+# 2026-11-17T04:54:20Z pip install -r frontend/requirements.txt -r frontend/requirements-browser.txt (pytest==9.1.1, playwright==1.55.0)
+
+[notice] A new release of pip is available: 25.2 -> 26.3
+[notice] To update, run: python3 -m pip install --upgrade pip
+# exit status: 0

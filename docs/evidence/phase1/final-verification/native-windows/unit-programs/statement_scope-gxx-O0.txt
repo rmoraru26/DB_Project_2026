@@ -1,0 +1,1 @@
+/usr/bin/bash: line 1: <scratch>/native-unit-build/st-gxx-O0.exe: Permission denied

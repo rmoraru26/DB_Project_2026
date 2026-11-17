@@ -1,0 +1,14 @@
+# tests/database/run_database_tests.sh: database/database_tests.sql with its expected errors checked automatically
+# MariaDB 13.0.2 (official Windows zip), the first local server (port 3399), 2026-11-03
+
+PASS: TEST 1: all seven tables exist
+PASS: TEST 2: Alice Student, Room 201, confirmed
+PASS: TEST 3: Alice Student, Arduino Starter Kit, returned
+PASS: expected error 1: ERROR 4025 naming chk_rooms_capacity_positive
+PASS: expected error 2: ERROR 4025 naming chk_bookings_time_order
+PASS: expected error 3: ERROR 1062 naming uq_users_email
+PASS: expected error 4: ERROR 1452 naming fk_bookings_user
+PASS: expected error 5: ERROR 4025 naming chk_loans_status_returned_consistent
+PASS: no other error (5 errors, each one expected)
+PASS: the file ran to its last statement
+== 10 passed, 0 failed

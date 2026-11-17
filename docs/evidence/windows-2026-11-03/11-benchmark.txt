@@ -1,0 +1,44 @@
+# scripts/benchmark.sh, unchanged, run natively on 2026-11-03 against a fresh MariaDB 13.0.2 (port 3397):
+# MARIADB_CLIENT="mariadb.exe -h127.0.0.1 -P3397 --skip-ssl-verify-server-cert", BENCH_ROWS=2000 BENCH_REPS=5 BENCH_PASSES=2 (defaults).
+# Laptop with other programs running; raw timings: 11-benchmark.csv
+== 13.0.2-MariaDB on Win64, 2026-11-03T16:24:13Z
+== 2000 INSERTs per run, 5 timed runs per configuration, 2 passes -> <scratch>/bench-2026-11-03.csv
+pass 1  none  run 1: 994 ms
+pass 1  none  run 2: 898 ms
+pass 1  none  run 3: 962 ms
+pass 1  none  run 4: 964 ms
+pass 1  none  run 5: 1060 ms
+pass 1  campus_audit  run 1: 1159 ms
+pass 1  campus_audit  run 2: 1078 ms
+pass 1  campus_audit  run 3: 1057 ms
+pass 1  campus_audit  run 4: 1081 ms
+pass 1  campus_audit  run 5: 1345 ms
+pass 1  server_audit  run 1: 1020 ms
+pass 1  server_audit  run 2: 1095 ms
+pass 1  server_audit  run 3: 1013 ms
+pass 1  server_audit  run 4: 1146 ms
+pass 1  server_audit  run 5: 1005 ms
+pass 2  server_audit  run 1: 1345 ms
+pass 2  server_audit  run 2: 1172 ms
+pass 2  server_audit  run 3: 1292 ms
+pass 2  server_audit  run 4: 1166 ms
+pass 2  server_audit  run 5: 1459 ms
+pass 2  campus_audit  run 1: 1136 ms
+pass 2  campus_audit  run 2: 1126 ms
+pass 2  campus_audit  run 3: 1289 ms
+pass 2  campus_audit  run 4: 1248 ms
+pass 2  campus_audit  run 5: 1449 ms
+pass 2  none  run 1: 964 ms
+pass 2  none  run 2: 1007 ms
+pass 2  none  run 3: 1025 ms
+pass 2  none  run 4: 1048 ms
+pass 2  none  run 5: 1092 ms
+
+Median of 5 runs in ms (min-max); overhead relative to 'none' of the same pass
+config        pass 1                            pass 2
+none          964 (898-1060)                    1025 (964-1092)
+campus_audit  1081 (1057-1345)  +12.1%          1248 (1126-1449)  +21.8%
+server_audit  1020 (1005-1146)  +5.8%           1292 (1166-1459)  +26.0%
+campus_audit log volume per run of 2000 INSERTs (bytes): pass1=1149364 pass2=1149364
+raw timings: <scratch>/bench-2026-11-03.csv
+exit=0

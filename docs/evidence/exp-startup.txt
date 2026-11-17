@@ -1,0 +1,30 @@
+# Startup with an invalid campus_audit_file_path in my.ini (missing directory)
+2026-10-25 12:47:56 0 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:47:56 0 [Warning] mariadbd.exe: campus_audit: plugin not started: Cannot open audit log '<scratch>/exp/no_such_dir/x.jsonl': No such file or directory (errno 2)
+2026-10-25 12:47:56 0 [ERROR] Plugin 'campus_audit' init function returned error.
+2026-10-25 12:47:56 0 [ERROR] Plugin 'campus_audit' registration as a AUDIT failed.
+2026-10-25 12:47:56 0 [Warning] mariadbd.exe: campus_audit: The audit log is not open; audit records are being dropped (fail-open), retrying every 5 s
+# (the last line came from deinit being called after the failed init; fixed afterwards, see next run)
+
+# Startup with an invalid campus_audit_databases ('bad name') after the deinit guard
+2026-10-25 12:49:01 0 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:49:01 0 [Warning] mariadbd.exe: campus_audit: invalid configuration, plugin not started: unsupported character in database name 'bad name'
+2026-10-25 12:49:01 0 [ERROR] Plugin 'campus_audit' init function returned error.
+2026-10-25 12:49:01 0 [ERROR] Plugin 'campus_audit' registration as a AUDIT failed.
+
+# Startup after restoring a valid my.ini: plugin re-loaded from mysql.plugin
+2026-10-25 12:49:15 0 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:49:50 15 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 12:50:01 29 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 13:01:16 106 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-10-25 13:01:33 127 [Warning] mariadbd.exe: campus_audit: The audit log path is empty
+2026-10-25 13:01:33 128 [Warning] mariadbd.exe: campus_audit: campus_audit_file_path cannot be NULL
+2026-10-25 13:01:34 129 [Warning] mariadbd.exe: campus_audit: Cannot open audit log '<scratch>\run\data\no_such_dir_1792929690_1680/x.jsonl': No such file or directory (errno 2)
+2026-10-25 13:01:34 130 [Warning] mariadbd.exe: campus_audit: The audit log path names a directory: some_dir/
+2026-10-25 13:01:34 131 [Warning] mariadbd.exe: campus_audit: Cannot open audit log '<scratch>\run\data\no_such_dir_1792929690_1680/x.jsonl': No such file or directory (errno 2)
+2026-10-25 13:01:35 133 [Warning] mariadbd.exe: campus_audit: unsupported character in database name 'bad name'
+2026-10-25 13:01:35 134 [Warning] mariadbd.exe: campus_audit: empty database name in list
+2026-10-25 13:01:35 135 [Warning] mariadbd.exe: campus_audit: '*' cannot be combined with explicit database names
+2026-10-25 13:01:36 136 [Warning] mariadbd.exe: campus_audit: unsupported character in user name 'x;DROP'
+2026-10-25 13:01:37 141 [Warning] mariadbd.exe: campus_audit: Cannot open audit log '<scratch>/exp/denied/audit.jsonl': Permission denied (errno 13)
+2026-10-25 13:02:19 328 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable

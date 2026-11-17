@@ -1,0 +1,22 @@
+## g++.exe (Rev8, Built by MSYS2 project) 15.2.0 on MINGW64_NT-10.0-26100
+## variant O2  (-std=c++11 -O2 -Wall -Wextra -I. -static -pthread)
+test_record_format: exit 0, 72 PASS lines, 0 FAIL lines, 0 compiler warnings | Failures: 0
+test_log_sink: exit 0, 19 PASS lines, 0 FAIL lines, 0 compiler warnings | Failures: 0
+test_automatic_errors: exit 0, 13 PASS lines, 0 FAIL lines, 0 compiler warnings | Failures: 0
+test_error_reporter: exit 0, 1 PASS lines, 0 FAIL lines, 0 compiler warnings
+test_runtime_config: exit 0, 4 PASS lines, 0 FAIL lines, 0 compiler warnings | Checks: 4, Failures: 0
+test_gap_accounting: exit 0, 8 PASS lines, 0 FAIL lines, 0 compiler warnings | Checks: 8, Failures: 0
+test_statement_scope: exit 126, 0 PASS lines, 0 FAIL lines, 0 compiler warnings
+   (no PASS line: the program checks nothing visible)
+## variant O2-NDEBUG  (-std=c++11 -O2 -Wall -Wextra -I. -static -pthread -DNDEBUG)
+test_record_format: exit 0, 72 PASS lines, 0 FAIL lines, 0 compiler warnings | Failures: 0
+test_log_sink: exit 0, 19 PASS lines, 0 FAIL lines, 0 compiler warnings | Failures: 0
+test_automatic_errors: exit 126, 0 PASS lines, 0 FAIL lines, 0 compiler warnings
+   (no PASS line: the program checks nothing visible)
+test_error_reporter: exit 126, 0 PASS lines, 0 FAIL lines, 0 compiler warnings
+   (no PASS line: the program checks nothing visible)
+test_runtime_config: exit 0, 4 PASS lines, 0 FAIL lines, 0 compiler warnings | Checks: 4, Failures: 0
+test_gap_accounting: exit 126, 0 PASS lines, 0 FAIL lines, 0 compiler warnings
+   (no PASS line: the program checks nothing visible)
+test_statement_scope: exit 0, 63 PASS lines, 0 FAIL lines, 0 compiler warnings | Checks: 63, Failures: 0
+## programs with a failure: 8

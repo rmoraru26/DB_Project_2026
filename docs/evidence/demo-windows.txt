@@ -1,0 +1,106 @@
+
+=== Server version
++----------------+-------+-----------------+
+| version        | os    | plugin_maturity |
++----------------+-------+-----------------+
+| 13.0.2-MariaDB | Win64 | beta            |
++----------------+-------+-----------------+
+
+=== 1. Install the plugin (no-op if it is already installed)
++--------------+---------------+-------------+------------------+-----------------+---------------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY   | PLUGIN_MATURITY | PLUGIN_AUTH_VERSION |
++--------------+---------------+-------------+------------------+-----------------+---------------------+
+| campus_audit | ACTIVE        | AUDIT       | campus_audit.dll | Beta            | 1.0.0               |
++--------------+---------------+-------------+------------------+-----------------+---------------------+
++-----------------------------+----------------------+
+| Variable_name               | Value                |
++-----------------------------+----------------------+
+| campus_audit_connections    | FAILED               |
+| campus_audit_databases      | university_resources |
+| campus_audit_exclude_users  |                      |
+| campus_audit_file_path      | campus_audit.jsonl   |
+| campus_audit_log_reads      | OFF                  |
+| campus_audit_max_sql_length | 1024                 |
+| campus_audit_reopen_now     | OFF                  |
++-----------------------------+----------------------+
+
+=== 2. Cause events: an application booking, a rejected statement, a failed login
++-----------------+----------+
+| name            | capacity |
++-----------------+----------+
+| Room 201        |        8 |
+| Project Room 12 |        6 |
+| Electronics Lab |       12 |
++-----------------+----------+
+   (expected) --------------
+   (expected) INSERT INTO university_resources.rooms (name, capacity) VALUES ('Broken room', 0)
+   (expected) --------------
+   (expected)
+   (expected) ERROR 4025 (23000) at line 1: CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
+   (expected) ERROR 1045 (28000): Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+
+=== 3. Raw JSON lines written by the plugin (last 6)
+*************************** 1. row ***************************
+tail_of_log: ,"event":"statement","conn":384,"query_id":37969,"account":"campus_app[campus_app] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) VALUES (?, ?, ?, ?)","sql_digest_truncated":false}
+{"ts":"2026-10-25T12:02:55.703250Z","seq":90,"instance":"65ea8fc373205-5d70","event":"table_write","conn":395,"query_id":38007,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"bookings"}
+{"ts":"2026-10-25T12:02:55.703308Z","seq":91,"instance":"65ea8fc373205-5d70","event":"table_write","conn":395,"query_id":38007,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-10-25T12:02:55.716183Z","seq":92,"instance":"65ea8fc373205-5d70","event":"statement","conn":395,"query_id":38007,"account":"root[root] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @app_user_id, room_id, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR, CURRENT_DATE + INTERVAL ? DAY + INTERVAL ? HOUR FROM rooms WHERE name = ?","sql_digest_truncated":false}
+{"ts":"2026-10-25T12:02:55.907293Z","seq":93,"instance":"65ea8fc373205-5d70","event":"table_write","conn":396,"query_id":38011,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"rooms"}
+{"ts":"2026-10-25T12:02:55.907352Z","seq":94,"instance":"65ea8fc373205-5d70","event":"table_write","conn":396,"query_id":38011,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":"127.0.0.1","db":"university_resources","table":"audit_events"}
+{"ts":"2026-10-25T12:02:55.907528Z","seq":95,"instance":"65ea8fc373205-5d70","event":"statement","conn":396,"query_id":38011,"account":"root[root] @ localhost [127.0.0.1]","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-10-25T12:02:56.091067Z","seq":96,"instance":"65ea8fc373205-5d70","event":"connect_failed","conn":397,"status":1045,"user":"nobody_demo","priv_user":"","proxy_user":"","host":"localhost","ip":"127.0.0.1","port":62593,"db":null,"tls_version":""}
+
+
+=== 4. Import into campus_audit.plugin_events
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+-----------------------+----------------+
+| log_file                                                                                                                                                        | total_lines | invalid_lines_skipped | newly_imported |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+-----------------------+----------------+
+| <scratch>\run\data\campus_audit.jsonl |         280 |                     0 |            280 |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+-----------------------+----------------+
+
+=== 5. Table access with statement outcome (campus_audit.v_table_activity)
++----------------------------+-------------+--------------+------------+---------------+----------+------+------------------------------------------------------------------------+
+| event_time                 | event_type  | table_name   | db_user    | connection_id | query_id | err  | sql_digest                                                             |
++----------------------------+-------------+--------------+------------+---------------+----------+------+------------------------------------------------------------------------+
+| 2026-10-25 13:02:55.907352 | table_write | audit_events | root       |           396 |    38011 | 4025 | INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)  |
+| 2026-10-25 13:02:55.907293 | table_write | rooms        | root       |           396 |    38011 | 4025 | INSERT INTO university_resources.rooms (name, capacity) VALUES (?, ?)  |
+| 2026-10-25 13:02:55.703308 | table_write | audit_events | root       |           395 |    38007 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
+| 2026-10-25 13:02:55.703250 | table_write | bookings     | root       |           395 |    38007 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
+| 2026-10-25 13:02:52.392519 | table_write | audit_events | campus_app |           384 |    37969 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) VALUES ( |
+| 2026-10-25 13:02:52.392436 | table_write | bookings     | campus_app |           384 |    37969 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) VALUES ( |
++----------------------------+-------------+--------------+------------+---------------+----------+------+------------------------------------------------------------------------+
+
+=== 6. Row changes (triggers) joined with the plugin's statement (v_row_change_history)
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+| event_id | entity_table | action | entity_id | app_user | event_source | plugin_query_id | sql_digest                                                   |
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+|       26 | bookings     | INSERT | 8         |        1 | application  |           38007 | INSERT INTO bookings (user_id, room_id, start_time, end_time |
+|       25 | bookings     | INSERT | 7         |        1 | application  |           37969 | INSERT INTO bookings (user_id, room_id, start_time, end_time |
+|       24 | bookings     | UPDATE | 6         |        1 | application  |           37951 | UPDATE bookings SET status = ? WHERE booking_id = ? AND user |
++----------+--------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+
+=== 7. Failed logins
++----------------------------+----------------+-------------+------------+
+| event_time                 | attempted_user | client_host | error_code |
++----------------------------+----------------+-------------+------------+
+| 2026-10-25 13:02:56.091067 | nobody_demo    | localhost   |       1045 |
+| 2026-10-25 12:23:40.330846 | nobody         | localhost   |       1045 |
+| 2026-10-25 12:23:40.091287 | root           | localhost   |       1045 |
++----------------------------+----------------+-------------+------------+
+
+=== 8. Plugin health counters
++--------------------------------+--------------------+
+| Variable_name                  | Value              |
++--------------------------------+--------------------+
+| Campus_audit_bytes_written     | 29864              |
+| Campus_audit_events_dropped    | 0                  |
+| Campus_audit_events_filtered   | 0                  |
+| Campus_audit_events_unexpected | 0                  |
+| Campus_audit_events_written    | 96                 |
+| Campus_audit_file              | campus_audit.jsonl |
+| Campus_audit_last_error        |                    |
+| Campus_audit_open_failures     | 0                  |
+| Campus_audit_reopens           | 0                  |
+| Campus_audit_state             | ACTIVE             |
+| Campus_audit_write_failures    | 0                  |
++--------------------------------+--------------------+

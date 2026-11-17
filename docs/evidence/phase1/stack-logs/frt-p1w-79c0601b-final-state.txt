@@ -1,0 +1,26 @@
++--------------+---------------+---------------------+-----------------+----------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_AUTH_VERSION | PLUGIN_MATURITY | PLUGIN_LICENSE |
++--------------+---------------+---------------------+-----------------+----------------+
+| campus_audit | ACTIVE        | 1.2.0               | Beta            | BSD            |
++--------------+---------------+---------------------+-----------------+----------------+
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 113874                                   |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 359                                      |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
++-------------------------------+---------+-----------+
+| email                         | role    | is_active |
++-------------------------------+---------+-----------+
+| admin@frantastic.local        | admin   |         1 |
+| demo.student@frantastic.local | student |         1 |
++-------------------------------+---------+-----------+

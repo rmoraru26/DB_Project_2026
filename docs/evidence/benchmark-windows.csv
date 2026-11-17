@@ -1,0 +1,16 @@
+config,repetition,elapsed_ms
+none,1,993
+none,2,730
+none,3,688
+none,4,721
+none,5,702
+campus_audit,1,810
+campus_audit,2,813
+campus_audit,3,875
+campus_audit,4,738
+campus_audit,5,805
+server_audit,1,745
+server_audit,2,782
+server_audit,3,723
+server_audit,4,733
+server_audit,5,750

@@ -1,0 +1,11 @@
+# final pass 2026-11-17T05:02:04Z: run 1 of 2 of the corrected tests/integration/test_log_rotation.sh on frt-final-28f2fc09 (instance already rotated before: by make test-integration and by 27a)
+PASS: rotate_log.sh renames the log, reopens it and imports both files
+PASS: the archived file and a new active file exist; the plugin is ACTIVE
+PASS: the new log has the owner and mode of the old one (mysql:mysql 664)
+PASS: the archived file holds every earlier record (5 lines of this plugin instance); the new file starts with the reopen record
+PASS: the statement written before the rotation and the one written after it are both in plugin_events, once each
+PASS: no record lost and none duplicated: 10 lines in the two files, each of their seq values exactly once in plugin_events
+PASS: a second rotation creates a second archive and keeps the first
+PASS: re-importing the archived files adds nothing
+== 8 passed, 0 failed   (archives kept: /var/log/campus_audit/campus_audit-20261117T050206Z.jsonl /var/log/campus_audit/campus_audit-20261117T050212Z.jsonl)
+# exit status: 0

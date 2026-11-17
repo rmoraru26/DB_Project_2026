@@ -1,0 +1,20 @@
+﻿PASS: the fake docker.cmd is the first docker on PATH
+PASS: help: dispatched without any Docker call
+PASS: demo without .env: stops before any container command
+PASS: demo with a whitespace-only root secret: stops before any container command
+PASS: demo: succeeds although the fake engine and exec write to stderr
+PASS: demo: exact Docker calls, no password forwarded: ARGS compose version | ARGS info --format {{.OSType}} | ARGS compose exec -T mariadb bash /usr/local/share/campus/scripts/demo.sh | ENV MARIADB_ROOT_PASSWORD absent | ENV MYSQL_PWD absent
+PASS: demo: the session override is announced and removed before Docker runs
+PASS: demo: a non-zero Docker exit code is propagated
+PASS: down: dispatched to docker compose down
+powershell.exe : fake exec stderr line 
+At line:1 char:762
++ ... in-$t.txt"; & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fake exec stderr line :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+PASS: in-process run: the variable is absent for Docker
+PASS: in-process run: the removed session variable is restored afterwards
+PASS: no dummy secret appears in any launcher output
+Launcher end-to-end tests: 12 checks passed.

@@ -1,0 +1,26 @@
+# What a fresh installation provides
+# command: bash -c 
+        echo "credential files (mode owner bytes lines):"; for f in .env .demo-credentials .admin-credentials; do echo "  $f $(stat -c "%a %U %s" $f) $(wc -l < $f)"; done
+        echo "first line of .demo-credentials: $(sed -n 1p .demo-credentials)"
+        echo "pending or temporary credential files: $(ls -a | grep -c -E "credentials\.(pending|tmp)")"
+        
+# started: 2026-11-16T11:18:27Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+credential files (mode owner bytes lines):
+  .env 600 root 1068 31
+  .demo-credentials 600 root 55 2
+  .admin-credentials 600 root 67 2
+first line of .demo-credentials: demo.student@frantastic.local
+pending or temporary credential files: 0
+
+# exit status: 0
+# demo student over HTTP (tests/integration/http_login.py)
+login=302 session=yes admin_audit=403 events_scope=mine items_home=200
+# administrator over HTTP
+login=302 session=yes admin_audit=200 events_scope=all items_home=200
+# catalogue
+54 catalogue items, 18 types
+8 rooms in total: Room 201, Project Room 12, Electronics Lab, Study Room, Meeting Room, Studio Room, Practice Room, Cinema Room
+accounts: alice.student@example.edu (student), bob.student@example.edu (student), dana.admin@example.edu (student), admin@frantastic.local (admin), demo.student@frantastic.local (student)
+plugin: ACTIVE 1.2.0 Beta BSD
+migrations: demo constraint 1

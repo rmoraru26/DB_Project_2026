@@ -1,0 +1,13 @@
+# Original snapshot (before remediation), app started with a campus_app password that differs from the stored one
+# (what a database volume initialised with an earlier .env does). Driver: <scratch>/repro_web.py
+GET  /          -> 200
+GET  /register  -> 200
+POST /register  -> 500  500 Internal Server Error Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloade
+GET  /login     -> 200
+POST /login     -> 500  500 Internal Server Error Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloade
+
+# Flask log (excerpt)
+[2026-11-03 16:12:21,351] ERROR in app: Exception on /register [POST]
+pymysql.err.OperationalError: (1045, "Access denied for user 'campus_app'@'localhost' (using password: YES)")
+[2026-11-03 16:12:21,444] ERROR in app: Exception on /login [POST]
+pymysql.err.OperationalError: (1045, "Access denied for user 'campus_app'@'localhost' (using password: YES)")

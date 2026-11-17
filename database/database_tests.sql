@@ -54,8 +54,8 @@ ROLLBACK;
 -- Expected: ERROR 1062, uq_users_email.
 START TRANSACTION;
 
-INSERT INTO users (full_name, email, role)
-VALUES ('Duplicate Test', 'alice.student@example.edu', 'student');
+INSERT INTO users (full_name, email, password_hash, role)
+VALUES ('Duplicate Test', 'alice.student@example.edu', 'test-only-placeholder-hash', 'student');
 
 ROLLBACK;
 

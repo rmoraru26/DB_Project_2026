@@ -1,0 +1,23 @@
+# post-audit 2026-11-17: system schema names, 2026-11-17T02:20:49Z; script: see 'Reproducing' in README.md of this folder
+== 1. plugin from the image (Phase 1 tree before this fix)
+plugin 1.2.0, lower_case_table_names=0, 13.0.2-MariaDB-ubu2604
+name resolution: INFORMATION_SCHEMA=1 Performance_Schema=1 | ERROR 1146 (42S02) at line 1: Table 'MYSQL.user' doesn't exist | ERROR 1146 (42S02) at line 1: Table 'SYS.version' doesn't exist
+table records for db=MySQL: 0
+table records for db=Sys: 0
+table records for db=university_resources: 3
+table records for db=mysql: 0
+table records for db=sys: 0
+table records for db=performance_schema: 0
+table records for db=PERFORMANCE_SCHEMA: 0
+
+== 2. plugin built from the post-audit working tree
+plugin 1.2.0, lower_case_table_names=0, 13.0.2-MariaDB-ubu2604
+name resolution: INFORMATION_SCHEMA=1 Performance_Schema=1 | ERROR 1146 (42S02) at line 1: Table 'MYSQL.user' doesn't exist | ERROR 1146 (42S02) at line 1: Table 'SYS.version' doesn't exist
+table records for db=MySQL: 1
+table records for db=Sys: 1
+table records for db=university_resources: 3
+table records for db=mysql: 0
+table records for db=sys: 0
+table records for db=performance_schema: 0
+table records for db=PERFORMANCE_SCHEMA: 0
+# exit status: 0

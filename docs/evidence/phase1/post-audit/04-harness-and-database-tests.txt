@@ -1,0 +1,343 @@
+# post-audit 2026-11-17 2026-11-17T02:28:49Z: plugin harness + database tests of this working tree in a throw-away 13.0.2 server (image frt-p1-79c0601b-mariadb:13.0.2, plugin built from this tree)
+plugin: ACTIVE 1.2.0
+applied database/migrations/007_local_demo_student.sql
+applied database/migrations/008_import_plugin_log_errors.sql
+applied database/catalogue.sql
+
+######## tests/plugin/run_plugin_tests.sh
+== campus_audit integration tests (run 1794882557_272)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- statements without table events (LOCK TABLES; trigger, view and routine DDL)
+PASS: statement_scope defaults to TABLES
+PASS: LOCK TABLES on a watched table raises one table event and is recorded
+PASS: the statements under the lock did change the table
+PASS: scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)
+PASS: scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record
+PASS: scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)
+PASS: unknown statement scope rejected
+PASS: the scope change is recorded as config_change
+PASS: scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session
+PASS: scope SESSION: they still have no table record (the server raised no table event for them)
+PASS: scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible
+PASS: scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded
+PASS: API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope
+PASS: log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement
+PASS: log_reads=ON: each of those statement records shares its query_id with the table_read record
+PASS: scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)
+PASS: scope SESSION: a statement with a table event keeps its ordinary, unmarked record
+PASS: scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)
+PASS: scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)
+PASS: scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id
+PASS: scope SESSION: the trigger's body statement is not recorded as a statement of the client
+PASS: scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session
+PASS: scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)
+PASS: scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)
+PASS: scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded
+PASS: known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded
+PASS: scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered
+PASS: back to scope TABLES: table-less statements are no longer recorded
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: failed recovery-marker write keeps the plugin DEGRADED
+PASS: failed recovery-marker write is counted
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 128 passed, 0 failed, 0 skipped
+######## tests/plugin/run_plugin_tests.sh: exit status 0
+
+######## tests/database/test_legacy_admin_migration.sh
+PASS: legacy admin demoted; unrelated admin and user rows preserved; rerun idempotent; transaction rolled back
+PASS: seed re-run after migration 004 keeps the shared account a student and leaves local administrators unchanged
+######## tests/database/test_legacy_admin_migration.sh: exit status 0
+
+######## tests/database/test_cancelled_loan_migration.sh
+PASS: scratch copy starts from the official enum('active','returned','lost')
+PASS: migration 006 run 1 succeeds
+PASS: migration 006 run 2 succeeds
+PASS: loans.status is enum('active','returned','lost','cancelled')
+PASS: loans.status stays NOT NULL with default 'active'
+PASS: no loan row was deleted or rewritten (4 rows, identical values and updated_at)
+PASS: the current active loan is still active
+PASS: an insert without status still gets 'active'
+PASS: the chk_loans_status_returned_consistent constraint is still present
+PASS: a future active loan is cancelled by an UPDATE with returned_at = NULL
+PASS: the cancelled loan keeps its row, dates and returned_at = NULL
+PASS: a cancelled loan with returned_at is rejected
+PASS: a returned loan without returned_at is still rejected
+PASS: an active loan with returned_at is still rejected
+PASS: the returned and lost loans are unchanged
+PASS: re-running migration 006 on a migrated table changes nothing (cancelled row kept)
+PASS: an unexpected loans.status definition stops migration 006
+PASS: ... and leaves that definition unchanged
+== 18 passed, 0 failed
+######## tests/database/test_cancelled_loan_migration.sh: exit status 0
+
+######## tests/database/test_audit_triggers.sh
+PASS: legacy triggers trg_{bookings,loans}_a{i,u,d}_audit are absent
+PASS: users INSERT: exactly one trigger, trg_users_audit_insert (AFTER)
+PASS: users UPDATE: exactly one trigger, trg_users_audit_update (AFTER)
+PASS: users DELETE: exactly one trigger, trg_users_audit_delete (AFTER)
+PASS: rooms INSERT: exactly one trigger, trg_rooms_audit_insert (AFTER)
+PASS: rooms UPDATE: exactly one trigger, trg_rooms_audit_update (AFTER)
+PASS: rooms DELETE: exactly one trigger, trg_rooms_audit_delete (AFTER)
+PASS: items INSERT: exactly one trigger, trg_items_audit_insert (AFTER)
+PASS: items UPDATE: exactly one trigger, trg_items_audit_update (AFTER)
+PASS: items DELETE: exactly one trigger, trg_items_audit_delete (AFTER)
+PASS: bookings INSERT: exactly one trigger, trg_bookings_audit_insert (AFTER)
+PASS: bookings UPDATE: exactly one trigger, trg_bookings_audit_update (AFTER)
+PASS: bookings DELETE: exactly one trigger, trg_bookings_audit_delete (AFTER)
+PASS: loans INSERT: exactly one trigger, trg_loans_audit_insert (AFTER)
+PASS: loans UPDATE: exactly one trigger, trg_loans_audit_update (AFTER)
+PASS: loans DELETE: exactly one trigger, trg_loans_audit_delete (AFTER)
+PASS: audit_lab_notes INSERT: exactly one trigger, trg_audit_lab_notes_audit_insert (AFTER)
+PASS: audit_lab_notes UPDATE: exactly one trigger, trg_audit_lab_notes_audit_update (AFTER)
+PASS: audit_lab_notes DELETE: exactly one trigger, trg_audit_lab_notes_audit_delete (AFTER)
+PASS: test_audit_triggers.sql: one history row per booking/loan INSERT, UPDATE, DELETE (no duplicates)
+PASS: test_audit_triggers.sql: rows carry database_user, connection_id and event_source=direct_sql
+PASS: application attribution and a loan cancellation, one history row each
+== 22 passed, 0 failed
+######## tests/database/test_audit_triggers.sh: exit status 0
+
+######## tests/database/test_app_account_grants.sh
+PASS: account SQL applies to a fresh account
+PASS: fresh account: exactly the least-privilege grants
+PASS: account SQL applies to an account with old table-wide users grants
+PASS: upgraded account: table-wide users INSERT/UPDATE revoked, column grants kept
+PASS: account SQL re-runs without error
+PASS: re-run: grants unchanged (column grants are not revoked by the refresh)
+PASS: registration: INSERT (full_name, email, password_hash) into users (rolled back)
+PASS: account settings: UPDATE users.full_name
+PASS: account settings: UPDATE users.password_hash
+PASS: UPDATE users.role is refused
+PASS: UPDATE users.is_active is refused
+PASS: UPDATE users.email is refused
+PASS: INSERT users with a role is refused
+PASS: DELETE FROM users is refused
+PASS: INSERT INTO audit_events is refused
+PASS: UPDATE audit_events is refused
+PASS: DELETE FROM audit_events is refused
+PASS: INSERT INTO campus_audit.plugin_events is refused
+PASS: DELETE FROM loans is refused
+PASS: UPDATE loans SET status = 'cancelled' is allowed
+PASS: DELETE FROM audit_lab_notes is allowed
+PASS: CALL import_plugin_log() (needs FILE) is refused
+PASS: CALL import_current_log() is permitted (result: imported)
+PASS: installed campus_app@%: exactly the least-privilege grants
+== 24 passed, 0 failed, 0 skipped
+######## tests/database/test_app_account_grants.sh: exit status 0
+
+######## tests/database/test_demo_student.sh
+PASS: scratch copy of the users table created
+PASS: before the migration the scratch table has no demo constraint
+PASS: a conflicting non-student row stops the migration with a clear message (SQLSTATE 45000)
+PASS: the conflicting row was not demoted or removed by the migration
+PASS: and no constraint was added in that case
+PASS: migration 007 applies
+PASS: the migration adds chk_users_demo_is_student
+PASS: migration 007 re-runs without error
+PASS: re-running does not duplicate the constraint
+PASS: the migration itself creates no account
+PASS: bootstrap on an empty table reports CREATED
+PASS: the created row is an active student named Demo Student
+PASS: a second bootstrap reports EXISTS
+PASS: and leaves the stored hash unchanged (a restart cannot rotate the password)
+PASS: rotate reports ROTATED
+PASS: and replaces only the hash; the row is still the one student
+PASS: bootstrap refuses a value that is not a Werkzeug hash
+PASS: rotate refuses a value that is not a Werkzeug hash
+PASS: rotate refuses NULL
+PASS: a refused call changed nothing
+PASS: bootstrap_local_demo_student refuses inside an open transaction; the caller's transaction is still open with its uncommitted row
+PASS: after the caller's ROLLBACK its row is gone (it was not committed by bootstrap_local_demo_student)
+PASS: rotate_local_demo_student refuses inside an open transaction; the caller's transaction is still open with its uncommitted row
+PASS: after the caller's ROLLBACK its row is gone (it was not committed by rotate_local_demo_student)
+PASS: the refusals inside a transaction changed nothing
+PASS: UPDATE to the administrator role is refused by the CHECK constraint
+PASS: the constraint also covers a differently cased address (the collation is case-insensitive)
+PASS: documented limit: with check_constraint_checks = 0 a session can bypass the constraint (defence in depth, not a barrier against root)
+PASS: other accounts may still be administrators
+PASS: rotate without the demo row: MISSING, no row created, other rows kept
+PASS: installed database: chk_users_demo_is_student exists
+PASS: installed database: both procedures exist (SQL SECURITY DEFINER)
+PASS: installed database: no account was granted EXECUTE on the credential procedures
+NOTE: the installed database has no demo account yet (make up creates it); testing the constraint with an INSERT
+PASS: installed database: the administrator connection cannot give the demo identity the admin role (ER 4025)
+PASS: installed database: the demo account row is exactly as before this test
+== 35 passed, 0 failed
+######## tests/database/test_demo_student.sh: exit status 0
+
+######## tests/database/test_catalogue.sh
+PASS: installed: 18 item types, each with copies A, B and C (54 rows)
+PASS: installed: every item type has exactly three copies
+PASS: installed: the five rooms of the booking page exist, each once
+PASS: installed: catalogue rooms and items are bookable (status available) unless changed locally
+PASS: installed: catalogue.sql re-runs without error
+PASS: installed: two more runs changed no row of items or rooms and wrote no history row (rows, ids, updated_at, audit_events count identical)
+PASS: scratch copies of items and rooms created (empty)
+PASS: fresh database: catalogue.sql applies
+PASS: fresh database: 54 items and 5 rooms
+PASS: fresh database: items are numbered in the order of the booking page (Vacuum A first, Gameboy C last)
+PASS: fresh database: rooms in the order of the booking page with their capacities
+PASS: fresh database: categories as on the booking page
+PASS: existing database: catalogue.sql applies
+PASS: existing database: the removed rows are back, nothing is duplicated (55 items incl. the local one, 6 rooms)
+PASS: existing database: locally changed rows keep their status, description, capacity and building
+PASS: existing database: locally added rows are kept
+PASS: existing database: every row that existed before the run is byte-for-byte unchanged (ids, values, updated_at)
+PASS: three further runs change nothing
+PASS: two overlapping runs under READ COMMITTED both succeed
+PASS: two overlapping runs under READ COMMITTED create no duplicate room (5 rooms, 5 distinct names)
+PASS: the overlapping runs left the existing items unchanged
+PASS: the catalogue lock is released after the runs
+PASS: while another session holds the lock, a run stops with an explanation
+PASS: that run changed nothing (Cinema Room still missing, 4 rooms)
+== 24 passed, 0 failed
+######## tests/database/test_catalogue.sh: exit status 0
+
+######## tests/database/test_log_import.sh
+PASS: import of the current log returns log_file, total_lines, invalid_lines_skipped, newly_imported (145 lines)
+PASS: an immediate second import reads the whole file again and adds nothing
+PASS: after a successful import the session time_zone and max_recursive_iterations are as before; no temporary table remains
+PASS: plugin_events holds each (instance, seq) once, with its complete JSON record
+PASS: an empty or NULL path is refused (ER 1644); the session is untouched
+PASS: a missing file is refused (ER 1644, LOAD_FILE returned NULL); the session is untouched
+PASS: a lock wait timeout during the import is reported as that error (ER 1205), not replaced by another
+PASS: after the failed import the session time_zone (+05:30) and max_recursive_iterations (4321) are restored
+PASS: after the failed import no temporary table is left in the session
+PASS: the next import succeeds; nothing was left half-done
+PASS: a log of 47197 bytes with max_allowed_packet = 23552 is refused with the limit and the remedy (import in parts with rotate_log.sh) in the message
+PASS: that refusal leaves the session untouched
+PASS: the global max_allowed_packet is back at 16777216
+PASS: with the original limit the same file imports again
+PASS: 4 complete lines read, 1 invalid line skipped and counted, 2 records imported; the unterminated last line is left for the next import
+PASS: the imported columns hold the record's values; event_time is the record's UTC time; unknown fields such as scope stay in the JSON record
+== 16 passed, 0 failed, 0 skipped
+######## tests/database/test_log_import.sh: exit status 0
+
+######## tests/database/test_native_password_hash.sh
+PASS: hash equals PASSWORD() for 100 random passwords (quotes, backslashes, %, spaces)
+PASS: account created from the hash accepts the plain password
+PASS: a wrong password is still rejected (ER 1045)
+== 3 passed, 0 failed
+######## tests/database/test_native_password_hash.sh: exit status 0
+
+######## tests/database/run_database_tests.sh
+PASS: TEST 1: all seven tables exist
+PASS: TEST 2: Alice Student, Room 201, confirmed
+PASS: TEST 3: Alice Student, Arduino Starter Kit, returned
+PASS: expected error 1: ERROR 4025 naming chk_rooms_capacity_positive
+PASS: expected error 2: ERROR 4025 naming chk_bookings_time_order
+PASS: expected error 3: ERROR 1062 naming uq_users_email
+PASS: expected error 4: ERROR 1452 naming fk_bookings_user
+PASS: expected error 5: ERROR 4025 naming chk_loans_status_returned_consistent
+PASS: no other error (5 errors, each one expected)
+PASS: the file ran to its last statement
+== 10 passed, 0 failed
+######## tests/database/run_database_tests.sh: exit status 0
+
+######## overall exit status 0
+# exit status: 0
