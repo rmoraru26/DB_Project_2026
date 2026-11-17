@@ -21,7 +21,8 @@ ifeq ($(SERVICES_LIB),)
 PLUGIN_SOURCES += src/service_symbols.cpp
 endif
 
-UNIT_TESTS = test_record_format test_log_sink test_automatic_errors test_error_reporter test_runtime_config test_gap_accounting
+UNIT_TESTS = test_record_format test_log_sink test_automatic_errors test_error_reporter test_runtime_config \
+             test_gap_accounting test_statement_scope
 
 .PHONY: all plugin test check-headers clean
 
@@ -55,6 +56,8 @@ $(BUILD)/test_error_reporter: tests/test_error_reporter.cpp audit_error_reporter
 $(BUILD)/test_runtime_config: tests/test_runtime_config.cpp src/runtime_config.h | $(BUILD)
 	$(CXX) $(CXXFLAGS) -pthread $< -o $@
 $(BUILD)/test_gap_accounting: tests/test_gap_accounting.cpp src/gap_accounting.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) $< -o $@
+$(BUILD)/test_statement_scope: tests/test_statement_scope.cpp src/statement_scope.h | $(BUILD)
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 # Tests create temporary files in the working directory, so run them in $(BUILD).

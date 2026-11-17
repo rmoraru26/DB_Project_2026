@@ -1,0 +1,34 @@
+# post-audit 2026-11-17 2026-11-17T02:33:43Z: CONTROL run: the same test against the PRE-FIX scripts/rotate_log.sh, scripts/mariadb_admin_auth.sh and migration 008 from the backup taken before the post-audit changes (the size checks must fail)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+FAIL: refusal of the oversized log
+      --------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit.jsonl')
+--------------
+
+ERROR 1644 (45000) at line 1: import_plugin_log: the log file is larger than max_allowed_packet and was not imported; rotate the log (make rotate-log, scripts/rotate_log.sh) or raise max_allowed_packet
+FAIL: rotation of the oversized log
+      Rotated: /var/log/campus_audit/campus_audit-20261117T023402Z.jsonl (129711 bytes); the plugin now writes to /var/log/campus_audit/campus_audit.jsonl
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl')
+--------------
+
+ERROR 1644 (45000) at line 1: import_plugin_log: the log file is larger than max_allowed_packet and was not imported; rotate the log (make rotate-log, scripts/rotate_log.sh) or raise max_allowed_packet
+rotate_log: the archived file could not be imported; it is kept at /var/log/campus_audit/campus_audit-20261117T023402Z.jsonl, retry with CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl')
+PASS: no part file is left after the import
+FAIL: lines vs rows after the oversized rotation
+      files 515, rows 65
+FAIL: --import of the oversized archive
+      rotate_log: '/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl' exists already; wait a second and retry
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+FAIL: import with the raised GLOBAL limit
+      131072
+/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl	452	0	450
+FAIL: file with a too long line
+      status 1: rotate_log: '/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl' exists already; wait a second and retry
+PASS: after that refusal nothing was imported, the file is unchanged and no part file is left
+FAIL: missing file
+      status 1: rotate_log: '/var/log/campus_audit/campus_audit-20261117T023402Z.jsonl' exists already; wait a second and retry
+== 6 passed, 7 failed
+# exit status: 1

@@ -2,8 +2,15 @@
 
 The booking pages offer a fixed catalogue (frontend/app.py: items_home and
 rooms_home).  This script inserts the matching rows into `items` and `rooms`.
-database/seed.sql, the supported initialisation path (scripts/setup_database.sh,
-make up), loads the demo data and is not replaced or changed by this script.
+
+You normally do not need it.  Every installation path loads the same rows
+from database/catalogue.sql: scripts/setup_database.sh, `make up` /
+`frantastic.cmd up` (also when they upgrade an existing database) and the
+Docker initialisation of an empty volume.  That file inserts only the rows
+that are missing, so it can run on every start.  This script is kept as the
+website's original utility for a database that was set up by hand without
+catalogue.sql; frontend/tests/test_seed.py checks that the two lists are
+identical.
 
 It is NOT part of the web application:
 
@@ -27,7 +34,8 @@ these rows yet:
 
 Both INSERTs run in one transaction: either the whole catalogue is added or
 nothing is.  The INSERTs are not idempotent (items.asset_tag is unique), so a
-second run fails with ER 1062 and changes nothing.
+run against a database that already has the catalogue (every database set up
+with the current scripts) fails with ER 1062 and changes nothing.
 """
 import os
 import sys

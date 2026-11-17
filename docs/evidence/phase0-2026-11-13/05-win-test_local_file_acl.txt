@@ -1,0 +1,8 @@
+﻿PASS: test process is not elevated
+PASS: DACL flags convert to UInt32 value 2147483652
+PASS: New-TestAcl returns one RawAcl object
+PASS: spaced path, exact SID allowlist, deny/extra ACE removal, protected DACL and unchanged content
+PASS: repeated protection is idempotent
+PASS: .env create-only and credential create/replace workflows verify final destinations
+PASS: injected ACL failure is fail-closed, redacted, cleans its temporary file, and preserves destination
+PASS: implementation does not inspect or set audit rules

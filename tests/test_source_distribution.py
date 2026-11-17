@@ -25,6 +25,7 @@ FRONTEND_TEST_FILES = {
     "frontend/tests/test_admin_bootstrap.py", "frontend/tests/test_app.py",
     "frontend/tests/test_fakedb.py", "frontend/tests/test_lab.py",
     "frontend/tests/test_seed.py", "frontend/tests/browser/test_lab_browser.py",
+    "frontend/tests/test_demo_bootstrap.py",
 }
 PYTEST_MODULES = ("pytest", "flask", "pymysql", "dotenv", "werkzeug")
 
@@ -64,6 +65,12 @@ def assert_archive_files(names: list[str]) -> None:
         "tests/windows/test_launcher_hardening.ps1", "tests/shell/test_admin_auth.sh",
         "tests/windows/test_launcher_end_to_end.ps1",
         "frontend/pytest.ini", "frontend/requirements-dev.txt", "scripts/run_test_suites.sh",
+        # What `frantastic.cmd up` and `test` need for the generated demo student.
+        "scripts/windows_demo_credentials.ps1", "tests/windows/test_demo_credentials.ps1",
+        "frontend/bootstrap_demo.py", "scripts/provision_local_demo_db.sh",
+        "database/migrations/007_local_demo_student.sql", "database/catalogue.sql",
+        # Documents the README and docs/ link to; check_repo.py fails without them.
+        "docs/visual-qa.md", "docs/evidence/phase1/README.md", "docs/evidence/phase0-2026-11-13/README.md",
     }
     required.update(FRONTEND_TEST_FILES)
     missing = required.difference(names)
@@ -73,6 +80,9 @@ def assert_archive_files(names: list[str]) -> None:
                    for name in names)
     assert not any(pathlib.PurePosixPath(name).name == ".admin-credentials" or
                    pathlib.PurePosixPath(name).name.startswith(".admin-credentials.") for name in names)
+    assert not any(pathlib.PurePosixPath(name).name.startswith(".demo-credentials") for name in names)
+    # No staging or rollback file of the Windows launcher's protected writer.
+    assert not any(pathlib.PurePosixPath(name).name.startswith(".frantastic-") for name in names)
     assert not any(part in package.EXCLUDED_PARTS or part.startswith(".venv")
                    for name in names for part in pathlib.PurePosixPath(name).parts)
     assert not any(pathlib.PurePosixPath(name).suffix.lower() in package.EXCLUDED_SUFFIXES for name in names)
@@ -85,6 +95,8 @@ def main() -> int:
     assert not package.is_excluded(package.REQUIRED_JSONL)
     assert package.is_excluded("docs/evidence/local-run.jsonl")
     assert package.is_excluded(".env") and package.is_excluded(".admin-credentials")
+    assert package.is_excluded(".demo-credentials") and package.is_excluded(".demo-credentials.pending")
+    assert package.is_excluded(".admin-credentials.pending") and package.is_excluded(".frantastic-0123abcd.tmp")
     assert package.is_excluded(".agents/skills/private.md")
     dockerignore = (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
     assert "*.jsonl" in dockerignore and "!" + package.REQUIRED_JSONL in dockerignore

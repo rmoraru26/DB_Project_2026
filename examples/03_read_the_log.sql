@@ -4,7 +4,8 @@
 --         a table so that audit records can be joined with the trigger-based row
 --         history.  (Why a file: see docs/design-decisions.md.)
 -- Needs:  02 done.  The FILE privilege and a log inside secure_file_priv (the
---         Docker image and README Quick start A configure this).
+--         Docker image configures this; for a native server see the README, "Building
+--         and installing the plugin yourself").
 -- Real output of these statements: docs/evidence/demo-windows.txt, steps 3-8.
 
 -- The raw records, newest at the end.  Look for:

@@ -23,6 +23,9 @@ failed logins**.
   table.  GENERAL LOG/ERROR/RESULT/WARNING would only duplicate this.
 - **CONNECTION** records failed logins by default (`FAILED`); `ALL` adds connect/disconnect.
 
+The TABLE class does not report everything the goal names: DML under `LOCK TABLES` and trigger,
+view and routine DDL are the exceptions. Section 12 says what the plugin does about them.
+
 ## 3. What the plugin does *not* claim: row images
 
 No audit event carries column values.  The plugin therefore records *which table* a statement opened
@@ -38,7 +41,7 @@ before/after values come from AFTER triggers (`database/triggers.sql`) that writ
 | Sees rolled-back transactions | no (the history row is rolled back too) | yes (it records the statement, not the commit) |
 | Application identity | `@app_user_id` set by the app (NULL for housekeeping and anonymous requests, section 4) | no (only the database account) |
 | Failure behaviour | **fail-closed**: if the history insert fails, the user's statement fails | **fail-open**: the statement succeeds, the gap is counted and announced |
-| Can be bypassed by | a client with ALTER/DROP TRIGGER or SUPER | an admin with SUPER (UNINSTALL / SET GLOBAL) – but config changes and plugin_stop are logged |
+| Can be bypassed by | a client with the TRIGGER privilege (DROP TRIGGER) or SUPER. The plugin records that DDL only with `log_reads = ON` (section 12); `make doctor` detects a missing trigger | an admin with SUPER (UNINSTALL / SET GLOBAL) – but config changes and plugin_stop are logged |
 
 Ownership is unambiguous: only the triggers write `audit_events`; only `import_plugin_log()` writes
 `campus_audit.plugin_events`.  The application account cannot write either (tested:
@@ -127,7 +130,8 @@ imported nothing at all.  Rather than open every log by default, plugin 1.1.1 ha
 `campus_audit_readable_by_all`, which the Docker image turns on together with a `0750 mysql:mysql`
 log directory (see `docs/security.md`).  An import that does not need `LOAD_FILE` (an
 INFORMATION_SCHEMA table provided by the plugin, or reading the file outside the server) would remove
-the trade-off; it is listed as future work (README section 7).
+the trade-off; it is listed as future work (README, "Known limitations"). Section 15 explains why
+the import still reads the whole file and what bounds it.
 
 ## 6. Data minimisation
 
@@ -226,3 +230,100 @@ or SQL first.  Decisions:
   password.
 - **Students see their own records.** The connection ids of a user's lab actions are kept in the
   signed session; only administrators can list every record.
+
+## 12. Statements without table events: an opt-in scope, not SQL parsing (plugin 1.2.0)
+
+Section 2 says the plugin records "all write access and DDL on the resource schema". Measured, that
+was too strong (experiments 21 and 22): under `LOCK TABLES` the server raises no table event for
+DML, and trigger, view and routine DDL either raise none or a read event. The header documents the
+first case; the second was found by experiment.
+
+Three ways to close the gap were considered.
+
+| Option | Why not, or why |
+|---|---|
+| Recognise `LOCK TABLES`, `CREATE TRIGGER` and the like in the SQL text | Rejected. The plugin would need a parser for comments, quoting, `sql_mode` and multi-statements to be right, and a wrong guess is worse in an audit log than a documented gap. The project's rule since 1.1.0 is that the plugin never reads SQL to decide *what a statement touched* |
+| Ask the server: `thd_in_lock_tables()`, `thd_sql_command()` from `plugin.h` | Rejected. They are functions of the server executable, not services, so the plugin would have to link against the server binary (on Windows: an import library the GNU-toolchain build does not have), and the command numbers come from a private header |
+| Record, on request, the statements the TABLE class could not classify, using facts the events do carry | **Chosen**: `campus_audit_statement_scope = SESSION`. A statement that raised no table event is recorded when the session's default schema is watched, or when the connection's last table access was to a watched table (which `LOCK TABLES` on a watched table always is) |
+
+Why it is opt-in and the default stays `TABLES`: the rule cannot tell `SET` or `SELECT 1` from DML
+under a lock, so it records them all. A web request then adds four records (experiment 29). An
+installation that wants the complete trail turns it on, together with `log_reads` for trigger DDL;
+the demonstration keeps the smaller log. Records admitted by the rule are marked
+`"scope":"session"`, so a reader can always tell them from table-backed ones.
+
+Two refinements came from running it (experiment 25): a trigger's body statement arrives as a
+STATUS event of its own before the statement that fired it, and the protocol's `Quit` command also
+raises STATUS. Both are excluded by facts, not by text: "another statement of this connection is
+still waiting for its STATUS event" and "the command is `Query` or `Execute`".
+
+What stays open is stated in `docs/plugin-api-notes.md`, section 2a, and tested as a known limit.
+For the one case that matters most for tamper evidence, a dropped row-history trigger, the
+compensating control is `make doctor`, which compares the triggers in the database with
+`database/triggers.sql`.
+
+## 13. A generated demo student instead of a shared password
+
+A newcomer needs a login that works at once. Three options:
+
+| Option | Why not, or why |
+|---|---|
+| A seeded account with a published password | Rejected. A password in the README is a credential in every clone and every volume, and it would sit next to the project's own claim that no secret is committed. An earlier version did this; the integration replaced those hashes by a placeholder and left the documentation advertising a login that no longer worked |
+| No demo account: point to `/register` | Works and remains available, but adds a step before the first click of the guided tour |
+| **A student account generated per installation** | **Chosen.** The start-up scripts create `demo.student@frantastic.local` with a random password, exactly as they already create the local administrator, and store the password in a private file |
+
+Decisions inside that choice:
+
+- **A dedicated identity, not one of the seeded people.** The seed belongs to the database team and
+  its three identities deliberately cannot log in; tests and examples use them as fixtures. A
+  separate row also lets the database guard "this identity is a student" with a CHECK constraint.
+  The primary protection is the grant (the web account cannot write `users.role`); the constraint
+  is defence in depth against ordinary or accidental writes by other accounts. It does not bind a
+  privileged operator: `root` can turn CHECK enforcement off for its session
+  (`check_constraint_checks = 0`) or drop the constraint.
+- **Procedures, not ad-hoc SQL.** `bootstrap_local_demo_student()` cannot change an existing row,
+  so a restart cannot rotate a password even if the script around it is wrong.
+- **A missing or mismatching credential file is reported, not repaired.** If the database has the
+  account and this machine does not have the password, the only automatic "fix" would be to
+  replace somebody's working password. The start prints what it found and the explicit command
+  (`make reset-demo`), and carries on: the application is usable without the demo login. For the
+  administrator the same situation stops the start, because there the missing credential is the
+  only way in.
+- **Verification by the application's own check.** The saved password is verified against the
+  stored hash with the function the login route uses, read through the web account, and the test
+  suites then log in over HTTP.
+
+## 14. The booking catalogue belongs to the installation
+
+The booking pages name 18 item types and five rooms in the application code, so those rows are
+reference data: without them every booking answers "This item does not exist.". They used to be
+loaded by a separate script, with administrator credentials, that no setup path ran. They are now
+`database/catalogue.sql`, a step of the installation order.
+
+It runs on upgrades too (`SKIP_SEED=1` skips the demonstration rows, not the catalogue), because a
+database without the catalogue has booking pages that do not work, and it is written so that
+running it on an existing database is harmless: `INSERT ... SELECT ... WHERE NOT EXISTS`, no
+`ON DUPLICATE KEY UPDATE` (which would overwrite a status somebody changed, and fire the UPDATE
+triggers on every start) and no `INSERT IGNORE` (which would hide real errors). The web account
+still has no INSERT privilege on `items` or `rooms`; the catalogue is loaded by the connection that
+runs the migrations. `SKIP_CATALOGUE=1` exists for an installation with its own inventory.
+
+## 15. The import keeps reading the whole file
+
+`import_plugin_log()` reads the complete log on every call and relies on the primary key to skip
+what it has. That is simple and idempotent, and it has a ceiling: `LOAD_FILE()` returns at most
+`max_allowed_packet` bytes. An incremental import would need a way to read a byte range, which
+`LOAD_FILE()` does not offer, and per-file state on the server. Instead the limit is made explicit
+(migration 008 names it and the remedy) and rotation is one command (`make rotate-log`), which
+keeps each file small without losing a record. Rotation does not shrink a file that is already too
+large, so `scripts/rotate_log.sh` checks every file's size first and imports an oversized one in
+line-aligned parts below the limit (post-audit fix; `tests/integration/test_log_import_limits.sh`). Migration 008 also fixes what the first version got
+wrong on its error path: it left the caller's session in UTC (experiment 27).
+
+## 16. Licence metadata of the plugin
+
+The repository is MIT-licensed. The plugin declaration has a `license` field with three possible
+values, none of them MIT. Earlier versions declared `PLUGIN_LICENSE_GPL`, with the comment "the
+server headers are GPL"; since 1.2.0 the plugin and the tutorial plugin declare
+`PLUGIN_LICENSE_BSD`, the permissive value. The reasoning, and what we do not claim, is in
+`docs/plugin-api-notes.md`, section 6a.

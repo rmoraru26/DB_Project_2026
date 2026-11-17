@@ -11,8 +11,9 @@
 # Order (explicit, not the lexical order of database/migrations/):
 #   1. schema.sql, migrations 001-003, triggers.sql   (SCHEMA_STEPS)
 #   2. seed.sql                                       (skipped with SKIP_SEED=1)
-#   3. migrations 004, 005, 006                       (POST_SEED_STEPS)
-#   4. application account campus_app                 (if CAMPUS_APP_PASSWORD is set)
+#   3. catalogue.sql                                  (skipped with SKIP_CATALOGUE=1)
+#   4. migrations 004, 005, 006, 007, 008             (POST_SEED_STEPS)
+#   5. application account campus_app                 (if CAMPUS_APP_PASSWORD is set)
 # On a fresh database seed.sql inserts the demo account dana.admin@example.edu
 # as an administrator.  Migration 004 demotes it and migration 005 opens the
 # one-time local administrator gate only when no administrator is left, so
@@ -25,7 +26,13 @@
 #
 # SKIP_SEED=1 leaves out seed.sql: used by scripts/post_start.sh (and
 # `make migrate`) when it upgrades an existing database, whose data must not
-# be touched.  Steps 1, 3 and 4 still run.
+# be touched.  Steps 1, 3, 4 and 5 still run.
+#
+# catalogue.sql holds the rooms and items the booking pages offer.  It only
+# inserts rows that are absent and never updates one, so it also runs on an
+# upgrade: an older database whose booking pages answered "This item does not
+# exist." is completed, and nothing that exists is changed.  SKIP_CATALOGUE=1
+# leaves it out for an installation that maintains items and rooms itself.
 #
 # The Docker setup runs the same files in the same order through
 # /docker-entrypoint-initdb.d/ (docker/mariadb/Dockerfile) when it initialises
@@ -47,10 +54,13 @@ SCHEMA_STEPS=(
     database/triggers.sql
 )
 SEED_STEP=database/seed.sql
+CATALOGUE_STEP=database/catalogue.sql
 POST_SEED_STEPS=(
     database/migrations/004_remove_shared_admin.sql
     database/migrations/005_local_admin_bootstrap_state.sql
     database/migrations/006_cancelled_loan_status.sql
+    database/migrations/007_local_demo_student.sql
+    database/migrations/008_import_plugin_log_errors.sql
 )
 
 listed=" ${SCHEMA_STEPS[*]} ${POST_SEED_STEPS[*]} "
@@ -74,6 +84,11 @@ if [ "${SKIP_SEED:-}" = "1" ]; then
     echo "(SKIP_SEED=1: seed.sql not loaded)"
 else
     run "$SEED_STEP"
+fi
+if [ "${SKIP_CATALOGUE:-}" = "1" ]; then
+    echo "(SKIP_CATALOGUE=1: catalogue.sql not loaded)"
+else
+    run "$CATALOGUE_STEP"
 fi
 for step in "${POST_SEED_STEPS[@]}"; do
     run "$step"

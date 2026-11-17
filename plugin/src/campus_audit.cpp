@@ -7,8 +7,12 @@
 //   TABLE       per-statement table access (LOCK) and DDL on watched schemas
 //   GENERAL     only the STATUS subclass, to close a statement that touched
 //               a watched table with its error code and a literal-free digest,
-//               and to record statements the privilege system refused before
-//               any table was opened (default schema watched; since 1.1.0)
+//               to record statements the privilege system refused before
+//               any table was opened (default schema watched; since 1.1.0),
+//               and, with campus_audit_statement_scope=SESSION (since 1.2.0),
+//               statements for which the server raises no table event at all:
+//               DML under LOCK TABLES, trigger/view/routine DDL, COMMIT,
+//               ROLLBACK (src/statement_scope.h)
 //
 // and appends one JSON object per event to a JSON Lines file.  The audit API
 // is notification-only (event_notify returns void), so the plugin can never
@@ -43,6 +47,7 @@
 #include "record_format.h"
 #include "runtime_config.h"
 #include "gap_accounting.h"
+#include "statement_scope.h"
 
 using campus_audit::JsonWriter;
 using campus_audit::LockGuard;
@@ -54,7 +59,7 @@ using campus_audit::RwLock;
 
 namespace {
 
-const char kPluginVersion[] = "1.1.1";
+const char kPluginVersion[] = "1.2.0";
 const unsigned int kErUnknownError = 1105;      // ER_UNKNOWN_ERROR (mysqld_error.h)
 const size_t kMaxPathLength = 512;
 const long long kReopenIntervalSeconds = 5;
@@ -82,6 +87,7 @@ char* sv_databases;
 char* sv_exclude_users;
 char sv_log_reads;
 unsigned long sv_connections;
+unsigned long sv_statement_scope;
 unsigned int sv_max_sql_length;
 char sv_reopen_now;
 char sv_readable_by_all;
@@ -93,6 +99,10 @@ char exclude_users_buffer[kListBufferSize];
 enum ConnectionMode { kConnNone = 0, kConnFailed = 1, kConnAll = 2 };
 const char* connection_mode_names[] = {"NONE", "FAILED", "ALL", nullptr};
 TYPELIB connection_mode_typelib = {3, "", connection_mode_names, nullptr, nullptr};
+
+// Order = campus_audit::StatementScope.
+const char* statement_scope_names[] = {"TABLES", "SESSION", nullptr};
+TYPELIB statement_scope_typelib = {2, "", statement_scope_names, nullptr, nullptr};
 
 // ------------------------------------------------------------ runtime state
 
@@ -309,6 +319,46 @@ MYSQL_THDVAR_ULONGLONG(stmt_query_id, PLUGIN_VAR_NOSYSVAR | PLUGIN_VAR_NOCMDOPT,
                        "Internal: query id of the statement whose table access was audited",
                        nullptr, nullptr, 0, 0, ~0ULL, 0);
 
+// The two values below exist for campus_audit_statement_scope=SESSION
+// (src/statement_scope.h).  They are maintained for every TABLE event,
+// whatever the scope is, so that switching the scope on takes effect at once
+// for connections that are already open.  Like stmt_query_id they are touched
+// only in event callbacks, never in a SET GLOBAL update callback.
+MYSQL_THDVAR_ULONGLONG(stmt_seen_query_id, PLUGIN_VAR_NOSYSVAR | PLUGIN_VAR_NOCMDOPT,
+                       "Internal: query id of the statement that raised the latest table event",
+                       nullptr, nullptr, 0, 0, ~0ULL, 0);
+MYSQL_THDVAR_ULONGLONG(session_latch, PLUGIN_VAR_NOSYSVAR | PLUGIN_VAR_NOCMDOPT,
+                       "Internal: 1 while the connection's last table-accessing statement touched a watched table",
+                       nullptr, nullptr, 0, 0, 1, 0);
+
+// Updates the per-connection bookkeeping for one TABLE event.  `recorded`:
+// the event was for a watched schema and was written.
+void track_table_event(MYSQL_THD thd, unsigned long long query_id, bool recorded) {
+    if (!thd) return;
+    const unsigned long long seen = THDVAR(thd, stmt_seen_query_id);
+    // A further unrecorded event of the statement already seen changes
+    // nothing (the usual case for statements on tables that are not watched).
+    if (seen == query_id && !recorded) return;
+    const campus_audit::TableEventTrack before = {seen, THDVAR(thd, stmt_query_id), THDVAR(thd, session_latch)};
+    campus_audit::TableEventTrack after = before;
+    campus_audit::note_table_event(&after, query_id, recorded);
+    if (after.seen_query_id != before.seen_query_id) THDVAR(thd, stmt_seen_query_id) = after.seen_query_id;
+    if (after.recorded_query_id != before.recorded_query_id) THDVAR(thd, stmt_query_id) = after.recorded_query_id;
+    if (after.latched != before.latched) THDVAR(thd, session_latch) = after.latched;
+}
+
+// A table event that is not written still classifies its statement ("it
+// worked on tables, none of them recorded"), with one exception: events for
+// the server's own schemas.  Observed on 13.0.2: CREATE/DROP PROCEDURE raise a
+// table event for mysql.proc and for nothing else, so such an event is
+// bookkeeping and says nothing about the user schema the statement worked on.
+// Statements whose only table events are of that kind are treated like
+// statements without table events (src/statement_scope.h).
+void track_unrecorded_table_event(MYSQL_THD thd, const mysql_event_table* e) {
+    if (campus_audit::is_system_schema(e->database.str, e->database.length)) return;
+    track_table_event(thd, e->query_id, false);
+}
+
 // ------------------------------------------------------------ event handlers
 
 void on_connection(const mysql_event_connection* e) {
@@ -366,7 +416,10 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
     const char* name;
     switch (e->event_subclass) {
     case MYSQL_AUDIT_TABLE_LOCK:
-        if (e->read_only && !runtime_config.log_reads.load(std::memory_order_relaxed)) return;
+        if (e->read_only && !runtime_config.log_reads.load(std::memory_order_relaxed)) {
+            track_unrecorded_table_event(thd, e);
+            return;
+        }
         name = e->read_only ? "table_read" : "table_write";
         break;
     case MYSQL_AUDIT_TABLE_CREATE: name = "table_create"; break;
@@ -375,6 +428,7 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
     case MYSQL_AUDIT_TABLE_ALTER:  name = "table_alter";  break;
     default:
         ++st_unexpected;
+        track_unrecorded_table_event(thd, e);
         return;
     }
 
@@ -387,11 +441,14 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
                     campus_audit::user_matches(user_filter, e->user,
                                                campus_audit::bounded_length(e->user, kFieldScan));
     filter_lock.read_unlock();
-    if (!watched) return;
-    if (excluded) {
-        ++st_filtered;
+    if (!watched || excluded) {
+        if (excluded) ++st_filtered;
+        track_unrecorded_table_event(thd, e);
         return;
     }
+    // From here on the event counts as recorded, also if the record itself is
+    // lost to an I/O error: the statement record must still close it.
+    track_table_event(thd, e->query_id, true);
 
     RecordBuffer buf(0);
     if (!buf.data) {
@@ -415,11 +472,9 @@ void on_table(MYSQL_THD thd, const mysql_event_table* e) {
     }
     w.end_object();
     write_record(w, true);
-
-    if (thd) THDVAR(thd, stmt_query_id) = e->query_id;
 }
 
-void write_statement_record(const mysql_event_general* e, bool access_denied);
+void write_statement_record(const mysql_event_general* e, bool access_denied, bool session_scope);
 
 void on_general(MYSQL_THD thd, const mysql_event_general* e) {
     // LOG, ERROR, RESULT and WARNING are ignored by design: STATUS already
@@ -428,33 +483,54 @@ void on_general(MYSQL_THD thd, const mysql_event_general* e) {
     bool config_change = log_this_statement;
     log_this_statement = false;
     unsigned long long pending = THDVAR(thd, stmt_query_id);
-    if (config_change || (pending != 0 && pending == e->query_id)) {
+    campus_audit::StatementFacts facts = {};
+    facts.config_change = config_change;
+    facts.recorded_table_event = pending != 0 && pending == e->query_id;
+    if (facts.config_change || facts.recorded_table_event) {
         if (pending != 0) THDVAR(thd, stmt_query_id) = 0;
-        write_statement_record(e, false);
+        write_statement_record(e, false, false);
         return;
     }
-    // The privilege check runs before the server opens a table, so a refused
-    // statement raised no TABLE event and would otherwise leave no trace
-    // (observed with 13.0.2: ER 1142 on a watched table, nothing logged).
-    // A GENERAL event does not name the target tables, so the session's
-    // default schema decides whether the refusal belongs to a watched schema.
-    if (!campus_audit::is_access_denied_error(e->general_error_code)) return;
+    // Two kinds of statement reach this point without a recorded table event
+    // and may still belong to a watched schema (src/statement_scope.h):
+    //
+    // * The privilege check runs before the server opens a table, so a refused
+    //   statement raised no TABLE event and would otherwise leave no trace
+    //   (observed with 13.0.2: ER 1142 on a watched table, nothing logged).
+    //   A GENERAL event does not name the target tables, so the session's
+    //   default schema decides whether the refusal belongs to a watched schema.
+    // * With campus_audit_statement_scope=SESSION: statements for which the
+    //   server raises no table event at all (LOCK TABLES in effect; trigger,
+    //   view and routine DDL; COMMIT and ROLLBACK).
+    facts.access_denied = campus_audit::is_access_denied_error(e->general_error_code);
+    facts.scope = runtime_config.statement_scope.load(std::memory_order_relaxed);
+    if (!facts.access_denied && facts.scope != campus_audit::kScopeSession) return;   // the common case
+    const unsigned long long seen = THDVAR(thd, stmt_seen_query_id);
+    facts.any_table_event = seen != 0 && seen == e->query_id;
+    // `pending` belongs to another statement here: that statement's table
+    // events were recorded and its own STATUS event has not arrived yet, so
+    // the present event is for a statement executed inside it (a trigger body).
+    facts.open_recorded_statement = pending != 0;
+    facts.sql_command = campus_audit::is_sql_command(e->general_command, e->general_command_length);
+    facts.latched = THDVAR(thd, session_latch) != 0;
     filter_lock.read_lock();
-    bool watched = campus_audit::database_matches(db_filter, e->database.str, e->database.length);
-    bool excluded = watched && e->general_user &&
+    facts.default_schema_watched =
+        campus_audit::database_matches(db_filter, e->database.str, e->database.length);
+    bool excluded = e->general_user &&
                     campus_audit::user_matches(
                         user_filter, e->general_user,
                         campus_audit::account_login_length(e->general_user, e->general_user_length));
     filter_lock.read_unlock();
-    if (!watched) return;
-    if (excluded) {
+    const campus_audit::StatementDecision decision = campus_audit::decide_statement(facts);
+    if (!decision.record) return;
+    if (decision.apply_user_filter && excluded) {
         ++st_filtered;
         return;
     }
-    write_statement_record(e, true);
+    write_statement_record(e, decision.mark_access_denied, decision.mark_session);
 }
 
-void write_statement_record(const mysql_event_general* e, bool access_denied) {
+void write_statement_record(const mysql_event_general* e, bool access_denied, bool session_scope) {
     unsigned int max_sql = runtime_config.max_sql_length.load(std::memory_order_relaxed);
     RecordBuffer buf(max_sql + 1);
     char* digest = max_sql > 0 ? static_cast<char*>(std::malloc(max_sql + 1)) : nullptr;
@@ -474,6 +550,8 @@ void write_statement_record(const mysql_event_general* e, bool access_denied) {
     w.field_string("status", e->general_error_code == 0 ? "ok" : "error",
                    e->general_error_code == 0 ? 2 : 5);
     if (access_denied) w.field_bool("access_denied", true);
+    // Recorded although the server raised no table event for the statement.
+    if (session_scope) w.field_string("scope", "session", 7);
     if (digest) {
         bool truncated = false;
         size_t n = campus_audit::sql_digest(e->general_query, e->general_query_length,
@@ -650,6 +728,13 @@ void update_connections(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, 
     log_config_change(thd, "campus_audit_connections", v < 3 ? connection_mode_names[v] : "?");
 }
 
+void update_statement_scope(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, const void* save) {
+    unsigned long v = *static_cast<const unsigned long*>(save);
+    *static_cast<unsigned long*>(var_ptr) = v;
+    runtime_config.statement_scope.store(v, std::memory_order_relaxed);
+    log_config_change(thd, "campus_audit_statement_scope", v < 2 ? statement_scope_names[v] : "?");
+}
+
 void update_max_sql_length(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, const void* save) {
     unsigned int v = *static_cast<const unsigned int*>(save);
     *static_cast<unsigned int*>(var_ptr) = v;
@@ -711,6 +796,15 @@ MYSQL_SYSVAR_ENUM(connections, sv_connections, PLUGIN_VAR_RQCMDARG,
                   "change-user attempts) or ALL",
                   nullptr, update_connections, kConnFailed, &connection_mode_typelib);
 
+MYSQL_SYSVAR_ENUM(statement_scope, sv_statement_scope, PLUGIN_VAR_RQCMDARG,
+                  "Statements to record: TABLES (statements for which the server reported "
+                  "access to a watched table, and refused ones) or SESSION (additionally "
+                  "statements that raise no table event, such as DML under LOCK TABLES, "
+                  "trigger/view/routine DDL, COMMIT and ROLLBACK, when the session's default "
+                  "schema is watched or its last table access was to a watched table)",
+                  nullptr, update_statement_scope, campus_audit::kScopeTables,
+                  &statement_scope_typelib);
+
 MYSQL_SYSVAR_UINT(max_sql_length, sv_max_sql_length, PLUGIN_VAR_RQCMDARG,
                   "Maximum bytes of the literal-free statement digest; 0 disables digests",
                   nullptr, update_max_sql_length, 1024, 0, 8192, 0);
@@ -733,10 +827,13 @@ struct st_mysql_sys_var* system_variables[] = {
     MYSQL_SYSVAR(exclude_users),
     MYSQL_SYSVAR(log_reads),
     MYSQL_SYSVAR(connections),
+    MYSQL_SYSVAR(statement_scope),
     MYSQL_SYSVAR(max_sql_length),
     MYSQL_SYSVAR(reopen_now),
     MYSQL_SYSVAR(readable_by_all),
     MYSQL_SYSVAR(stmt_query_id),
+    MYSQL_SYSVAR(stmt_seen_query_id),
+    MYSQL_SYSVAR(session_latch),
     nullptr
 };
 
@@ -816,6 +913,7 @@ int campus_audit_init(void*) {
     // copy before event callbacks can observe the plugin.
     runtime_config.log_reads.store(sv_log_reads != 0, std::memory_order_relaxed);
     runtime_config.connections.store(sv_connections, std::memory_order_relaxed);
+    runtime_config.statement_scope.store(sv_statement_scope, std::memory_order_relaxed);
     runtime_config.max_sql_length.store(sv_max_sql_length, std::memory_order_relaxed);
     // Option values from my.cnf / the command line do not pass through the
     // check functions above, so everything is validated again here.
@@ -860,6 +958,7 @@ int campus_audit_init(void*) {
     w.field_cstring("exclude_users", sv_exclude_users, 2048);
     w.field_bool("log_reads", sv_log_reads != 0);
     w.field_cstring("connections", connection_mode_name());
+    w.field_cstring("statement_scope", sv_statement_scope < 2 ? statement_scope_names[sv_statement_scope] : "?");
     w.field_uint("max_sql_length", sv_max_sql_length);
     w.field_bool("readable_by_all", sv_readable_by_all != 0);
     w.end_object();
@@ -902,10 +1001,14 @@ maria_declare_plugin(campus_audit)
     "campus_audit",
     "DB_Project_2026 team, Constructor University",
     "Structured JSON Lines audit of table access, DDL and logins for watched schemas",
-    PLUGIN_LICENSE_GPL,
+    // plugin.h offers PROPRIETARY, GPL and BSD.  The plugin's own source is
+    // under the MIT licence (LICENSE), a permissive licence for which the
+    // header has no value of its own; BSD is the permissive one it offers.
+    // The value is descriptive only (INFORMATION_SCHEMA.PLUGINS.PLUGIN_LICENSE).
+    PLUGIN_LICENSE_BSD,
     campus_audit_init,
     campus_audit_deinit,
-    0x0101,
+    0x0102,
     status_variables,
     system_variables,
     kPluginVersion,

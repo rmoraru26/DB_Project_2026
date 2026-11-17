@@ -86,6 +86,7 @@ cleanup() {
          SET GLOBAL campus_audit_exclude_users = '${ORIG_EXCLUDE:-}';
          SET GLOBAL campus_audit_log_reads = ${ORIG_LOG_READS:-OFF};
          SET GLOBAL campus_audit_connections = '${ORIG_CONNECTIONS:-FAILED}';
+         SET GLOBAL campus_audit_statement_scope = '${ORIG_SCOPE:-TABLES}';
          SET GLOBAL campus_audit_max_sql_length = ${ORIG_MAX_SQL:-1024};" >/dev/null 2>&1
     if [ -n "${ORIG_PATH:-}" ]; then
         sql "SET GLOBAL campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';" >/dev/null 2>&1
@@ -120,6 +121,7 @@ ORIG_DATABASES=$(sql "SELECT @@GLOBAL.campus_audit_databases;")
 ORIG_EXCLUDE=$(sql "SELECT @@GLOBAL.campus_audit_exclude_users;")
 ORIG_LOG_READS=$(sql "SELECT IF(@@GLOBAL.campus_audit_log_reads,'ON','OFF');")
 ORIG_CONNECTIONS=$(sql "SELECT @@GLOBAL.campus_audit_connections;")
+ORIG_SCOPE=$(sql "SELECT @@GLOBAL.campus_audit_statement_scope;")
 ORIG_MAX_SQL=$(sql "SELECT @@GLOBAL.campus_audit_max_sql_length;")
 trap cleanup EXIT
 
@@ -214,6 +216,7 @@ sql "SET GLOBAL campus_audit_databases = 'audit_test_watched';
      SET GLOBAL campus_audit_exclude_users = 'ca_test_excluded';
      SET GLOBAL campus_audit_log_reads = OFF;
      SET GLOBAL campus_audit_connections = 'FAILED';
+     SET GLOBAL campus_audit_statement_scope = 'TABLES';
      SET GLOBAL campus_audit_max_sql_length = 1024;
      SET GLOBAL campus_audit_file_path = $LOG_EXPR;" || { echo "cannot switch to the test log"; exit 2; }
 check "test log is active" "SELECT VARIABLE_VALUE = $LOG_EXPR FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME='CAMPUS_AUDIT_FILE';"
@@ -435,6 +438,168 @@ check "configuration changes are recorded as config_change" \
     "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_databases' AND $(ev value)='*'") = 1;"
 check "the SET statement of a configuration change is attributed to the account" \
     "SELECT $(count_where "$(ev event)='statement' AND $(ev sql_digest) LIKE 'SET GLOBAL campus_audit_databases = ?%'") >= 1;"
+
+# ---------------------------------------------------------------- statements without table events
+
+# MariaDB raises no TABLE event for two kinds of statement (plugin_audit.h:
+# the LOCK event "is generated once for LOCK TABLES and then is suppressed
+# until the tables are unlocked"; the class has no subclass for triggers,
+# views or routines).  With the default scope TABLES these statements leave no
+# record; the first group of checks pins that documented limit down.  The
+# opt-in scope SESSION (1.2.0) records them from GENERAL STATUS, by rules that
+# use event facts only (plugin/src/statement_scope.h); the plugin does not
+# parse SQL to find out what a statement touched.
+echo "-- statements without table events (LOCK TABLES; trigger, view and routine DDL)"
+check "statement_scope defaults to TABLES" "SELECT @@GLOBAL.campus_audit_statement_scope = 'TABLES';"
+sql "CREATE TABLE audit_test_watched.lock_t (id INT PRIMARY KEY, v INT) ENGINE=InnoDB;"
+LOCKED_DML="'INSERT INTO lock_t VALUES (?, ?)','UPDATE lock_t SET v = ? WHERE id = ?','DELETE FROM lock_t WHERE id = ?'"
+LA=$(sql "USE audit_test_watched;
+    LOCK TABLES lock_t WRITE;
+    INSERT INTO lock_t VALUES (1, 1);
+    UPDATE lock_t SET v = 2 WHERE id = 1;
+    DELETE FROM lock_t WHERE id = 99;
+    UNLOCK TABLES;
+    CREATE TRIGGER lock_trg BEFORE INSERT ON lock_t FOR EACH ROW SET NEW.v = NEW.v;
+    DROP TRIGGER lock_trg;
+    CREATE VIEW lock_v AS SELECT id FROM lock_t;
+    DROP VIEW lock_v;
+    INSERT INTO lock_t VALUES (2, 2);
+    SELECT CONNECTION_ID();" | tail -1)
+LA=${LA:-0}
+check "LOCK TABLES on a watched table raises one table event and is recorded" \
+    "SELECT $(count_where "$(ev conn)=$LA AND $(ev event)='statement' AND $(ev sql_digest)='LOCK TABLES lock_t WRITE'") = 1
+        AND $(count_where "$(ev conn)=$LA AND $(ev event)='table_write' AND $(ev table)='lock_t'") = 2;"
+check "the statements under the lock did change the table" "SELECT v = 2 FROM audit_test_watched.lock_t WHERE id = 1;"
+check "scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)" \
+    "SELECT $(count_where "$(ev conn)=$LA AND $(ev event)='statement' AND $(ev sql_digest) IN ($LOCKED_DML)") = 1
+        AND $(count_where "$(ev conn)=$LA AND $(ev sql_digest)='UNLOCK TABLES'") = 0;"
+check "scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record" \
+    "SELECT $(count_where "$(ev conn)=$LA AND ($(ev sql_digest) LIKE '%TRIGGER%' OR $(ev sql_digest) LIKE '%VIEW%')") = 0;"
+check "scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)" \
+    "SELECT $(count_where "$(ev conn)=$LA AND $(ev event)='statement'") = 2;"
+
+expect_error "unknown statement scope rejected" 1231 "SET GLOBAL campus_audit_statement_scope = 'EVERYTHING';"
+sql "SET GLOBAL campus_audit_statement_scope = 'SESSION';"
+check "the scope change is recorded as config_change" \
+    "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_statement_scope' AND $(ev value)='SESSION'") = 1;"
+LB=$(sql "USE audit_test_watched;
+    LOCK TABLES lock_t WRITE;
+    INSERT INTO lock_t VALUES (10, 1);
+    UPDATE lock_t SET v = 3 WHERE id = 10;
+    DELETE FROM lock_t WHERE id = 98;
+    UNLOCK TABLES;
+    CREATE TRIGGER lock_trg BEFORE INSERT ON lock_t FOR EACH ROW SET NEW.v = NEW.v;
+    DROP TRIGGER lock_trg;
+    CREATE VIEW lock_v AS SELECT id FROM lock_t;
+    DROP VIEW lock_v;
+    CREATE PROCEDURE lock_p() SELECT 1;
+    DROP PROCEDURE lock_p;
+    START TRANSACTION;
+    INSERT INTO lock_t VALUES (11, 1);
+    ROLLBACK;
+    SELECT id FROM lock_t WHERE id = 0;
+    SELECT CONNECTION_ID();" | tail -1)
+LB=${LB:-0}
+check "scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev event)='statement' AND $(ev scope)='session' AND $(ev status)='ok' AND $(ev sql_digest) IN ($LOCKED_DML)") = 3;"
+check "scope SESSION: they still have no table record (the server raised no table event for them)" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev event)='table_write' AND $(ev table)='lock_t'") = 2;"
+check "scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev scope)='session' AND $(ev sql_digest)='UNLOCK TABLES'") = 1;"
+check "scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev scope)='session' AND $(ev db)='audit_test_watched' AND ($(ev sql_digest)='DROP VIEW lock_v' OR $(ev sql_digest) LIKE 'CREATE PROCEDURE lock_p%' OR $(ev sql_digest)='DROP PROCEDURE lock_p')") = 3;"
+# Observed on 13.0.2: the server reports CREATE TRIGGER, DROP TRIGGER and
+# CREATE VIEW as a LOCK event with read_only = 1 for the table they refer to,
+# exactly like a SELECT.  They are therefore recorded when reads are recorded,
+# and not otherwise; the scope cannot tell them from a SELECT.
+check "API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope" \
+    "SELECT $(count_where "$(ev conn)=$LB AND ($(ev sql_digest) LIKE '%TRIGGER%' OR $(ev sql_digest) LIKE 'CREATE VIEW%')") = 0;"
+LR=$(sql "SET GLOBAL campus_audit_log_reads = ON;
+    USE audit_test_watched;
+    CREATE TRIGGER lock_trg BEFORE INSERT ON lock_t FOR EACH ROW SET NEW.v = NEW.v;
+    DROP TRIGGER lock_trg;
+    CREATE VIEW lock_v AS SELECT id FROM lock_t;
+    DROP VIEW lock_v;
+    SET GLOBAL campus_audit_log_reads = OFF;
+    SELECT CONNECTION_ID();" | tail -1)
+LR=${LR:-0}
+check "log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement" \
+    "SELECT $(count_where "$(ev conn)=$LR AND $(ev event)='table_read' AND $(ev table)='lock_t'") = 3
+        AND $(count_where "$(ev conn)=$LR AND $(ev event)='statement' AND $(ev scope) IS NULL AND ($(ev sql_digest) LIKE 'CREATE TRIGGER lock_trg %' OR $(ev sql_digest)='DROP TRIGGER lock_trg' OR $(ev sql_digest) LIKE 'CREATE VIEW lock_v %')") = 3;"
+check "log_reads=ON: each of those statement records shares its query_id with the table_read record" \
+    "SELECT COUNT(*) = 3 FROM campus_audit_test.log_lines r JOIN campus_audit_test.log_lines s
+       ON JSON_VALUE(s.line,'\$.query_id') = JSON_VALUE(r.line,'\$.query_id') AND JSON_VALUE(s.line,'\$.event')='statement'
+     WHERE JSON_VALUE(r.line,'\$.event')='table_read' AND JSON_VALUE(r.line,'\$.conn')='$LR' AND JSON_VALUE(r.line,'\$.table')='lock_t';"
+check "scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev scope)='session' AND $(ev sql_digest) IN ('START TRANSACTION','ROLLBACK')") = 2;"
+check "scope SESSION: a statement with a table event keeps its ordinary, unmarked record" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev event)='statement' AND $(ev scope) IS NULL AND $(ev sql_digest) IN ('INSERT INTO lock_t VALUES (?, ?)','LOCK TABLES lock_t WRITE')") = 2;"
+check "scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)" \
+    "SELECT $(count_where "$(ev conn)=$LB AND $(ev sql_digest) LIKE 'SELECT id FROM lock_t%'") = 0;"
+sql_force "USE audit_test_watched; LOCK TABLES lock_t WRITE; INSERT INTO lock_t VALUES (10, 1); UNLOCK TABLES;" >/dev/null 2>&1
+check "scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)" \
+    "SELECT $(count_where "$(ev event)='statement' AND $(ev scope)='session' AND $(ev status)='error' AND $(ev error_code)='1062' AND $(ev sql_digest)='INSERT INTO lock_t VALUES (?, ?)'") = 1;"
+
+# Statements inside statements.  A trigger's body statement gets a STATUS event
+# of its own (own query id) before the STATUS event of the statement that fired
+# it; its table access is already recorded under the firing statement.  A
+# routine's statements are statements of their own; CALL raises no table event.
+LT=$(sql "USE audit_test_watched;
+    CREATE TABLE lock_h (id INT PRIMARY KEY AUTO_INCREMENT, note VARCHAR(20)) ENGINE=InnoDB;
+    CREATE TRIGGER lock_trg_h AFTER INSERT ON lock_t FOR EACH ROW INSERT INTO lock_h (note) VALUES ('from trigger');
+    CREATE PROCEDURE lock_p2() INSERT INTO lock_t VALUES (41, 1);
+    INSERT INTO lock_t VALUES (40, 1);
+    CALL lock_p2();
+    PREPARE lock_s FROM 'INSERT INTO lock_t VALUES (?, ?)';
+    SET @lock_a = 42;
+    EXECUTE lock_s USING @lock_a, @lock_a;
+    DEALLOCATE PREPARE lock_s;
+    DROP TRIGGER lock_trg_h;
+    SELECT CONNECTION_ID();" | tail -1)
+LT=${LT:-0}
+check "scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id" \
+    "SELECT $(count_where "$(ev conn)=$LT AND $(ev event)='statement' AND $(ev scope) IS NULL AND $(ev sql_digest) LIKE 'INSERT INTO lock_t VALUES%'") = 3
+        AND $(count_where "$(ev conn)=$LT AND $(ev event)='table_write' AND $(ev table)='lock_h'") = 3
+        AND (SELECT COUNT(*) FROM campus_audit_test.log_lines h JOIN campus_audit_test.log_lines t
+               ON JSON_VALUE(h.line,'\$.query_id') = JSON_VALUE(t.line,'\$.query_id') AND JSON_VALUE(t.line,'\$.table')='lock_t'
+              WHERE JSON_VALUE(h.line,'\$.table')='lock_h' AND JSON_VALUE(h.line,'\$.conn')='$LT') = 3;"
+check "scope SESSION: the trigger's body statement is not recorded as a statement of the client" \
+    "SELECT $(count_where "$(ev conn)=$LT AND $(ev event)='statement' AND $(ev sql_digest) LIKE 'INSERT INTO lock_h%'") = 0;"
+check "scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session" \
+    "SELECT $(count_where "$(ev conn)=$LT AND $(ev scope)='session' AND ($(ev sql_digest)='CALL lock_p2()' OR $(ev sql_digest) LIKE 'PREPARE lock_s FROM%' OR $(ev sql_digest)='DEALLOCATE PREPARE lock_s')") = 3;"
+check "scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)" \
+    "SELECT $(count_where "$(ev event)='statement' AND $(ev scope)='session' AND $(ev command) NOT IN ('Query','Execute')") = 0
+        AND $(count_where "$(ev event)='statement' AND $(ev scope)='session' AND $(ev sql_digest) IS NULL") = 0;"
+
+# Rule (b): the default schema is NOT watched; LOCK TABLES on the watched
+# table is the connection's last table access, so what follows is recorded
+# until a statement accesses tables again.
+LC=$(sql "USE audit_test_other;
+    LOCK TABLES audit_test_watched.lock_t WRITE;
+    UPDATE audit_test_watched.lock_t SET v = 4 WHERE id = 10;
+    UNLOCK TABLES;
+    INSERT INTO audit_test_other.t VALUES (50, 'other schema');
+    SET @frt_after_other = 1;
+    SELECT CONNECTION_ID();" | tail -1)
+LC=${LC:-0}
+check "scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)" \
+    "SELECT $(count_where "$(ev conn)=$LC AND $(ev scope)='session' AND $(ev db)='audit_test_other' AND $(ev sql_digest)='UPDATE audit_test_watched.lock_t SET v = ? WHERE id = ?'") = 1
+        AND $(count_where "$(ev conn)=$LC AND $(ev scope)='session' AND $(ev sql_digest)='UNLOCK TABLES'") = 1;"
+check "scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded" \
+    "SELECT $(count_where "$(ev conn)=$LC AND ($(ev sql_digest) LIKE 'SET @frt_after_other%' OR $(ev sql_digest) LIKE 'SELECT CONNECTION_ID%' OR $(ev sql_digest) LIKE 'INSERT INTO audit_test_other%')") = 0;"
+LD=$(sql "USE audit_test_other;
+    CREATE TRIGGER audit_test_watched.lock_trg2 BEFORE INSERT ON audit_test_watched.lock_t FOR EACH ROW SET NEW.v = NEW.v;
+    DROP TRIGGER audit_test_watched.lock_trg2;
+    SELECT CONNECTION_ID();" | tail -1)
+check "known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded" \
+    "SELECT $(count_where "$(ev conn)=${LD:-0}") = 0;"
+before=$(sql "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME='CAMPUS_AUDIT_EVENTS_FILTERED';")
+EX_CONN2=$(sql_as ca_test_excluded "$TEST_PW" "SELECT CONNECTION_ID(); USE audit_test_watched; SET @frt_excluded = 1;" 2>/dev/null | head -1)
+check "scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered" \
+    "SELECT $(count_where "$(ev conn)=${EX_CONN2:-0}") = 0 AND (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME='CAMPUS_AUDIT_EVENTS_FILTERED') > $before;"
+sql "SET GLOBAL campus_audit_statement_scope = 'TABLES';"
+LE=$(sql "USE audit_test_watched; SET @frt_scope_off = 1; CREATE VIEW lock_v2 AS SELECT id FROM lock_t; DROP VIEW lock_v2; SELECT CONNECTION_ID();" | tail -1)
+check "back to scope TABLES: table-less statements are no longer recorded" "SELECT $(count_where "$(ev conn)=${LE:-0}") = 0;"
 
 # ---------------------------------------------------------------- concurrency
 

@@ -80,8 +80,13 @@ AuditResult parse_name_list(const char* text, NameKind kind, NameList* out);
 
 // Database names are compared ASCII-case-insensitively (conservative: on a
 // lower_case_table_names=0 server "Foo" and "foo" are both audited).
-// System schemas are never matched by "*".
+// System schemas (is_system_schema) are never matched by "*".
 bool database_matches(const NameList& list, const char* db, size_t length);
+// The server's own schemas: exactly "mysql" and "sys" (on a
+// lower_case_table_names=0 server `MySQL` or `Sys` is a user schema), and
+// information_schema and performance_schema in any case (the server resolves
+// those two case-insensitively).
+bool is_system_schema(const char* db, size_t length);
 // User names are compared exactly.
 bool user_matches(const NameList& list, const char* user, size_t length);
 

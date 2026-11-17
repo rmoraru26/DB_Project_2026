@@ -1,0 +1,66 @@
++------------------------+-------------------+--------------------+
+| @@version              | @@thread_handling | @@thread_pool_size |
++------------------------+-------------------+--------------------+
+| 13.0.2-MariaDB-ubu2604 | pool-of-threads   |                  2 |
++------------------------+-------------------+--------------------+
++--------------+---------------+
+| PLUGIN_NAME  | PLUGIN_STATUS |
++--------------+---------------+
+| campus_audit | ACTIVE        |
++--------------+---------------+
+load finished in 1 s; client errors: 0
++--------------------+-------+
+| Variable_name      | Value |
++--------------------+-------+
+| Threadpool_threads | 14    |
++--------------------+-------+
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 501131                                   |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 1801                                     |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
++---------------+
+| rows_inserted |
++---------------+
+|           360 |
++---------------+
+new records: 1800
+config_change records:            360
+statement records for SET GLOBAL: 360
+statement records for INSERT:     360
+STRAY statement records (SELECT): 0
+other statement records:          0
+table_write records:              720
+SET GLOBAL statement records per connection (count conn):
+  "conn":10 x 30
+  "conn":11 x 30
+  "conn":12 x 30
+  "conn":13 x 30
+  "conn":14 x 30
+  "conn":15 x 30
+  "conn":16 x 30
+  "conn":17 x 30
+  "conn":6 x 30
+  "conn":7 x 30
+  "conn":8 x 30
+  "conn":9 x 30
+INSERT statement records whose (conn,query_id) has exactly 2 table_write records:
+  statements: 360, table_write pairs: 360, matching: 360
+each config_change immediately followed (by seq order within file) by its SET statement on the same... sample:
+{"ts":"2026-11-14T02:10:48.775445Z","seq":2,"instance":"660330da41c4d-1","event":"config_change","variable":"campus_audit_max_sql_length","value":"1201"}
+{"ts":"2026-11-14T02:10:48.775526Z","seq":3,"instance":"660330da41c4d-1","event":"statement","conn":6,"query_id":9,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_max_sql_leng
+{"ts":"2026-11-14T02:10:48.786764Z","seq":4,"instance":"660330da41c4d-1","event":"config_change","variable":"campus_audit_max_sql_length","value":"2001"}
+{"ts":"2026-11-14T02:10:48.786815Z","seq":5,"instance":"660330da41c4d-1","event":"statement","conn":10,"query_id":11,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_max_sql_le
+invalid/duplicate seq: 0
+rc=0
+container stopped and removed (with its anonymous volume)

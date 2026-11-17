@@ -3,10 +3,10 @@
 
 #include "audit_error.h"
 
-// Funcția care primește eroarea pentru raportare.
+// The function that receives an error for reporting.
 using AuditErrorSink = void (*)(const AuditResult&);
 
-// Raportează doar rezultatele care reprezintă erori.
+// Reports only the results that are errors.
 void report_audit_error(
     const AuditResult& result,
     AuditErrorSink sink

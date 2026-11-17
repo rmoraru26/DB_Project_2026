@@ -1,0 +1,46 @@
+# make bench: no plugin / campus_audit / server_audit, two passes
+# command: make bench
+# started: 2026-11-16T11:32:35Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+== 13.0.2-MariaDB-ubu2604 on debian-linux-gnu, 2026-11-16T11:32:36Z
+== 2000 INSERTs per run, 5 timed runs per configuration, 2 passes -> bench-results.csv
+pass 1  none  run 1: 1075 ms
+pass 1  none  run 2: 1178 ms
+pass 1  none  run 3: 1365 ms
+pass 1  none  run 4: 1235 ms
+pass 1  none  run 5: 1436 ms
+pass 1  campus_audit  run 1: 1516 ms
+pass 1  campus_audit  run 2: 1456 ms
+pass 1  campus_audit  run 3: 1248 ms
+pass 1  campus_audit  run 4: 1587 ms
+pass 1  campus_audit  run 5: 1315 ms
+pass 1  server_audit  run 1: 1865 ms
+pass 1  server_audit  run 2: 1288 ms
+pass 1  server_audit  run 3: 1548 ms
+pass 1  server_audit  run 4: 1679 ms
+pass 1  server_audit  run 5: 1889 ms
+pass 2  server_audit  run 1: 1099 ms
+pass 2  server_audit  run 2: 1421 ms
+pass 2  server_audit  run 3: 2027 ms
+pass 2  server_audit  run 4: 1887 ms
+pass 2  server_audit  run 5: 1135 ms
+pass 2  campus_audit  run 1: 1700 ms
+pass 2  campus_audit  run 2: 2336 ms
+pass 2  campus_audit  run 3: 2013 ms
+pass 2  campus_audit  run 4: 3946 ms
+pass 2  campus_audit  run 5: 2221 ms
+pass 2  none  run 1: 1715 ms
+pass 2  none  run 2: 1687 ms
+pass 2  none  run 3: 1644 ms
+pass 2  none  run 4: 1920 ms
+pass 2  none  run 5: 1970 ms
+
+Median of 5 runs in ms (min-max); overhead relative to 'none' of the same pass
+config        pass 1                            pass 2                            
+none          1235 (1075-1436)                  1715 (1644-1970)                  
+campus_audit  1456 (1248-1587)  +17.9%          2221 (1700-3946)  +29.5%          
+server_audit  1679 (1288-1889)  +36.0%          1421 (1099-2027)  -17.1%          
+campus_audit log volume per run of 2000 INSERTs (bytes): pass1=1105342 pass2=1105342
+raw timings: bench-results.csv
+
+# exit status: 0

@@ -45,13 +45,24 @@ if [ -n "${CAMPUS_APP_PASSWORD:-}" ]; then
 fi
 
 status=$(sql "SELECT PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';")
+install_out=""
 if [ "$status" != "ACTIVE" ]; then
     echo "-> installing the campus_audit plugin"
-    sql "INSTALL SONAME 'campus_audit';"
+    # --force and SHOW WARNINGS in the same session: when the plugin's init
+    # function refuses to start (for example because it cannot open its log
+    # file), INSTALL fails with the generic ER 1123 and the plugin's own
+    # reason is a warning of that statement.
+    install_out=$(printf "INSTALL SONAME 'campus_audit';\nSHOW WARNINGS;\n" \
+                  | "${CLIENT[@]}" -u"$ADMIN_USER" --batch --skip-column-names --force 2>&1) || true
     status=$(sql "SELECT PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';")
 fi
 echo "-> campus_audit plugin: ${status:-NOT INSTALLED}"
 if [ "$status" != "ACTIVE" ]; then
-    echo "post_start: the plugin is not ACTIVE; the reason is in the server log (docker compose logs mariadb)" >&2
+    echo "post_start: the campus_audit plugin is not ACTIVE." >&2
+    if [ -n "$install_out" ]; then
+        echo "The server answered:" >&2
+        printf '%s\n' "$install_out" | sed 's/^/    /' >&2
+    fi
+    echo "More detail is in the server log: docker compose logs mariadb | grep campus_audit" >&2
     exit 4
 fi

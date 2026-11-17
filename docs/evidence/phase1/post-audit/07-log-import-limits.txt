@@ -1,0 +1,51 @@
+# post-audit 2026-11-17 2026-11-17T02:34:27Z: run 1 of 3: LOG_LIMITS_IMAGE=frt-p1-79c0601b-mariadb:13.0.2 bash tests/integration/test_log_import_limits.sh (this working tree, after the sleep fix)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+PASS: import_plugin_log() refuses it with ER 1644 and names the remedy (import in parts)
+PASS: rotate_log.sh rotates the oversized log and imports the archive (129711 bytes) in 3 line-aligned parts
+PASS: no part file is left after the import
+PASS: nothing lost, nothing duplicated: 515 records in the three files and in plugin_events
+PASS: rotate_log.sh --import re-imports the oversized archive in parts and adds nothing
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+PASS: after SET GLOBAL max_allowed_packet = 131072 a new connection imports the archive in one call (0 new)
+PASS: a line at or above the limit is refused before any import, with the remedy (exit 1)
+PASS: after that refusal nothing was imported, the file is unchanged and no part file is left
+PASS: a missing file is refused (exit 1)
+== 13 passed, 0 failed
+# exit status: 0
+
+# post-audit 2026-11-17 2026-11-17T02:34:47Z: run 2 of 3: LOG_LIMITS_IMAGE=frt-p1-79c0601b-mariadb:13.0.2 bash tests/integration/test_log_import_limits.sh (this working tree, after the sleep fix)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+PASS: import_plugin_log() refuses it with ER 1644 and names the remedy (import in parts)
+PASS: rotate_log.sh rotates the oversized log and imports the archive (129711 bytes) in 3 line-aligned parts
+PASS: no part file is left after the import
+PASS: nothing lost, nothing duplicated: 515 records in the three files and in plugin_events
+PASS: rotate_log.sh --import re-imports the oversized archive in parts and adds nothing
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+PASS: after SET GLOBAL max_allowed_packet = 131072 a new connection imports the archive in one call (0 new)
+PASS: a line at or above the limit is refused before any import, with the remedy (exit 1)
+PASS: after that refusal nothing was imported, the file is unchanged and no part file is left
+PASS: a missing file is refused (exit 1)
+== 13 passed, 0 failed
+# exit status: 0
+
+# post-audit 2026-11-17 2026-11-17T02:35:09Z: run 3 of 3: LOG_LIMITS_IMAGE=frt-p1-79c0601b-mariadb:13.0.2 bash tests/integration/test_log_import_limits.sh (this working tree, after the sleep fix)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+PASS: import_plugin_log() refuses it with ER 1644 and names the remedy (import in parts)
+PASS: rotate_log.sh rotates the oversized log and imports the archive (129711 bytes) in 3 line-aligned parts
+PASS: no part file is left after the import
+PASS: nothing lost, nothing duplicated: 515 records in the three files and in plugin_events
+PASS: rotate_log.sh --import re-imports the oversized archive in parts and adds nothing
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+PASS: after SET GLOBAL max_allowed_packet = 131072 a new connection imports the archive in one call (0 new)
+PASS: a line at or above the limit is refused before any import, with the remedy (exit 1)
+PASS: after that refusal nothing was imported, the file is unchanged and no part file is left
+PASS: a missing file is refused (exit 1)
+== 13 passed, 0 failed
+# exit status: 0
+

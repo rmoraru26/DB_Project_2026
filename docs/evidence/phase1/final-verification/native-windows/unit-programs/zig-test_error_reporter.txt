@@ -1,0 +1,2 @@
+Reported: Cannot open audit log
+PASS: all reporter checks

@@ -1,0 +1,8 @@
+# Repository checks and source-distribution test
+# command: bash -c python3 scripts/check_repo.py && python3 tests/test_source_distribution.py
+# started: 2026-11-16T11:15:10Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+Repository checks failed:
+ - credential-like file is tracked: .env
+
+# exit status: 0

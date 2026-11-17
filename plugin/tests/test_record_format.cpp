@@ -185,6 +185,28 @@ int main() {
               "'*' never matches system schemas");
     }
     {
+        check(campus_audit::is_system_schema("mysql", 5) && campus_audit::is_system_schema("information_schema", 18) &&
+              campus_audit::is_system_schema("performance_schema", 18) && campus_audit::is_system_schema("sys", 3),
+              "the four system schemas are recognised");
+        check(campus_audit::is_system_schema("INFORMATION_SCHEMA", 18) &&
+              campus_audit::is_system_schema("Performance_Schema", 18),
+              "information_schema and performance_schema are recognised in any case (the server resolves them so)");
+        check(!campus_audit::is_system_schema("MySQL", 5) && !campus_audit::is_system_schema("MYSQL", 5) &&
+              !campus_audit::is_system_schema("Sys", 3),
+              "a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys");
+        NameList all;
+        check(parse_name_list("*", NameKind::Database, &all).ok() &&
+              campus_audit::database_matches(all, "MySQL", 5) && campus_audit::database_matches(all, "Sys", 3) &&
+              !campus_audit::database_matches(all, "mysql", 5) && !campus_audit::database_matches(all, "sys", 3) &&
+              !campus_audit::database_matches(all, "INFORMATION_SCHEMA", 18) &&
+              campus_audit::database_matches(all, "university_resources", 20),
+              "'*' audits the user schemas `MySQL` and `Sys`, never the system schemas");
+        check(!campus_audit::is_system_schema("university_resources", 20) && !campus_audit::is_system_schema("mysql2", 6) &&
+              !campus_audit::is_system_schema("my", 2) && !campus_audit::is_system_schema("system", 6) &&
+              !campus_audit::is_system_schema(nullptr, 0) && !campus_audit::is_system_schema("", 0),
+              "user schemas, prefixes and empty names are not system schemas");
+    }
+    {
         NameList l;
         check(parse_name_list("a,,b", NameKind::Database, &l).code == AuditError::invalid_Configuration,
               "empty element rejected");

@@ -1,0 +1,10 @@
+# post-audit 2026-11-17 2026-11-17T02:38:10Z: website visual files against the baseline commit 19fd0a2
+## git status --porcelain -- frontend/templates frontend/static frontend/app.py (empty = untouched)
+## git diff --stat 19fd0a2 -- frontend/templates frontend/static frontend/app.py
+## files changed anywhere in the tree with extension .html .css .js (tracked diff + untracked)
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'plugin/tests/test_gap_accounting.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'plugin/tests/test_runtime_config.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'requirements.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/mutation_check.py', LF will be replaced by CRLF the next time Git touches it
+# end (no file names above = none changed)

@@ -3,7 +3,8 @@
 #
 # Checks, in the order a failure would cascade:
 #   .env  ->  containers  ->  root login  ->  campus_app login (through the
-#   web app's /healthz)  ->  plugin ACTIVE  ->  Audit Lab objects
+#   web app's /healthz)  ->  plugin ACTIVE  ->  Audit Lab objects  ->
+#   row-history triggers  ->  generated local accounts
 # and says what to do for each failure.  It changes nothing and never prints
 # a password.  Exit status 0 when every check passed.
 #
@@ -133,6 +134,43 @@ if [ "$ROOT_OK" = 1 ]; then
     else
         bad "Audit Lab objects missing: the volume predates migration 003"
         hint "make migrate   (or make up, which applies it automatically; data is kept)"
+    fi
+
+    # Row-history triggers.  Both audit trails depend on them, and with the
+    # plugin's default settings DROP TRIGGER leaves no plugin record (the
+    # server reports it as read access; docs/experiments.md), so their
+    # presence is checked here against database/triggers.sql.
+    if [ -f database/triggers.sql ]; then
+        expected=$(tr -d '\r' < database/triggers.sql | sed -n 's/^CREATE OR REPLACE TRIGGER \([A-Za-z0-9_]*\).*/\1/p' | sort)
+        present=$(q "SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='university_resources';" | tr -d '\r' | sort)
+        missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$present") | tr '\n' ' ')
+        if [ -n "$expected" ] && [ -z "${missing// /}" ]; then
+            ok "row-history triggers present ($(printf '%s\n' "$expected" | wc -l | tr -d ' ') of database/triggers.sql)"
+        elif [ -n "$expected" ]; then
+            bad "row-history triggers missing: $missing"
+            hint "make migrate re-creates them (data is kept).  Changes made while a trigger was" \
+                 "missing have no row history; the plugin log still shows the statements."
+        fi
+    fi
+
+    # The generated local accounts (never their passwords).
+    demo=$(q "SELECT COALESCE((SELECT CONCAT(role, IF(is_active, '', ' (deactivated)')) FROM university_resources.users WHERE email='demo.student@frantastic.local'), 'missing');")
+    case "$demo" in
+        student)
+            if [ -f .demo-credentials ]; then ok "demo student account present (role student); credential file .demo-credentials present"
+            else warn "demo student account present, but .demo-credentials is not on this machine"
+                 hint "nothing is wrong with the database; make reset-demo issues a new demo password"; fi ;;
+        missing) warn "demo student account not created yet"; hint "make up creates it" ;;
+        *) warn "demo student account: $demo" ;;
+    esac
+    legacy=$(q "SELECT COUNT(*) FROM university_resources.users WHERE email IN ('alice.student@example.edu','bob.student@example.edu','dana.admin@example.edu') AND password_hash REGEXP '^(scrypt|pbkdf2):';")
+    if [ "$legacy" != "0" ] && printf '%s' "$legacy" | grep -Eq '^[0-9]+$'; then
+        warn "$legacy seeded identity/identities (alice, bob, dana @example.edu) have a real password hash"
+        hint "This database was created by a version that published a shared demo password, or the" \
+             "password was set by hand.  The current seed stores the placeholder TEST_HASH_NOT_FOR_LOGIN." \
+             "To disable these logins:  make sql, then" \
+             "  UPDATE university_resources.users SET password_hash = 'TEST_HASH_NOT_FOR_LOGIN'" \
+             "   WHERE email IN ('alice.student@example.edu','bob.student@example.edu','dana.admin@example.edu');"
     fi
 fi
 

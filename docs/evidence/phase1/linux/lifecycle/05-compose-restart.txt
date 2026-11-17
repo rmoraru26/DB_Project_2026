@@ -1,0 +1,4 @@
+ Container frt-p1-79c0601b-mariadb-1  Restarting
+ Container frt-p1-79c0601b-web-1  Restarting
+ Container frt-p1-79c0601b-mariadb-1  Started
+ Container frt-p1-79c0601b-web-1  Started

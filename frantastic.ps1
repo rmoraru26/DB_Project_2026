@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("up", "demo", "test", "down", "reset-admin", "help")]
+    [ValidateSet("up", "demo", "test", "down", "reset-admin", "reset-demo", "help")]
     [string] $Command = "help"
 )
 
@@ -10,6 +10,7 @@ $Compose = @("compose")
 . (Join-Path $ProjectRoot "scripts/windows_security.ps1")
 . (Join-Path $ProjectRoot "scripts/windows_compose_url.ps1")
 . (Join-Path $ProjectRoot "scripts/windows_launcher.ps1")
+. (Join-Path $ProjectRoot "scripts/windows_demo_credentials.ps1")
 
 # Credentials: Docker Compose passes MARIADB_ROOT_PASSWORD and
 # CAMPUS_APP_PASSWORD from .env to the mariadb service, and the scripts run
@@ -156,7 +157,13 @@ Push-Location -LiteralPath $ProjectRoot
 $savedSecretEnvironment = $null
 try {
     if ($Command -eq "help") {
-        Write-Host "Usage: .\frantastic.cmd up|demo|test|down|reset-admin"
+        Write-Host "Usage: .\frantastic.cmd up|demo|test|down|reset-admin|reset-demo"
+        Write-Host "  up           build and start MariaDB 13.0.2 with the campus_audit plugin and the web app"
+        Write-Host "  demo         cause audited events and show what the plugin recorded"
+        Write-Host "  test         run every test suite"
+        Write-Host "  down         stop the containers (data is kept)"
+        Write-Host "  reset-admin  issue a new local administrator password (.admin-credentials)"
+        Write-Host "  reset-demo   issue a new demo-student password (.demo-credentials)"
         Write-Host "Requires Docker Desktop with Docker Compose V2."
         exit 0
     }
@@ -173,9 +180,15 @@ try {
             Invoke-Docker (@($Compose) + @("exec", "-T", "mariadb", "bash", "/usr/local/share/campus/scripts/post_start.sh"))
             Invoke-Docker (@($Compose) + @("up", "-d", "--build", "--wait", "web"))
             Invoke-AdminProvision
+            $demoStatus = Invoke-FrantasticDemoProvision -ProjectRoot $ProjectRoot -Compose $Compose
             $readyUrl = Get-FrantasticReadyUrl
             Write-Host "FRANtastic is ready at $readyUrl"
-            Write-Host "Student demo: alice.student@example.edu / campus-demo-2026"
+            if ($demoStatus -ceq "Unavailable") {
+                Write-Host "Student login: no local demo credential (see the notice above); /register creates an account."
+            } else {
+                Write-Host "Student login: open .demo-credentials (line 1 e-mail address, line 2 password), for example: notepad .demo-credentials"
+            }
+            Write-Host "Administrator credential: .admin-credentials (private local file; not printed)"
         }
         "demo" {
             [void](Read-Environment)
@@ -188,11 +201,19 @@ try {
             & (Join-Path $ProjectRoot "tests/windows/test_launcher_url.ps1")
             & (Join-Path $ProjectRoot "tests/windows/test_launcher_hardening.ps1")
             & (Join-Path $ProjectRoot "tests/windows/test_launcher_end_to_end.ps1")
+            & (Join-Path $ProjectRoot "tests/windows/test_demo_credentials.ps1")
             $credentialPath = Join-Path $ProjectRoot ".admin-credentials"
             $testEnvironment = @{}
             if (Test-Path -LiteralPath $credentialPath) {
                 $adminPassword = Read-AdminCredential $credentialPath
                 $testEnvironment = @{ TEST_ADMIN_EMAIL = "admin@frantastic.local"; TEST_ADMIN_PASSWORD = $adminPassword }
+            }
+            # The generated demo student, so the suite can prove that the
+            # advertised login works and stays a student (forwarded by name).
+            $demoPassword = Read-FrantasticDemoCredential (Join-Path $ProjectRoot ".demo-credentials")
+            if ($null -ne $demoPassword) {
+                $testEnvironment["TEST_DEMO_EMAIL"] = $FrantasticDemoEmail
+                $testEnvironment["TEST_DEMO_PASSWORD"] = $demoPassword
             }
             $testArguments = @($Compose) + @("--profile", "test", "run", "--rm", "--build", "test-runner")
             if ($testEnvironment.Count -gt 0) {
@@ -202,6 +223,10 @@ try {
         "reset-admin" {
             [void](Read-Environment)
             Invoke-AdminProvision -Rotate
+        }
+        "reset-demo" {
+            [void](Read-Environment)
+            [void](Invoke-FrantasticDemoProvision -ProjectRoot $ProjectRoot -Compose $Compose -Rotate)
         }
         "down" { Invoke-Docker (@($Compose) + @("down")) }
     }

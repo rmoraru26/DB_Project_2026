@@ -7,10 +7,11 @@
 namespace campus_audit {
 
 struct RuntimeConfig {
-    RuntimeConfig() : log_reads(false), connections(1), max_sql_length(1024) {}
+    RuntimeConfig() : log_reads(false), connections(1), statement_scope(0), max_sql_length(1024) {}
 
     std::atomic<bool> log_reads;
     std::atomic<unsigned long> connections;
+    std::atomic<unsigned long> statement_scope;    // campus_audit::StatementScope
     std::atomic<unsigned int> max_sql_length;
 };
 

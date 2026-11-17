@@ -70,6 +70,8 @@ services:
       DB_PORT: "3306"
       TEST_ADMIN_EMAIL: ${TEST_ADMIN_EMAIL:-}
       TEST_ADMIN_PASSWORD: ${TEST_ADMIN_PASSWORD:-}
+      TEST_DEMO_EMAIL: ${TEST_DEMO_EMAIL:-}
+      TEST_DEMO_PASSWORD: ${TEST_DEMO_PASSWORD:-}
     depends_on:
       mariadb:
         condition: service_healthy

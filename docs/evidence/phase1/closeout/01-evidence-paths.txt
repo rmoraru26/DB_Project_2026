@@ -1,0 +1,98 @@
+# closeout 2026-11-17 2026-11-17T02:49:38Z: every evidence path cited in README.md, docs/*.md and the evidence READMEs
+ok      docs/evidence/phase1/
+ok      docs/evidence/phase1/README.md
+ok      docs/evidence/sample-records.jsonl
+ok      docs/evidence/linux-ci-2026-11-03/
+ok      docs/evidence/phase1/
+ok      docs/evidence/windows-2026-11-03/
+ok      docs/evidence/windows-docker-desktop-2026-11-09/README.md
+ok      docs/evidence/linux-ci-2026-11-03/
+ok      docs/evidence/phase1/
+ok      docs/evidence/phase1/post-audit/
+ok      docs/evidence/windows-2026-11-03/01-reproduction-root-1045.txt
+ok      docs/evidence/benchmark-windows.csv
+ok      docs/evidence/exp-lock.txt
+ok      docs/evidence/exp-startup.txt
+ok      docs/evidence/linux-ci-2026-11-03/
+ok      docs/evidence/linux-ci-2026-11-03/02-make-test.txt
+ok      docs/evidence/phase1/
+ok      docs/evidence/windows-2026-11-03/
+ok      docs/evidence/windows-2026-11-03/04-unit-tests.txt
+ok      docs/evidence/windows-2026-11-03/05-plugin-e2e-tests.txt
+ok      docs/evidence/exp-server-audit.txt
+ok      docs/evidence/linux-ci-2026-11-03/
+ok      docs/evidence/exp-server-audit.txt
+ok      docs/evidence/phase1/
+ok      docs/evidence/linux-ci-2026-11-03/
+ok      docs/evidence/phase0-2026-11-13/
+ok      docs/evidence/phase1/
+ok      docs/evidence/phase1/README.md
+ok      docs/evidence/phase1/checks/github-actions-runs-for-19fd0a2.txt
+ok      docs/evidence/phase1/experiments/makefile-credentials-read-from-stdin.txt
+ok      docs/evidence/phase1/linux/
+ok      docs/evidence/phase1/post-audit/
+ok      docs/evidence/sample-records.jsonl
+ok      docs/evidence/windows-2026-11-03/
+ok      docs/evidence/phase1/checks/git-history-secret-scan.txt
+ok      docs/evidence/phase1/checks/github-actions-runs-for-19fd0a2.txt
+ok      docs/evidence/phase1/checks/repository-guards-mutation.txt
+ok      docs/evidence/phase1/checks/step-verification-by-content.txt
+MISSING docs/evidence/phase1/linux-rerun-2026-11-17/01  (cited in docs/evidence/phase1/README.md)
+ok      docs/evidence/phase1/linux-rerun-2026-11-17/03-repository-checks-clean-export.txt
+ok      docs/evidence/phase1/linux-rerun-2026-11-17/03-repository-checks.txt
+ok      docs/evidence/phase1/linux-rerun-2026-11-17/20-make-test.txt
+ok      docs/evidence/phase1/linux-rerun-2026-11-17/33-… (prefix)
+ok      docs/evidence/phase1/linux/01-unit-tests.txt
+ok      docs/evidence/phase1/linux/02-shell-tests.txt
+ok      docs/evidence/phase1/linux/03-repository-checks.txt
+ok      docs/evidence/phase1/linux/04-mutation-check.txt
+ok      docs/evidence/phase1/linux/10-make-up-fresh.txt
+ok      docs/evidence/phase1/linux/20-make-test.txt
+ok      docs/evidence/phase1/linux/21-make-examples.txt
+ok      docs/evidence/phase1/linux/22-make-test-integration.txt
+ok      docs/evidence/phase1/linux/23-make-test-app.txt
+ok      docs/evidence/phase1/linux/24-browser-tests.txt
+ok      docs/evidence/phase1/linux/25-pages-three-widths.txt
+MISSING docs/evidence/phase1/linux/26-source-distribution.txt  (cited in docs/evidence/phase1/README.md)
+ok      docs/evidence/phase1/linux/30-restart.txt
+ok      docs/evidence/phase1/linux/31-volume-recreated.txt
+ok      docs/evidence/phase1/linux/32-stale-env.txt
+ok      docs/evidence/phase1/linux/40-benchmark.txt
+ok      docs/evidence/phase1/linux/90-secret-scan.txt
+ok      docs/evidence/phase1/linux/lifecycle/
+ok      docs/evidence/phase1/windows-launcher/01-… (prefix)
+ok      docs/evidence/phase1/windows-launcher/04-… (prefix)
+ok      docs/evidence/phase1/windows-launcher/06-… (prefix)
+ok      docs/evidence/phase1/windows-native/01-…excerpt.txt (prefix)
+ok      docs/evidence/phase1/windows-native/02-… (prefix)
+ok      docs/evidence/phase1/windows-native/05-unit-tests-windows-gxx.txt
+ok      docs/evidence/phase1/windows-native/06-… (prefix)
+ok      docs/evidence/phase1/checks/repository-guards-mutation.txt
+MISSING docs/evidence/phase1/linux/10  (cited in docs/testing.md)
+ok      docs/evidence/phase1/linux/20-make-test.txt
+ok      docs/evidence/phase1/post-audit/01-unit-tests.txt
+ok      docs/evidence/phase1/post-audit/02-mutation-check.txt
+ok      docs/evidence/phase1/post-audit/04-… (prefix)
+ok      docs/evidence/phase1/post-audit/06-… (prefix)
+ok      docs/evidence/phase1/post-audit/07-… (prefix)
+ok      docs/evidence/phase1/post-audit/09-… (prefix)
+ok      docs/evidence/phase1/post-audit/12-… (prefix)
+ok      docs/evidence/phase1/windows-native/05-unit-tests-windows-gxx.txt
+ok      docs/evidence/phase1/windows-native/09-plugin-e2e.txt
+ok      docs/evidence/phase1/post-audit/01-unit-tests.txt
+ok      docs/evidence/phase1/post-audit/02-mutation-check.txt
+ok      docs/evidence/phase1/post-audit/03-system-schema-case.txt
+ok      docs/evidence/phase1/post-audit/04-harness-and-database-tests.txt
+ok      docs/evidence/phase1/post-audit/05-control-new-db-tests-against-prefix-sql.txt
+ok      docs/evidence/phase1/post-audit/06-server-behaviour-and-p2-1-probes.txt
+ok      docs/evidence/phase1/post-audit/07-log-import-limits.txt
+ok      docs/evidence/phase1/post-audit/07a-log-import-limits-first-run-test-defect.txt
+ok      docs/evidence/phase1/post-audit/08-control-log-import-limits-against-prefix-scripts.txt
+ok      docs/evidence/phase1/post-audit/09-log-rotation-running-stack.txt
+ok      docs/evidence/phase1/post-audit/10-repository-checks.txt
+ok      docs/evidence/phase1/post-audit/11-shell-frontend-syntax.txt
+ok      docs/evidence/phase1/post-audit/12-windows-gxx-test-record-format.txt
+ok      docs/evidence/phase1/post-audit/13-website-files-untouched.txt
+ok      docs/evidence/phase1/post-audit/15-final-repository-checks.txt
+ok      docs/evidence/phase1/post-audit/14-catalogue-race-prefix.txt
+# 3 MISSING lines. Expected and explained: linux-rerun-2026-11-17/01 and linux/10 are the first file of a range written as '01 to 04' / '10 to 13' (those files exist); linux/26-source-distribution.txt is named only in the correction note that says it was never recorded.

@@ -1504,12 +1504,195 @@ def free_slot(kind, name, horizon_days):
     pytest.skip("no free slot found")
 
 
+# ---------------------------------------------------------------- local accounts
+#
+# The repository publishes no password.  The seeded identities carry a
+# placeholder instead of a hash and can never log in; the account for
+# demonstrations is generated per installation by `make up` /
+# `frantastic.cmd up` (scripts/bootstrap_demo.sh, migration 007) and its
+# credential reaches these tests through TEST_DEMO_EMAIL / TEST_DEMO_PASSWORD,
+# read from the private file .demo-credentials by the test targets.
+
+DEMO_EMAIL = "demo.student@frantastic.local"
+SEEDED_IDENTITIES = ("alice.student@example.edu", "bob.student@example.edu", "dana.admin@example.edu")
+# Strings that were once published or stored: none of them may open any account.
+PUBLISHED_STRINGS = ("TEST_HASH_NOT_FOR_LOGIN", "campus-demo-2026")
+needs_demo_credential = pytest.mark.skipif(
+    not os.getenv("TEST_DEMO_PASSWORD"),
+    reason="no local demo credential (.demo-credentials); make up / frantastic.cmd up creates it")
+
+
 @db_only
-def test_seed_placeholder_hashes_cannot_log_in(db_client):
-    for email in ("alice.student@example.edu", "dana.admin@example.edu"):
-        response = post(db_client, "/login", data={"email": email, "password": "TEST_HASH_NOT_FOR_LOGIN"})
-        assert response.status_code == 401
-    assert scalar("SELECT role FROM users WHERE email=%s", ("dana.admin@example.edu",)) == "student"
+@pytest.mark.parametrize("email", SEEDED_IDENTITIES)
+def test_seeded_identities_cannot_log_in_with_any_published_string(db_app, email):
+    for password in PUBLISHED_STRINGS:
+        client = db_app.test_client()
+        assert post(client, "/login", data={"email": email, "password": password}).status_code == 401
+        with client.session_transaction() as session:
+            assert "user_id" not in session
+    stored = scalar("SELECT password_hash FROM users WHERE email = %s", (email,))
+    assert not stored.startswith(("scrypt:", "pbkdf2:"))               # a placeholder, not a hash of anything
+    assert scalar("SELECT role FROM users WHERE email = %s", (email,)) == "student"
+
+
+@db_only
+def test_no_published_string_opens_the_demo_or_the_administrator_account(db_app):
+    for email in (DEMO_EMAIL, "admin@frantastic.local"):
+        for password in PUBLISHED_STRINGS:
+            assert post(db_app.test_client(), "/login", data={"email": email, "password": password}).status_code == 401
+
+
+@needs_demo_credential
+@db_only
+def test_generated_demo_student_can_log_in(db_client):
+    assert os.environ["TEST_DEMO_EMAIL"] == DEMO_EMAIL
+    response = post(db_client, "/login", data={"email": DEMO_EMAIL, "password": os.environ["TEST_DEMO_PASSWORD"]})
+    assert response.status_code == 302 and response.headers["Location"].endswith("/")
+    with db_client.session_transaction() as session:
+        assert session["user_id"] == user_id(DEMO_EMAIL)
+        assert session["role"] == "student" and session["full_name"] == "Demo Student"
+    assert db_client.get("/accountProfile").status_code == 200
+    assert db_client.get("/itemsHome").status_code == 200 and db_client.get("/roomsHome").status_code == 200
+    # The guided tour is reachable right after the login offered on the lab page.
+    again = db_client.application.test_client()
+    lab_login = post(again, "/login?next=lab", data={"email": DEMO_EMAIL, "password": os.environ["TEST_DEMO_PASSWORD"]})
+    assert lab_login.status_code == 302 and lab_login.headers["Location"].endswith("/lab")
+
+
+@needs_demo_credential
+@db_only
+def test_demo_student_wrong_passwords_are_rejected(db_client):
+    right = os.environ["TEST_DEMO_PASSWORD"]
+    # Four attempts: one fewer than the throttle allows (5 failures per address and e-mail).
+    for wrong in (right + "x", right[:-1], right.swapcase() if right.swapcase() != right else right[::-1], ""):
+        assert wrong != right
+        response = post(db_client, "/login", data={"email": DEMO_EMAIL, "password": wrong})
+        assert response.status_code == 401 and b"Invalid email or password" in response.data
+        with db_client.session_transaction() as session:
+            assert "user_id" not in session
+    # The failures did not lock the account out and did not change it: the right password still works.
+    assert post(db_client, "/login", data={"email": DEMO_EMAIL, "password": right}).status_code == 302
+
+
+@needs_demo_credential
+@db_only
+def test_demo_student_has_no_administrator_access(db_client):
+    post(db_client, "/login", data={"email": DEMO_EMAIL, "password": os.environ["TEST_DEMO_PASSWORD"]})
+    assert db_client.get("/admin/audit").status_code == 403
+    # A forged role in the session cookie does not help: the role is re-read from MariaDB.
+    with db_client.session_transaction() as session:
+        session["role"] = "admin"
+    assert db_client.get("/admin/audit").status_code == 403
+    with db_client.session_transaction() as session:
+        assert session["role"] == "student"
+    # The Audit Lab's "all users" scope is for administrators; a student gets only their own records.
+    assert db_client.get("/lab/api/events?scope=all").get_json()["scope"] == "mine"
+    assert db_client.get("/lab/api/history?scope=all").get_json()["scope"] == "mine"
+
+
+@db_only
+def test_demo_identity_is_a_student_and_the_application_cannot_change_that():
+    stored = scalar("SELECT CONCAT(role, '|', is_active) FROM users WHERE email = %s", (DEMO_EMAIL,))
+    if stored is None:
+        pytest.skip("the demo student has not been created in this database (make up creates it)")
+    assert stored == "student|1"
+    hashed = scalar("SELECT password_hash FROM users WHERE email = %s", (DEMO_EMAIL,))
+    assert hashed.startswith(("scrypt:", "pbkdf2:"))
+    if os.getenv("TEST_DEMO_PASSWORD"):
+        assert os.environ["TEST_DEMO_PASSWORD"] not in hashed          # stored as a hash, never in plain text
+    with connect() as db, db.cursor() as cursor:
+        # The web application account has no privilege to raise a role ...
+        with pytest.raises(pymysql.err.OperationalError) as denied:
+            cursor.execute("UPDATE users SET role = 'admin' WHERE email = %s", (DEMO_EMAIL,))
+        assert denied.value.args[0] == 1143
+        # ... and may not call the procedures that issue the demo password.
+        for procedure in ("bootstrap_local_demo_student", "rotate_local_demo_student"):
+            with pytest.raises(pymysql.err.OperationalError) as denied:
+                cursor.execute(f"CALL {procedure}('pbkdf2:sha256:1$x$y')")
+            assert denied.value.args[0] == 1370
+    assert scalar("SELECT CONCAT(role, '|', password_hash = %s) FROM users WHERE email = %s",
+                  (hashed, DEMO_EMAIL)) == "student|1"
+
+
+@db_only
+def test_demo_address_cannot_be_registered_again_or_as_administrator(db_client):
+    if user_id(DEMO_EMAIL) is None:
+        pytest.skip("the demo student has not been created in this database (make up creates it)")
+    before = scalar("SELECT CONCAT(user_id, '|', password_hash, '|', role) FROM users WHERE email = %s", (DEMO_EMAIL,))
+    form = {"full_name": "Impostor", "email": DEMO_EMAIL.upper(), "password": "another-long-password",
+            "confirm_password": "another-long-password", "role": "admin"}
+    assert post(db_client, "/register", data=form).status_code == 400
+    assert scalar("SELECT COUNT(*) FROM users WHERE email = %s", (DEMO_EMAIL,)) == 1
+    assert scalar("SELECT CONCAT(user_id, '|', password_hash, '|', role) FROM users WHERE email = %s",
+                  (DEMO_EMAIL,)) == before
+
+
+# ---------------------------------------------------------------- booking catalogue
+#
+# Every room and item the booking pages offer must exist after an ordinary
+# installation (database/catalogue.sql, part of scripts/setup_database.sh and
+# the Docker initialisation); nobody has to run frontend/seed.py by hand.
+
+CATALOGUE_ITEMS = ["Vacuum", "Mop", "Iron", "Broom", "Chess", "Monopoly", "Settlers of Catan", "Scrabble",
+                   "Battleship", "Basketball", "Football", "Frisbee", "Tennis Racket", "Speaker",
+                   "PS5 Controller", "Headphones", "Nintendo Switch", "Gameboy"]
+CATALOGUE_ROOMS = ["Study Room", "Meeting Room", "Studio Room", "Practice Room", "Cinema Room"]
+
+
+@db_only
+def test_every_item_and_room_of_the_booking_pages_exists_in_the_database(db_client):
+    login_as(db_client, user_id("alice.student@example.edu"))
+    items_page = db_client.get("/itemsHome").data.decode()
+    rooms_page = db_client.get("/roomsHome").data.decode()
+    for name in CATALOGUE_ITEMS:
+        assert name in items_page                                       # the list here is the one the page shows
+        assert scalar("SELECT GROUP_CONCAT(asset_tag ORDER BY asset_tag) FROM items WHERE name = %s", (name,)) == \
+            f"{name} A,{name} B,{name} C"
+    for name in CATALOGUE_ROOMS:
+        assert name in rooms_page
+        assert scalar("SELECT COUNT(*) FROM rooms WHERE name = %s", (name,)) == 1
+
+
+@db_only
+@pytest.mark.parametrize("item", ["Chess", "Settlers of Catan", "Gameboy"])
+def test_a_catalogue_item_can_be_booked_through_the_official_urls(db_client, item):
+    user = user_id("bob.student@example.edu")
+    login_as(db_client, user)
+    version = f"{item} B"
+    start, _ = free_slot("item", version, 13)
+    form = {"date": start.date().isoformat(), "time": slot(start), "version": version}
+    path = "/items/" + item.replace(" ", "%20")
+    assert db_client.get(path).status_code == 200
+    verified = post(db_client, path + "/verifyBooking", data=form)
+    assert verified.status_code == 200 and b"does not exist" not in verified.data
+    assert post(db_client, path + "/confirmBooking", data=form).status_code == 302
+    loan = scalar("SELECT l.loan_id FROM loans l JOIN items i ON i.item_id = l.item_id "
+                  "WHERE i.asset_tag = %s AND l.user_id = %s AND l.borrowed_at = %s AND l.status = 'active'",
+                  (version, user, start))
+    assert loan is not None
+    # Leave the catalogue free for the next run: cancel the scheduled loan again.
+    post(db_client, "/cancelBooking", data={"booking_id": str(loan), "kind": "item"})
+    assert scalar("SELECT status FROM loans WHERE loan_id = %s", (loan,)) == "cancelled"
+
+
+@db_only
+@pytest.mark.parametrize("room", ["Study Room", "Cinema Room"])
+def test_a_catalogue_room_can_be_booked_through_the_official_urls(db_client, room):
+    user = user_id("bob.student@example.edu")
+    login_as(db_client, user)
+    start, _ = free_slot("room", room, 80)
+    form = {"date": start.date().isoformat(), "time": slot(start), "people": "2"}
+    path = "/rooms/" + room.replace(" ", "%20")
+    assert db_client.get(path).status_code == 200
+    verified = post(db_client, path + "/verifyBooking", data=form)
+    assert verified.status_code == 200 and b"does not exist" not in verified.data
+    assert post(db_client, path + "/confirmBooking", data=form).status_code == 302
+    booking = scalar("SELECT b.booking_id FROM bookings b JOIN rooms r ON r.room_id = b.room_id "
+                     "WHERE r.name = %s AND b.user_id = %s AND b.start_time = %s AND b.status = 'confirmed'",
+                     (room, user, start))
+    assert booking is not None
+    post(db_client, "/cancelBooking", data={"booking_id": str(booking), "kind": "room"})
+    assert scalar("SELECT status FROM bookings WHERE booking_id = %s", (booking,)) == "cancelled"
 
 
 @pytest.mark.skipif(not os.getenv("TEST_ADMIN_PASSWORD"), reason="no local bootstrap credential file")

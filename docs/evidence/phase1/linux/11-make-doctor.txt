@@ -1,0 +1,20 @@
+# make doctor
+# command: make doctor
+# started: 2026-11-16T11:18:24Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+campus_audit doctor
+  [ OK ] .env defines MARIADB_ROOT_PASSWORD, CAMPUS_APP_PASSWORD and SECRET_KEY
+  [ OK ] mariadb container: running healthy
+  [ OK ] web container: running healthy
+  [ OK ] database volume frt-p1-79c0601b_mariadb-data created 2026-11-16T11:17:41Z; .env last changed 2026-11-16 11:14:53 +0000
+         a volume older than .env keeps the passwords of the .env that existed when it was created
+  [ OK ] root login with the password from .env (server 13.0.2-MariaDB-ubu2604)
+  [ OK ] web app logs in to MariaDB as campus_app (/healthz)
+  [ OK ] campus_audit plugin: ACTIVE / state ACTIVE
+  [ OK ] Audit Lab objects present (migration 003)
+  [ OK ] row-history triggers present (18 of database/triggers.sql)
+  [ OK ] demo student account present (role student); credential file .demo-credentials present
+
+All checks passed. Web app: http://127.0.0.1:25080  (guided tour: /lab)
+
+# exit status: 0

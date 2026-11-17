@@ -1,0 +1,26 @@
+## installing the DLL into the scratch server's plugin directory
+## mariadb-install-db
+exit 0
+## starting mariadbd (127.0.0.1:23399)
+server: 13.0.2-MariaDB on Win64, plugin_maturity=beta
+## INSTALL SONAME 'campus_audit'
+campus_audit | ACTIVE | AUDIT | campus_audit.dll | 1.2.0 | Beta | BSD
+system variables: 9
+status variables: 11
+statement_scope: TABLES
+2026-11-16  2:53:30 5 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+RESULT: the DLL loaded and is ACTIVE
+## database setup, demo and the end-to-end harness (as in the windows-native CI job)
+setup_database.sh exit 0
+-> database/migrations/008_import_plugin_log_errors.sql
+(CAMPUS_APP_PASSWORD not set: application account not created)
+Database setup complete.
+demo.sh exit 0
+run_plugin_tests.sh exit 0
+== campus_audit integration tests (run 1794794014_1260)
+Server: 13.0.2-MariaDB (Win64)
+SKIP: permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)
+SKIP: CHANGE_USER (set CHANGE_USER_CLIENT to the campus_change_user helper; make test-e2e does)
+SKIP: write failure via /dev/full (Linux only; see docs/experiments.md for the Windows lock experiment)
+== 110 passed, 0 failed, 3 skipped
+## server stopped

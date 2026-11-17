@@ -1,0 +1,10 @@
+﻿PASS: default Compose mapping
+PASS: custom Compose mapping
+PASS: IPv6 loopback mapping
+PASS: empty Compose mapping
+PASS: wildcard binding rejected
+PASS: out-of-range port rejected
+PASS: ambiguous mapping rejected
+PASS: Compose query failure rejected
+PASS: malformed mapping rejected
+PASS: empty mapping rejected

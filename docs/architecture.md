@@ -87,6 +87,8 @@ the database running (**fail-open**), counts the lost records, retries every 5 s
 | `plugin/src/campus_audit.cpp` | Plugin declaration, system/status variables, event handlers, init/deinit, error policy |
 | `plugin/src/record_format.cpp` | JSON writer (bounded, UTF-8 validating), SQL digest, name-list parsing, timestamps; no MariaDB headers, unit tested |
 | `plugin/src/log_sink.cpp` | Append-only file with `O_APPEND`, one `write()` per record, errno-rich errors |
+| `plugin/src/statement_scope.h` | Which statements get a `statement` record, decided from event facts only; the per-connection bookkeeping of `campus_audit_statement_scope = SESSION`; no MariaDB headers, unit tested |
+| `plugin/src/runtime_config.h`, `plugin/src/gap_accounting.h` | Atomic copies of the dynamic settings read by concurrent callbacks; the count of events lost during an I/O outage |
 | `plugin/src/platform.h` | Mutex / reader-writer lock / clock for Linux and Windows |
 | `plugin/src/service_symbols.cpp` | Service pointers for builds that cannot link `mysqlservices` (Zig on Windows) |
 | `plugin/audit_error.h`, `audit_error_reporter.*`, `audit_file_check.*` | The team's original error-result helpers, now used by the plugin (`AuditResult`, `report_audit_error`, `validate_log_path`) |
@@ -95,6 +97,14 @@ Concurrency: event handlers run in many connection threads.  Filters are read un
 reader/writer lock; the file is written under one mutex with a single `write()` per record;
 counters are atomics; `seq` is an atomic counter assigned when a record is formatted, so it is
 unique per plugin instance but lines can appear slightly out of `seq` order under concurrency.
+
+State per statement is kept per **connection**, in three hidden session variables (the query id of
+the statement whose table events were recorded, the query id of the statement that raised the
+latest table event, and the latch of scope `SESSION`), so it follows a connection that the thread
+pool moves between threads. The only per-**thread** state is the mark "this statement was an
+accepted `SET GLOBAL campus_audit_*`", which cannot be a session variable (the deadlock described
+in `docs/plugin-api-notes.md`, section 3). Both are measured under `thread_handling=pool-of-threads`
+by `tests/plugin/test_thread_pool.sh`.
 
 ## Database schema
 
@@ -110,7 +120,7 @@ erDiagram
         bigint user_id PK
         varchar email UK
         varchar password_hash "Werkzeug hash, never audited"
-        enum role "student | admin"
+        enum role "student | admin; CHECK: the demo address is a student"
         bool is_active
     }
     rooms {
@@ -163,10 +173,23 @@ keys to `university_resources` on purpose: plugin records are evidence about the
 survive deletion of the rows they describe, and their connection ids are only unique within one
 server run.
 
+Rows that exist after an installation, besides what users create:
+
+| Rows | Loaded by | Purpose |
+|---|---|---|
+| 3 users, 3 rooms, 3 items, 1 booking, 1 loan | `database/seed.sql` (new databases only) | fixtures for the examples and tests; the users cannot log in |
+| 54 items (18 types, copies A to C), 5 rooms | `database/catalogue.sql` (every installation and upgrade; inserts missing rows only) | what the booking pages offer |
+| `admin@frantastic.local` (administrator), `demo.student@frantastic.local` (student) | the start-up scripts, through the procedures of migrations 005 and 007 | the two generated local accounts; passwords in private local files |
+
+The migrations in order, each idempotent: 001 trigger-owned row history and `connection_id`; 002
+the `campus_audit` schema, import and views; 003 Audit Lab objects and `import_current_log()`;
+004 and 005 no shared administrator, the local administrator gate; 006 the `cancelled` loan status;
+007 the demo-student constraint and procedures; 008 the import's error handling.
+
 ## Deployment options
 
 | Option | What runs | Verified by us |
 |---|---|---|
-| A. Native Windows MariaDB 13.0.2 + `campus_audit.dll` (Zig build) | official zip/MSI server, DLL from `plugin/build_windows.ps1` | **yes**: build, load, all integration tests, failure experiments, restart (2026-10-25); plugin 1.1.0, web app, Audit Lab and browser tests again on 2026-11-03 (`docs/evidence/windows-2026-11-03/`) |
-| B. Linux container (Docker Desktop on Windows, or Linux) + `campus_audit.so` | `compose.yaml`, image `mariadb:13.0.2-resolute` pinned by digest, plugin compiled in the image | **CI:** Linux Docker Engine, 2026-11-03, build/load/demo/test/examples/browser/restart/stale-volume checks (`docs/evidence/linux-ci-2026-11-03/`). **Manual:** Windows 11 Docker Desktop, 2026-11-09, fresh deployment, demo and test suite; Linux containers from Windows, not Windows CI (`docs/evidence/windows-docker-desktop-2026-11-09/README.md`) |
+| A. Native Windows MariaDB 13.0.2 + `campus_audit.dll` (Zig build) | official zip/MSI server, DLL from `plugin/build_windows.ps1` | **yes**: build, load, all integration tests, failure experiments, restart (2026-10-25); plugin 1.1.0, web app, Audit Lab and browser tests again on 2026-11-03 (`docs/evidence/windows-2026-11-03/`); plugin 1.2.0 build, load, database setup, demo and the end-to-end harness on 2026-11-16 (`docs/evidence/phase1/`) |
+| B. Linux container (Docker Desktop on Windows, or Linux) + `campus_audit.so` | `compose.yaml`, image `mariadb:13.0.2-resolute` pinned by digest, plugin compiled in the image | **Local, plugin 1.2.0:** 2026-11-15/16, a Linux host driving Docker Desktop and the Windows launcher, every suite (`docs/evidence/phase1/`). **CI:** Linux Docker Engine, 2026-11-03, build/load/demo/test/examples/browser/restart/stale-volume checks (`docs/evidence/linux-ci-2026-11-03/`), and again for commit `19fd0a2` on 2026-11-14 (plugin 1.1.1). **Manual:** Windows 11 Docker Desktop, 2026-11-09, fresh deployment, demo and test suite; Linux containers from Windows, not Windows CI (`docs/evidence/windows-docker-desktop-2026-11-09/README.md`) |
 | C. Linux shared object cross-compiled with Zig | compile check only | compile only; the `.so` that is loaded on Linux is the one built in the Docker image (B) |

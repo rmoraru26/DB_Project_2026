@@ -1,0 +1,2 @@
+Demo student password was rotated and verified.
+Demo student login: demo.student@frantastic.local; password on line 2 of .demo-credentials (private local file; not printed).

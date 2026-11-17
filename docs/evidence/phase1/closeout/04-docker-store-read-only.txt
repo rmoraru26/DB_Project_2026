@@ -1,0 +1,17 @@
+# closeout 2026-11-17 2026-11-17T02:49:51Z: Docker Desktop state when the P1-1 closeout scenarios (scripts/p1_1_recovery.sh) were to run
+## first attempt of scripts/p1_1_recovery.sh: its container started, then every docker exec answered 'container ... is not running' and its cleanup could not remove it
+## docker run --rm (probe):
+docker: Error response from daemon: write /var/lib/desktop-containerd/daemon/io.containerd.metadata.v1.bolt/meta.db: read-only file system
+
+Run 'docker run --help' for more information
+# exit status: 125
+## docker rm -f -v frt-closeout-p11-230 (the closeout script's own container):
+Error response from daemon: cannot remove container "frt-closeout-p11-230": write /var/lib/desktop-containerd/daemon/io.containerd.metadata.v1.bolt/meta.db: read-only file system
+# exit status: 1
+## docker ps:
+frt-closeout-p11-230	Up 7 minutes
+frt-p1w-79c0601b-mariadb-1	Up 2 hours (healthy)
+frt-p1-79c0601b-web-1	Up 2 hours (healthy)
+frt-p1-79c0601b-mariadb-1	Up 2 hours (healthy)
+frt-p1w-79c0601b-web-1	Up 2 hours (healthy)
+frt-p1-linuxhost-79c0601b	Up 2 hours

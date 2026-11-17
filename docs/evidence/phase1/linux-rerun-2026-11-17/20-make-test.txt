@@ -1,0 +1,920 @@
+Compose now can delegate build to bake for better performances
+Just set COMPOSE_BAKE=true
+#0 building with "default" instance using docker driver
+
+#1 [mariadb internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 5.70kB 0.0s done
+#1 DONE 0.3s
+
+#2 [mariadb internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [mariadb internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 351B done
+#3 DONE 0.2s
+
+#4 [mariadb internal] load build context
+#4 DONE 0.0s
+
+#5 [mariadb build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.2s
+
+#4 [mariadb internal] load build context
+#4 transferring context: 5.62kB 0.0s done
+#4 DONE 0.2s
+
+#6 [mariadb build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [mariadb stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#7 CACHED
+
+#8 [mariadb build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#8 CACHED
+
+#9 [mariadb stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#9 CACHED
+
+#10 [mariadb stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#10 CACHED
+
+#11 [mariadb stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#11 CACHED
+
+#12 [mariadb stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#12 CACHED
+
+#13 [mariadb build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#13 CACHED
+
+#14 [mariadb stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#14 CACHED
+
+#15 [mariadb stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#15 CACHED
+
+#16 [mariadb stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#16 CACHED
+
+#17 [mariadb build 5/9] RUN make clean && make test && make plugin
+#17 CACHED
+
+#18 [mariadb stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#18 CACHED
+
+#19 [mariadb stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#19 CACHED
+
+#20 [mariadb stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#20 CACHED
+
+#21 [mariadb stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#21 CACHED
+
+#22 [mariadb stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#22 CACHED
+
+#23 [mariadb build 4/9] COPY plugin/ ./
+#23 CACHED
+
+#24 [mariadb stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#24 CACHED
+
+#25 [mariadb stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#25 CACHED
+
+#26 [mariadb stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#26 CACHED
+
+#27 [mariadb stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#27 CACHED
+
+#28 [mariadb build 3/9] WORKDIR /src/plugin
+#28 CACHED
+
+#29 [mariadb stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#29 CACHED
+
+#30 [mariadb stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#30 CACHED
+
+#31 [mariadb stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#31 CACHED
+
+#32 [mariadb build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#32 CACHED
+
+#33 [mariadb stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#33 CACHED
+
+#34 [mariadb stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#34 CACHED
+
+#35 [mariadb build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#35 CACHED
+
+#36 [mariadb stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#36 CACHED
+
+#37 [mariadb stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#37 CACHED
+
+#38 [mariadb stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#38 CACHED
+
+#39 [mariadb] exporting to image
+#39 exporting layers 0.0s done
+#39 exporting manifest sha256:7caf12ee4a0289f334ac2b5aeca5d0799448208d4690c7d59cd2e3523e06316f
+#39 exporting manifest sha256:7caf12ee4a0289f334ac2b5aeca5d0799448208d4690c7d59cd2e3523e06316f 0.2s done
+#39 exporting config sha256:af75b0e5244d4138a40fbc7ff59575861cba8b544eccc707eac1d534236ed844
+#39 exporting config sha256:af75b0e5244d4138a40fbc7ff59575861cba8b544eccc707eac1d534236ed844 done
+#39 exporting attestation manifest sha256:9f44e0a7ec0ed96549257e460c1130af004cb07234e8d821045a7d67aac85cf0 0.1s done
+#39 exporting manifest list sha256:a403360a5c80719b87221d4d6497b922fabf911651f9646b1f9d9aa8ec81da96
+#39 exporting manifest list sha256:a403360a5c80719b87221d4d6497b922fabf911651f9646b1f9d9aa8ec81da96 0.1s done
+#39 naming to docker.io/library/frt-p1-79c0601b-mariadb:13.0.2 done
+#39 unpacking to docker.io/library/frt-p1-79c0601b-mariadb:13.0.2 0.0s done
+#39 DONE 0.7s
+
+#40 [mariadb] resolving provenance for metadata file
+#40 DONE 0.0s
+
+#41 [web internal] load build definition from Dockerfile
+#41 transferring dockerfile: 318B 0.0s done
+#41 DONE 0.3s
+
+#42 [web internal] load metadata for docker.io/library/python:3.13.17-slim
+#42 DONE 0.6s
+
+#43 [web internal] load .dockerignore
+#43 transferring context: 86B done
+#43 DONE 0.2s
+
+#44 [web internal] load build context
+#44 DONE 0.0s
+
+#45 [web 1/6] FROM docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962
+#45 resolve docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962
+#45 resolve docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 0.1s done
+#45 DONE 0.2s
+
+#44 [web internal] load build context
+#44 transferring context: 2.58kB done
+#44 DONE 0.2s
+
+#46 [web 3/6] COPY requirements.txt requirements-dev.txt ./
+#46 CACHED
+
+#47 [web 2/6] WORKDIR /app
+#47 CACHED
+
+#48 [web 5/6] COPY . .
+#48 CACHED
+
+#49 [web 4/6] RUN pip install --no-cache-dir -r requirements-dev.txt
+#49 CACHED
+
+#50 [web 6/6] RUN useradd --create-home --uid 10001 web
+#50 CACHED
+
+#51 [web] exporting to image
+#51 exporting layers done
+#51 exporting manifest sha256:b46381a21bc4a97dd247035b6064363f47a43e3b05ade0ee559149f653b87864 0.1s done
+#51 exporting config sha256:d57e50e41eeb27d94b11c4056cef48b8f97878f5f7d46dda1b52b425a264cbad
+#51 exporting config sha256:d57e50e41eeb27d94b11c4056cef48b8f97878f5f7d46dda1b52b425a264cbad 0.0s done
+#51 exporting attestation manifest sha256:12a29583f69d7b876f54e10b9b6368a2f20efb2584b0bf3725722266a0cf925a 0.1s done
+#51 exporting manifest list sha256:2b04bcd48ed11438d95f67ab9875efd8e0e4517c8a2535013b65b620cc2241ca
+#51 exporting manifest list sha256:2b04bcd48ed11438d95f67ab9875efd8e0e4517c8a2535013b65b620cc2241ca 0.1s done
+#51 naming to docker.io/library/frt-p1-79c0601b-web:latest done
+#51 unpacking to docker.io/library/frt-p1-79c0601b-web:latest 0.0s done
+#51 DONE 0.4s
+
+#52 [web] resolving provenance for metadata file
+#52 DONE 0.0s
+ mariadb  Built
+ web  Built
+ Container frt-p1-79c0601b-web-1  Stopping
+ Container frt-p1-79c0601b-web-1  Stopped
+ Container frt-p1-79c0601b-mariadb-1  Recreate
+ Container frt-p1-79c0601b-mariadb-1  Recreated
+ Container frt-p1-79c0601b-web-1  Recreate
+ Container frt-p1-79c0601b-web-1  Recreated
+ Container frt-p1-79c0601b-mariadb-1  Starting
+ Container frt-p1-79c0601b-mariadb-1  Started
+ Container frt-p1-79c0601b-mariadb-1  Waiting
+ Container frt-p1-79c0601b-mariadb-1  Healthy
+ Container frt-p1-79c0601b-web-1  Starting
+ Container frt-p1-79c0601b-web-1  Started
+#0 building with "default" instance using docker driver
+
+#1 [test-runner internal] load build definition from Dockerfile
+#1 transferring dockerfile: 5.70kB done
+#1 DONE 0.0s
+
+#2 [test-runner internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [test-runner internal] load .dockerignore
+#3 transferring context: 351B done
+#3 DONE 0.2s
+
+#4 [test-runner internal] load build context
+#4 DONE 0.0s
+
+#5 [test-runner build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.2s
+
+#4 [test-runner internal] load build context
+#4 transferring context: 5.80MB 0.6s done
+#4 DONE 0.6s
+
+#6 [test-runner build 4/9] COPY plugin/ ./
+#6 CACHED
+
+#7 [test-runner build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#7 CACHED
+
+#8 [test-runner build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#8 CACHED
+
+#9 [test-runner test-runner 3/6] COPY frontend/requirements.txt frontend/requirements-dev.txt /tmp/frantastic-requirements/
+#9 CACHED
+
+#10 [test-runner build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [test-runner build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#11 CACHED
+
+#12 [test-runner build 3/9] WORKDIR /src/plugin
+#12 CACHED
+
+#13 [test-runner build 5/9] RUN make clean && make test && make plugin
+#13 CACHED
+
+#14 [test-runner build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#14 CACHED
+
+#15 [test-runner test-runner 1/6] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends python3 python3-venv python3-pip;     rm -rf /var/lib/apt/lists/*;     python3 -m venv /opt/frantastic-test-venv
+#15 CACHED
+
+#16 [test-runner test-runner 2/6] WORKDIR /workspace
+#16 CACHED
+
+#17 [test-runner test-runner 4/6] RUN cd /tmp/frantastic-requirements && /opt/frantastic-test-venv/bin/pip install --no-cache-dir       -r requirements.txt -r requirements-dev.txt
+#17 CACHED
+
+#18 [test-runner test-runner 5/6] COPY . .
+#18 DONE 0.4s
+
+#19 [test-runner test-runner 6/6] RUN gcc -O2 -Wall -o /usr/local/bin/campus_change_user tests/plugin/change_user.c $(mariadb_config --cflags --libs)
+#19 DONE 1.5s
+
+#20 [test-runner] exporting to image
+#20 exporting layers
+#20 exporting layers 0.6s done
+#20 exporting manifest sha256:e4812f759dbc60e6956dbd4c313fd1ec818c0cbde5b58e124a1fb5873587ea7b
+#20 exporting manifest sha256:e4812f759dbc60e6956dbd4c313fd1ec818c0cbde5b58e124a1fb5873587ea7b 0.2s done
+#20 exporting config sha256:3245c8cf9f7a5dcb7f879af0dd6b0e6d766d77e612fc7ec6ffc921902ed6ffe0
+#20 exporting config sha256:3245c8cf9f7a5dcb7f879af0dd6b0e6d766d77e612fc7ec6ffc921902ed6ffe0 0.1s done
+#20 exporting attestation manifest sha256:d37f22b3dcaba77adab69f3161815e705468c872d70228cac76feff68cab35cb
+#20 exporting attestation manifest sha256:d37f22b3dcaba77adab69f3161815e705468c872d70228cac76feff68cab35cb 0.1s done
+#20 exporting manifest list sha256:5f4c78c4fcbd07c66a17d06877a0341c4e44fc088e6f91d99909c82942fb941e 0.1s done
+#20 naming to docker.io/library/frt-p1-79c0601b-test-runner:latest
+#20 naming to docker.io/library/frt-p1-79c0601b-test-runner:latest done
+#20 unpacking to docker.io/library/frt-p1-79c0601b-test-runner:latest
+#20 unpacking to docker.io/library/frt-p1-79c0601b-test-runner:latest 0.3s done
+#20 DONE 1.5s
+
+#21 [test-runner] resolving provenance for metadata file
+#21 DONE 0.0s
+== Plugin C++ unit tests
+make: Entering directory '/workspace/plugin'
+mkdir -p build
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+== test_record_format
+PASS: JSON plain string
+PASS: JSON quotes and backslashes escaped
+PASS: JSON newline/tab/CR escaped
+PASS: JSON control characters escaped
+PASS: JSON embedded NUL escaped, length respected
+PASS: JSON valid UTF-8 kept as is
+PASS: JSON invalid UTF-8 replaced by U+FFFD
+PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+PASS: JSON overlong encoding rejected
+PASS: JSON NULL pointer becomes null
+PASS: JSON empty string stays empty string
+PASS: JSON overflow detected instead of writing past the buffer
+PASS: JSON overflow keeps buffer NUL-terminated
+PASS: bounded field cut before a multi-byte character
+PASS: JSON numbers, booleans and null
+PASS: digest masks string and number literals
+PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+PASS: the same rule hides the rest of a default-mode escaped quote
+PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+PASS: digest hides passwords given as literals
+PASS: digest hides password hashes
+PASS: digest masks hex, bit, national and introducer literals
+PASS: digest masks decimals and exponents
+PASS: digest keeps identifiers containing digits and backtick identifiers
+PASS: digest keeps doubled backticks inside identifiers
+PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+PASS: digest removes all comment styles including executable comments
+PASS: digest collapses whitespace
+PASS: '--' without trailing space is not a comment
+PASS: digest of empty statement
+PASS: digest handles an unterminated string
+PASS: digest handles an unterminated comment
+PASS: digest keeps variable names but masks quoted ones
+PASS: digest truncates at max length and reports it
+PASS: digest never ends inside a UTF-8 sequence
+PASS: digest with max length 0 is empty and marked truncated
+PASS: 100 kB literal collapses to one '?'
+PASS: digest of a NULL statement
+PASS: database list parsed and trimmed
+PASS: database match is case-insensitive
+PASS: database match needs the whole name
+PASS: NULL database never matches
+PASS: empty database list watches nothing
+PASS: empty list matches nothing
+PASS: '*' accepted for databases
+PASS: '*' matches user schemas
+PASS: '*' never matches system schemas
+PASS: the four system schemas are recognised, case-insensitively
+PASS: user schemas, prefixes and empty names are not system schemas
+PASS: empty element rejected
+PASS: trailing comma rejected
+PASS: space inside a name rejected
+PASS: punctuation rejected
+PASS: '*' cannot be mixed with names
+PASS: '*' rejected for users
+PASS: more than 16 names rejected
+PASS: name longer than 128 characters rejected
+PASS: user list with '.', '-' and '@' accepted
+PASS: user match is exact and case-sensitive
+PASS: user match needs the whole name
+PASS: user match: a login that is only a prefix of an excluded name is still audited
+PASS: timestamp of the epoch
+PASS: timestamp 2026-10-25
+PASS: timestamp on a leap day
+PASS: timestamp one second before the epoch
+PASS: timestamp exactly one day before the epoch
+PASS: bounded_length stops at the limit and accepts NULL
+PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+PASS: login name is the part of the account before '['
+PASS: account without '[', NULL account and the length bound
+Failures: 0
+== test_log_sink
+PASS: NULL path rejected
+PASS: empty path rejected
+PASS: directory-like path rejected
+PASS: directory-like path ending in a backslash rejected
+PASS: control character in path rejected
+PASS: over-long path rejected
+PASS: missing directory reported as open_Failed
+PASS: open failure message carries errno
+PASS: sink stays closed after failed open
+PASS: write on closed sink fails
+PASS: valid path opened
+PASS: first record written
+PASS: failed re-open keeps the previous file open
+PASS: previous file still writable
+PASS: re-opened file is appended to
+PASS: file holds all records in order
+PASS: a newly created log file has no permission bits for others
+PASS: readable_by_all: an existing log file becomes readable by others
+PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+PASS: opened for EBADF test
+PASS: write on a dead descriptor reported as write_Failed
+PASS: write failure message carries errno
+PASS: /dev/full write reported as write_Failed (ENOSPC)
+Failures: 0
+== test_automatic_errors
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+PASS: validate: NULL path
+PASS: validate: empty path
+PASS: validate: trailing forward slash
+PASS: validate: trailing backslash
+PASS: validate: newline in path
+PASS: validate: DEL in path
+PASS: validate: 513-byte path
+PASS: validate: 512-byte path
+PASS: validate: lexically valid path
+PASS: validate: no file is created
+Failures: 0
+== test_error_reporter
+Reported: Cannot open audit log
+PASS: all reporter checks
+== test_runtime_config
+PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+PASS: six reader threads completed 100000 reads each while one thread wrote
+PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+PASS: after the writer finished every setting holds the last value stored
+Checks: 4, Failures: 0
+== test_gap_accounting
+PASS: a new accounting object has lost nothing
+PASS: every lost event is counted
+PASS: a marker that could not be written is reported as not written
+PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+PASS: events lost after the failed marker are added to the same outage
+PASS: a written marker is reported as written
+PASS: only a written marker resets the count
+PASS: a new outage starts counting from zero
+Checks: 8, Failures: 0
+== test_statement_scope
+PASS: TABLES: a statement without any fact is not recorded
+PASS: a statement with a recorded table event is recorded without extra marks
+PASS: an accepted SET GLOBAL campus_audit_* is recorded
+PASS: SESSION: a statement with a recorded table event is not marked scope=session
+PASS: TABLES: a refusal outside a watched default schema is not recorded
+PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+PASS: TABLES: the latch alone records nothing
+PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+PASS: SESSION: a table-less refusal carries both marks
+PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+PASS: SESSION: with both conditions met the statement is recorded
+PASS: Query and Execute are SQL commands
+PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+PASS: the command name must match exactly; NULL and empty names are not SQL commands
+PASS: an unrecorded table event marks the statement as seen, not as recorded
+PASS: a recorded event of the same statement sets the latch
+PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+PASS: and a recorded event sets it again
+PASS: LOCK TABLES on a watched table: one table event, recorded
+PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+PASS: UPDATE under LOCK TABLES: recorded
+PASS: a failing statement under LOCK TABLES: recorded
+PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+PASS: the next statement on another schema is not recorded
+PASS: and ends rule (b): a following table-less statement is not recorded
+PASS: TABLES: LOCK TABLES on a watched table is recorded
+PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+PASS: rule (a): DROP VIEW in a watched default schema is recorded
+PASS: rule (a): COMMIT in a watched default schema is recorded
+PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+PASS: INSERT into a watched table from another default schema is recorded
+PASS: rule (b): the COMMIT that follows it is recorded
+PASS: a statement on other tables is not recorded
+PASS: and the COMMIT after that one is not recorded
+PASS: a statement that touches another schema and a watched table is recorded
+PASS: rule (b) holds after it
+PASS: the order of its table events does not matter
+PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+PASS: the firing statement is recorded once, unmarked
+PASS: the COMMIT after it is recorded: nothing is left open
+PASS: TABLES: the same sequence gives exactly the firing statement
+PASS: a routine's INSERT into a watched table is recorded as its own statement
+PASS: a routine's SELECT from another schema is not recorded
+PASS: the CALL itself raised no table event and is recorded, scope=session
+PASS: a statement on a watched table
+PASS: the Quit command that ends the connection is not recorded as a statement
+PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+PASS: a statement that also touched another user schema is classified and not recorded
+PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+PASS: rule (b): a system-schema event does not clear the latch
+PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+Checks: 63, Failures: 0
+All unit test programs passed.
+make: Leaving directory '/workspace/plugin'
+[PASS] Plugin C++ unit tests
+== Repository checks
+Repository checks passed.
+Source distribution checks passed: documented JSONL included, exclusions enforced, frontend test files complete, ZIP extracted in spaced path, frontend test collection not checked (pytest, flask, pymysql, dotenv, werkzeug not installed for this interpreter), and checker detects removal of the sample.
+[PASS] Repository checks
+== Administrator credential and diagnostic tests
+PASS: post_start: MYSQL_PWD and MARIADB_ROOT_PASSWORD equal
+PASS: post_start: MYSQL_PWD absent, falls back to MARIADB_ROOT_PASSWORD
+PASS: post_start: MYSQL_PWD empty, falls back to MARIADB_ROOT_PASSWORD
+PASS: post_start: MYSQL_PWD only (Linux host / native server caller)
+PASS: post_start: MARIADB_ROOT_PASSWORD empty, refused before the client runs
+PASS: post_start: no password at all, refused before the client runs
+PASS: post_start: conflicting MYSQL_PWD and MARIADB_ROOT_PASSWORD are refused
+PASS: post_start: the root password is not used for another admin user
+PASS: post_start: another admin user uses MYSQL_PWD regardless of MARIADB_ROOT_PASSWORD
+PASS: post_start: rejected password (YES) explains the volume/.env mismatch
+PASS: post_start: missing password (NO) is not blamed on the volume
+PASS: post_start: unreachable server is not an authentication failure
+PASS: post_start: other client errors keep their own message
+PASS: post_start: missing client program is reported
+PASS: helper (set -u): resolved password is exported to child processes
+PASS: helper (set -u): unset variables give a clean refusal
+PASS: demo: no password, refused before the client runs
+PASS: demo: runs with the service password only (Windows launcher path)
+PASS: demo: conflicting passwords are refused
+PASS: provision_local_admin_db: state with the service password only
+PASS: provision_local_admin_db: bootstrap with equal MYSQL_PWD (Linux make path)
+PASS: provision_local_admin_db: no password, refused before the client runs
+PASS: provision_local_admin_db: conflicting passwords are refused
+PASS: provision_local_admin_db: an unknown action is reported as usage error, even without a password
+PASS: provision_local_admin_db: an invalid hash is reported before the password check
+PASS: provision_local_admin_db: an invalid hash never reaches the client
+PASS: doctor: working root login is reported OK
+PASS: doctor: rejected password (YES) is explained
+PASS: doctor: missing password (NO) is not blamed on the volume
+PASS: doctor: unreachable server is distinguished
+PASS: no password appears in any output
+Shell credential tests: 31 passed, 0 failed.
+[PASS] Administrator credential and diagnostic tests
+== Demo-student credential bootstrap (state machine, no server)
+PASS: first start: account created as student, credential file written with mode 0600, no pending file left
+PASS: first start: the output names the file and does not contain the password
+PASS: restart: nothing generated, nothing written, file and stored hash unchanged
+PASS: repeated restarts never rotate the credential
+PASS: restart: a too-permissive credential file is set back to mode 0600
+PASS: existing database without the local file: password not changed, no file written, recovery explained
+PASS: mismatching file: neither the file nor the stored password is changed
+PASS: re-created database: the account is created with the SAVED password; the file is not replaced
+PASS: reset: a new password is stored and saved; the previous one no longer matches
+PASS: reset on a database without the account creates it
+PASS: interrupted before the database was changed: the pending password is used, not a new one
+PASS: interrupted after the database was changed: the pending password replaces the stale file
+PASS: interrupted rotation that never reached the database: pending file discarded, working file kept
+PASS: irreconcilable state: fails, both files preserved, database untouched, recovery named
+PASS: the explicit reset recovers from the irreconcilable state
+PASS: database failure during the first start: exit 1, protected pending file kept, no half-created account
+PASS: retry after that failure completes with the same password
+PASS: failure reported after the row was committed: pending file kept
+PASS: retry after that failure promotes the pending password without touching the database
+PASS: an invalid hash never reaches the database
+PASS: unreachable database: fails before any file is written
+PASS: password generation failure: nothing written, nothing created
+PASS: failed rotation: the working credential file and the stored password are both unchanged
+PASS: start after a failed rotation: pending file discarded, the working credential stays valid
+PASS: a symbolic link in place of the credential file is refused and its target is not modified
+PASS: reset refuses to write through a symbolic link
+PASS: a malformed credential file is preserved and stops the run
+PASS: a file for another account is not used
+PASS: a file with an implausibly short password is not used
+PASS: an account that is not a student is never managed (start)
+PASS: an account that is not a student never receives a new password (reset)
+PASS: a deactivated demo account is reported and not reactivated
+PASS: an unknown argument is a usage error before any container call
+PASS: no password appears in any output
+PASS: no password hash appears in any output
+Demo credential bootstrap tests: 35 passed, 0 failed.
+[PASS] Demo-student credential bootstrap (state machine, no server)
+== Database installation order and account SQL (no server)
+PASS: fresh install order: schema, 001-003, triggers, seed, catalogue, 004-008, account
+PASS: upgrade order (SKIP_SEED=1): seed skipped; catalogue, 004-008 still run; account refreshed
+PASS: without CAMPUS_APP_PASSWORD the account step is skipped
+PASS: SKIP_CATALOGUE=1 leaves out only catalogue.sql
+PASS: catalogue.sql only inserts absent rows (two INSERT ... WHERE NOT EXISTS, nothing else writes)
+PASS: an unlisted migration stops setup_database.sh before any step runs
+PASS: Dockerfile initdb SQL order equals setup_database.sh
+PASS: Dockerfile runs the application-account script after every SQL step
+PASS: seed.sql: users ON DUPLICATE KEY UPDATE never changes role (Dana is admin only on first insert)
+PASS: the plain password does not appear in the account SQL
+PASS: grant: GRANT SELECT ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT INSERT (full_name, email, password_hash) ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT UPDATE (full_name, password_hash) ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT SELECT, INSERT, UPDATE ON university_resources.loans TO 'campus_app'@'%';
+PASS: grant: GRANT SELECT, INSERT, UPDATE, DELETE ON university_resources.audit_lab_notes TO 'campus_app'@'%';
+PASS: grant: GRANT EXECUTE ON PROCEDURE campus_audit.import_current_log TO 'campus_app'@'%';
+PASS: users: no role/is_active write and no table-wide INSERT/UPDATE/DELETE
+PASS: DELETE is granted only on audit_lab_notes
+PASS: audit tables are read-only for the application
+PASS: no FILE, SUPER or global privilege
+PASS: table-wide users grants are revoked before, and without touching, the column grants
+== 21 passed, 0 failed
+[PASS] Database installation order and account SQL (no server)
+== Plugin integration tests
+== campus_audit integration tests (run 1794877883_3491)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- statements without table events (LOCK TABLES; trigger, view and routine DDL)
+PASS: statement_scope defaults to TABLES
+PASS: LOCK TABLES on a watched table raises one table event and is recorded
+PASS: the statements under the lock did change the table
+PASS: scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)
+PASS: scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record
+PASS: scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)
+PASS: unknown statement scope rejected
+PASS: the scope change is recorded as config_change
+PASS: scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session
+PASS: scope SESSION: they still have no table record (the server raised no table event for them)
+PASS: scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible
+PASS: scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded
+PASS: API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope
+PASS: log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement
+PASS: log_reads=ON: each of those statement records shares its query_id with the table_read record
+PASS: scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)
+PASS: scope SESSION: a statement with a table event keeps its ordinary, unmarked record
+PASS: scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)
+PASS: scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)
+PASS: scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id
+PASS: scope SESSION: the trigger's body statement is not recorded as a statement of the client
+PASS: scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session
+PASS: scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)
+PASS: scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)
+PASS: scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded
+PASS: known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded
+PASS: scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered
+PASS: back to scope TABLES: table-less statements are no longer recorded
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: failed recovery-marker write keeps the plugin DEGRADED
+PASS: failed recovery-marker write is counted
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 128 passed, 0 failed, 0 skipped
+[PASS] Plugin integration tests
+== Database tests
+PASS: legacy admin demoted; unrelated admin and user rows preserved; rerun idempotent; transaction rolled back
+PASS: seed re-run after migration 004 keeps the shared account a student and leaves local administrators unchanged
+PASS: scratch copy starts from the official enum('active','returned','lost')
+PASS: migration 006 run 1 succeeds
+PASS: migration 006 run 2 succeeds
+PASS: loans.status is enum('active','returned','lost','cancelled')
+PASS: loans.status stays NOT NULL with default 'active'
+PASS: no loan row was deleted or rewritten (4 rows, identical values and updated_at)
+PASS: the current active loan is still active
+PASS: an insert without status still gets 'active'
+PASS: the chk_loans_status_returned_consistent constraint is still present
+PASS: a future active loan is cancelled by an UPDATE with returned_at = NULL
+PASS: the cancelled loan keeps its row, dates and returned_at = NULL
+PASS: a cancelled loan with returned_at is rejected
+PASS: a returned loan without returned_at is still rejected
+PASS: an active loan with returned_at is still rejected
+PASS: the returned and lost loans are unchanged
+PASS: re-running migration 006 on a migrated table changes nothing (cancelled row kept)
+PASS: an unexpected loans.status definition stops migration 006
+PASS: ... and leaves that definition unchanged
+== 18 passed, 0 failed
+PASS: legacy triggers trg_{bookings,loans}_a{i,u,d}_audit are absent
+PASS: users INSERT: exactly one trigger, trg_users_audit_insert (AFTER)
+PASS: users UPDATE: exactly one trigger, trg_users_audit_update (AFTER)
+PASS: users DELETE: exactly one trigger, trg_users_audit_delete (AFTER)
+PASS: rooms INSERT: exactly one trigger, trg_rooms_audit_insert (AFTER)
+PASS: rooms UPDATE: exactly one trigger, trg_rooms_audit_update (AFTER)
+PASS: rooms DELETE: exactly one trigger, trg_rooms_audit_delete (AFTER)
+PASS: items INSERT: exactly one trigger, trg_items_audit_insert (AFTER)
+PASS: items UPDATE: exactly one trigger, trg_items_audit_update (AFTER)
+PASS: items DELETE: exactly one trigger, trg_items_audit_delete (AFTER)
+PASS: bookings INSERT: exactly one trigger, trg_bookings_audit_insert (AFTER)
+PASS: bookings UPDATE: exactly one trigger, trg_bookings_audit_update (AFTER)
+PASS: bookings DELETE: exactly one trigger, trg_bookings_audit_delete (AFTER)
+PASS: loans INSERT: exactly one trigger, trg_loans_audit_insert (AFTER)
+PASS: loans UPDATE: exactly one trigger, trg_loans_audit_update (AFTER)
+PASS: loans DELETE: exactly one trigger, trg_loans_audit_delete (AFTER)
+PASS: audit_lab_notes INSERT: exactly one trigger, trg_audit_lab_notes_audit_insert (AFTER)
+PASS: audit_lab_notes UPDATE: exactly one trigger, trg_audit_lab_notes_audit_update (AFTER)
+PASS: audit_lab_notes DELETE: exactly one trigger, trg_audit_lab_notes_audit_delete (AFTER)
+PASS: test_audit_triggers.sql: one history row per booking/loan INSERT, UPDATE, DELETE (no duplicates)
+PASS: test_audit_triggers.sql: rows carry database_user, connection_id and event_source=direct_sql
+PASS: application attribution and a loan cancellation, one history row each
+== 22 passed, 0 failed
+PASS: account SQL applies to a fresh account
+PASS: fresh account: exactly the least-privilege grants
+PASS: account SQL applies to an account with old table-wide users grants
+PASS: upgraded account: table-wide users INSERT/UPDATE revoked, column grants kept
+PASS: account SQL re-runs without error
+PASS: re-run: grants unchanged (column grants are not revoked by the refresh)
+PASS: registration: INSERT (full_name, email, password_hash) into users (rolled back)
+PASS: account settings: UPDATE users.full_name
+PASS: account settings: UPDATE users.password_hash
+PASS: UPDATE users.role is refused
+PASS: UPDATE users.is_active is refused
+PASS: UPDATE users.email is refused
+PASS: INSERT users with a role is refused
+PASS: DELETE FROM users is refused
+PASS: INSERT INTO audit_events is refused
+PASS: UPDATE audit_events is refused
+PASS: DELETE FROM audit_events is refused
+PASS: INSERT INTO campus_audit.plugin_events is refused
+PASS: DELETE FROM loans is refused
+PASS: UPDATE loans SET status = 'cancelled' is allowed
+PASS: DELETE FROM audit_lab_notes is allowed
+PASS: CALL import_plugin_log() (needs FILE) is refused
+PASS: CALL import_current_log() is permitted (result: imported)
+PASS: installed campus_app@%: exactly the least-privilege grants
+== 24 passed, 0 failed, 0 skipped
+PASS: scratch copy of the users table created
+PASS: before the migration the scratch table has no demo constraint
+PASS: a conflicting non-student row stops the migration with a clear message (SQLSTATE 45000)
+PASS: the conflicting row was not demoted or removed by the migration
+PASS: and no constraint was added in that case
+PASS: migration 007 applies
+PASS: the migration adds chk_users_demo_is_student
+PASS: migration 007 re-runs without error
+PASS: re-running does not duplicate the constraint
+PASS: the migration itself creates no account
+PASS: bootstrap on an empty table reports CREATED
+PASS: the created row is an active student named Demo Student
+PASS: a second bootstrap reports EXISTS
+PASS: and leaves the stored hash unchanged (a restart cannot rotate the password)
+PASS: rotate reports ROTATED
+PASS: and replaces only the hash; the row is still the one student
+PASS: bootstrap refuses a value that is not a Werkzeug hash
+PASS: rotate refuses a value that is not a Werkzeug hash
+PASS: rotate refuses NULL
+PASS: a refused call changed nothing
+PASS: UPDATE to the administrator role is refused by the CHECK constraint
+PASS: the constraint also covers a differently cased address (the collation is case-insensitive)
+PASS: other accounts may still be administrators
+PASS: rotate without the demo row: MISSING, no row created, other rows kept
+PASS: installed database: chk_users_demo_is_student exists
+PASS: installed database: both procedures exist (SQL SECURITY DEFINER)
+PASS: installed database: no account was granted EXECUTE on the credential procedures
+PASS: installed database: the demo account is a student with a Werkzeug hash
+PASS: installed database: the administrator connection cannot give the demo identity the admin role (ER 4025)
+PASS: installed database: the demo account row is exactly as before this test
+== 30 passed, 0 failed
+PASS: installed: 18 item types, each with copies A, B and C (54 rows)
+PASS: installed: every item type has exactly three copies
+PASS: installed: the five rooms of the booking page exist, each once
+PASS: installed: catalogue rooms and items are bookable (status available) unless changed locally
+PASS: installed: catalogue.sql re-runs without error
+PASS: installed: two more runs changed no row of items or rooms and wrote no history row (rows, ids, updated_at, audit_events count identical)
+PASS: scratch copies of items and rooms created (empty)
+PASS: fresh database: catalogue.sql applies
+PASS: fresh database: 54 items and 5 rooms
+PASS: fresh database: items are numbered in the order of the booking page (Vacuum A first, Gameboy C last)
+PASS: fresh database: rooms in the order of the booking page with their capacities
+PASS: fresh database: categories as on the booking page
+PASS: existing database: catalogue.sql applies
+PASS: existing database: the removed rows are back, nothing is duplicated (55 items incl. the local one, 6 rooms)
+PASS: existing database: locally changed rows keep their status, description, capacity and building
+PASS: existing database: locally added rows are kept
+PASS: existing database: every row that existed before the run is byte-for-byte unchanged (ids, values, updated_at)
+PASS: three further runs change nothing
+== 18 passed, 0 failed
+PASS: import of the current log returns log_file, total_lines, invalid_lines_skipped, newly_imported (773 lines)
+PASS: an immediate second import reads the whole file again and adds nothing
+PASS: after a successful import the session time_zone and max_recursive_iterations are as before; no temporary table remains
+PASS: plugin_events holds each (instance, seq) once, with its complete JSON record
+PASS: an empty or NULL path is refused (ER 1644); the session is untouched
+PASS: a missing file is refused (ER 1644, LOAD_FILE returned NULL); the session is untouched
+PASS: a lock wait timeout during the import is reported as that error (ER 1205), not replaced by another
+PASS: after the failed import the session time_zone (+05:30) and max_recursive_iterations (4321) are restored
+PASS: after the failed import no temporary table is left in the session
+PASS: the next import succeeds; nothing was left half-done
+PASS: a log of 242703 bytes with max_allowed_packet = 120832 is refused with the limit and the remedy (rotate the log) in the message
+PASS: that refusal leaves the session untouched
+PASS: the global max_allowed_packet is back at 16777216
+PASS: with the original limit the same file imports again
+PASS: 4 complete lines read, 1 invalid line skipped and counted, 2 records imported; the unterminated last line is left for the next import
+PASS: the imported columns hold the record's values; event_time is the record's UTC time; unknown fields such as scope stay in the JSON record
+== 16 passed, 0 failed, 0 skipped
+PASS: hash equals PASSWORD() for 100 random passwords (quotes, backslashes, %, spaces)
+PASS: account created from the hash accepts the plain password
+PASS: a wrong password is still rejected (ER 1045)
+== 3 passed, 0 failed
+PASS: TEST 1: all seven tables exist
+PASS: TEST 2: Alice Student, Room 201, confirmed
+PASS: TEST 3: Alice Student, Arduino Starter Kit, returned
+PASS: expected error 1: ERROR 4025 naming chk_rooms_capacity_positive
+PASS: expected error 2: ERROR 4025 naming chk_bookings_time_order
+PASS: expected error 3: ERROR 1062 naming uq_users_email
+PASS: expected error 4: ERROR 1452 naming fk_bookings_user
+PASS: expected error 5: ERROR 4025 naming chk_loans_status_returned_consistent
+PASS: no other error (5 errors, each one expected)
+PASS: the file ran to its last statement
+== 10 passed, 0 failed
+[PASS] Database tests
+== Application and Audit Lab tests
+........................................................................ [ 21%]
+........................................................................ [ 43%]
+........................................................................ [ 65%]
+........................................................................ [ 86%]
+............................................                             [100%]
+332 passed, 1 skipped in 39.59s
+[PASS] Application and Audit Lab tests
+
+Summary:
+Total suites: 8
+Passed: 8
+Failed: 0
+Skipped suites: 0
+Individual pytest skips (if any) are listed in the application suite output above.
+Overall result: PASS
+# exit status: 0

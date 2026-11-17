@@ -1,0 +1,24 @@
+## zig 0.16.0; headers: <scratch>/win-native/mdb/mariadb-13.0.2-winx64/include/mysql/server
+## 1. plugin/build_windows.ps1 -SkipTests
+exit code: 0
+stdout:
+    Building campus_audit.dll against <scratch>\win-native\mdb\mariadb-13.0.2-winx64\include\mysql\server
+    Built <scratch>\win-native\build2\campus_audit.dll
+stderr: 0 lines, 0 with ': error:', 0 warnings
+warnings outside Zig's bundled libc++/libc: 0
+DLL: 873984 bytes
+exports:
+    _maria_plugin_declarations_
+    _maria_plugin_interface_version_
+    _maria_sizeof_struct_st_plugin_
+    my_print_error_service
+    thd_alloc_service
+## 2. compile and link the unit-test programs (same flags as build_windows.ps1; not executed)
+COMPILED: test_record_format (exit 0, 909312 bytes, 0 errors, 0 warnings in project sources)
+COMPILED: test_log_sink (exit 0, 871936 bytes, 0 errors, 0 warnings in project sources)
+COMPILED: test_automatic_errors (exit 0, 866304 bytes, 0 errors, 0 warnings in project sources)
+COMPILED: test_error_reporter (exit 0, 859136 bytes, 0 errors, 0 warnings in project sources)
+COMPILED: test_runtime_config (exit 0, 454144 bytes, 0 errors, 3 warnings in project sources)
+COMPILED: test_gap_accounting (exit 0, 187392 bytes, 0 errors, 0 warnings in project sources)
+COMPILED: test_statement_scope (exit 0, 196096 bytes, 0 errors, 0 warnings in project sources)
+## programs that failed to compile: 0

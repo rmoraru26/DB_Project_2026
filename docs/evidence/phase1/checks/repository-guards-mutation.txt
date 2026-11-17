@@ -1,0 +1,26 @@
+# unmodified snapshot: Repository checks passed.
+DETECTED: the baseline README (commit 19fd0a2) is put back
+           - README.md contains the stale phrase 'In development'
+DETECTED: the .demo-credentials ignore rule is removed
+           - .gitignore lacks the rule '.demo-credentials'
+DETECTED: the .admin-credentials ignore rules are removed (the baseline state)
+           - .gitignore lacks the rule '.admin-credentials'
+DETECTED: the *.jsonl rule hides the tracked evidence
+           - .gitignore lacks the rule '!docs/evidence/**/*.jsonl'
+DETECTED: the Makefile reads the administrator credential from the terminal again
+           - Makefile reads TEST_ADMIN_PASSWORD without '< .admin-credentials' (it would read the terminal)
+DETECTED: the Windows build script drops a unit-test program
+           - plugin/build_windows.ps1 builds ['test_automatic_errors', 'test_error_reporter', 'test_log_sink', 'test_record_format', 'test_runtime_config', 'test_statement_scope'], but plugin/tests has ['test_automatic_errors', 'test_error_reporter', 'test_gap_accounting', 'test_log_sink', 'test_record_format', 'test_runtime_config', 'test_statement_scope']
+DETECTED: a test-named source that no build compiles is added
+           - plugin/Makefile UNIT_TESTS ['test_automatic_errors', 'test_error_reporter', 'test_gap_accounting', 'test_log_sink', 'test_record_format', 'test_runtime_config', 'test_statement_scope'] differs from plugin/tests/test_*.cpp ['test_automatic_errors', 'test_error_reporter', 'test_gap_accounting', 'test_log_sink', 'test_placeholder', 'test_record_format', 'test_runtime_config', 'test_statement_scope']
+DETECTED: a unit test goes back to assert()
+           - plugin/tests/test_gap_accounting.cpp uses assert(); use explicit checks that survive NDEBUG
+DETECTED: a document advertises the formerly published demo password
+           - docs/docker.md names the formerly published demo password; the demo credential is generated per installation (.demo-credentials)
+DETECTED: a credential file is delivered with the source
+           - credential-like file is tracked: .demo-credentials
+DETECTED: the README loses the quick start
+           - README.md lacks the section '## Quick start'
+DETECTED: a technical document is no longer linked from the README
+           - README.md does not link docs/visual-qa.md
+# 12 of 12 broken states detected

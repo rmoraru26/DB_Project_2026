@@ -1,0 +1,16 @@
+# 2026-11-17T04:30:28Z bash scripts/setup_database.sh
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+-> database/seed.sql
+-> database/catalogue.sql
+-> database/migrations/004_remove_shared_admin.sql
+-> database/migrations/005_local_admin_bootstrap_state.sql
+-> database/migrations/006_cancelled_loan_status.sql
+-> database/migrations/007_local_demo_student.sql
+-> database/migrations/008_import_plugin_log_errors.sql
+-> application account campus_app
+Database setup complete.
+# exit status: 0

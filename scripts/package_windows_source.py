@@ -25,6 +25,29 @@ EXTRA_SOURCE_FILES = (
     "database/migrations/004_remove_shared_admin.sql",
     "database/migrations/005_local_admin_bootstrap_state.sql",
     "database/migrations/006_cancelled_loan_status.sql",
+    "database/migrations/007_local_demo_student.sql",
+    "database/migrations/008_import_plugin_log_errors.sql",
+    "database/catalogue.sql",
+    "docs/visual-qa.md",
+    "examples/07_what_table_events_miss.sql",
+    "frontend/bootstrap_demo.py",
+    "frontend/tests/test_demo_bootstrap.py",
+    "plugin/src/statement_scope.h",
+    "plugin/tests/test_statement_scope.cpp",
+    "scripts/bootstrap_demo.sh",
+    "scripts/provision_local_demo_db.sh",
+    "scripts/rotate_log.sh",
+    "scripts/windows_demo_credentials.ps1",
+    "tests/database/test_demo_student.sh",
+    "tests/database/test_catalogue.sh",
+    "tests/database/test_log_import.sh",
+    "tests/integration/http_login.py",
+    "tests/integration/test_demo_lifecycle.sh",
+    "tests/integration/test_log_rotation.sh",
+    "tests/integration/test_log_import_limits.sh",
+    "tests/plugin/test_thread_pool.sh",
+    "tests/shell/test_demo_bootstrap.sh",
+    "tests/windows/test_demo_credentials.ps1",
     "frantastic.cmd",
     "frantastic.ps1",
     "frontend/bootstrap_admin.py",
@@ -59,6 +82,15 @@ EXTRA_SOURCE_FILES = (
     "tests/test_source_distribution.py",
 )
 
+# Uncommitted evidence folders, packaged as a whole.  Their files are listed by
+# `git ls-files --others --exclude-standard`, so every .gitignore rule (local
+# credentials, logs, build output) still applies, and is_excluded() below
+# removes generated JSONL logs as everywhere else.
+EXTRA_SOURCE_DIRECTORIES = (
+    "docs/evidence/phase1/",
+    "docs/evidence/phase0-2026-11-13/",
+)
+
 REQUIRED_JSONL = "docs/evidence/sample-records.jsonl"
 EXCLUDED_PARTS = {
     ".git", ".agents", ".aws", "windows-test-transfer", "secrets", "credentials",
@@ -82,6 +114,10 @@ def is_excluded(name: str) -> bool:
         return True
     if path.name == ".admin-credentials" or path.name.startswith(".admin-credentials."):
         return True
+    if path.name == ".demo-credentials" or path.name.startswith(".demo-credentials."):
+        return True
+    if path.name.startswith(".frantastic-") and path.suffix.lower() in (".tmp", ".bak"):
+        return True
     if (path.suffix.lower() in EXCLUDED_SUFFIXES or name.lower().endswith(".sql.gz")
             or path.name == ".coverage"):
         return True
@@ -95,8 +131,20 @@ def git_source_paths(root: pathlib.Path) -> list[str]:
         ["git", "ls-files", "--cached", "-z"], cwd=root,
         check=True, stdout=subprocess.PIPE,
     )
-    tracked = [item.decode("utf-8") for item in result.stdout.split(b"\0") if item]
-    return sorted(set(tracked).union(EXTRA_SOURCE_FILES))
+    tracked = {item.decode("utf-8") for item in result.stdout.split(b"\0") if item}
+    # A tracked file that was deliberately removed from the working tree (the
+    # removal is not committed yet) is not part of the source being packaged.
+    removed = subprocess.run(
+        ["git", "ls-files", "--deleted", "-z"], cwd=root,
+        check=True, stdout=subprocess.PIPE,
+    )
+    tracked.difference_update(item.decode("utf-8") for item in removed.stdout.split(b"\0") if item)
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", *EXTRA_SOURCE_DIRECTORIES],
+        cwd=root, check=True, stdout=subprocess.PIPE,
+    )
+    tracked.update(item.decode("utf-8") for item in untracked.stdout.split(b"\0") if item)
+    return sorted(tracked.union(EXTRA_SOURCE_FILES))
 
 
 def select_source_files(root: pathlib.Path, candidates: list[str]) -> list[str]:

@@ -5,6 +5,11 @@
 !.env.example
 .admin-credentials
 .admin-credentials.*
+.demo-credentials
+.demo-credentials.*
+.frantastic-*.tmp
+.frantastic-*.bak
+.venv-browser/
 **/build/
 **/__pycache__/
 **/.pytest_cache/
@@ -13,3 +18,4 @@
 *.log
 *.jsonl
 !docs/evidence/sample-records.jsonl
+!docs/evidence/**/*.jsonl

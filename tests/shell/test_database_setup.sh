@@ -44,25 +44,48 @@ database/migrations/002_campus_audit_schema.sql
 database/migrations/003_audit_lab.sql
 database/triggers.sql
 database/seed.sql
+database/catalogue.sql
 database/migrations/004_remove_shared_admin.sql
 database/migrations/005_local_admin_bootstrap_state.sql
 database/migrations/006_cancelled_loan_status.sql
+database/migrations/007_local_demo_student.sql
+database/migrations/008_import_plugin_log_errors.sql
 application account campus_app"
 upgrade_expected=$(printf '%s\n' "$fresh_expected" | grep -v -x 'database/seed.sql')
 
 pw=$(random_password)
 got=$(setup_steps CAMPUS_APP_PASSWORD="$pw")
-if [ "$got" = "$fresh_expected" ]; then pass "fresh install order: schema, 001-003, triggers, seed, 004-006, account"
+if [ "$got" = "$fresh_expected" ]; then pass "fresh install order: schema, 001-003, triggers, seed, catalogue, 004-008, account"
 else fail "fresh install order" "got: $(printf '%s' "$got" | tr '\n' ' ')"; fi
 
 got=$(setup_steps SKIP_SEED=1 CAMPUS_APP_PASSWORD="$pw")
-if [ "$got" = "$upgrade_expected" ]; then pass "upgrade order (SKIP_SEED=1): seed skipped, 004-006 still run, account refreshed"
+if [ "$got" = "$upgrade_expected" ]; then pass "upgrade order (SKIP_SEED=1): seed skipped; catalogue, 004-008 still run; account refreshed"
 else fail "upgrade order (SKIP_SEED=1)" "got: $(printf '%s' "$got" | tr '\n' ' ')"; fi
 
 got=$(setup_steps SKIP_SEED=1)
 expected=$(printf '%s\n' "$upgrade_expected" | grep -v -x 'application account campus_app')
 if [ "$got" = "$expected" ]; then pass "without CAMPUS_APP_PASSWORD the account step is skipped"
 else fail "without CAMPUS_APP_PASSWORD the account step is skipped" "got: $(printf '%s' "$got" | tr '\n' ' ')"; fi
+
+# The booking catalogue is part of every installation path unless it is
+# explicitly left out; leaving it out must not skip anything else.
+got=$(setup_steps SKIP_CATALOGUE=1 CAMPUS_APP_PASSWORD="$pw")
+expected=$(printf '%s\n' "$fresh_expected" | grep -v -x 'database/catalogue.sql')
+if [ "$got" = "$expected" ]; then pass "SKIP_CATALOGUE=1 leaves out only catalogue.sql"
+else fail "SKIP_CATALOGUE=1 leaves out only catalogue.sql" "got: $(printf '%s' "$got" | tr '\n' ' ')"; fi
+
+# catalogue.sql must be safe on an existing database: it may only insert rows
+# that are absent.  Anything that could change or remove an existing row, or
+# hide an error (INSERT IGNORE), fails this check.
+catalogue=$(tr -d '\r' < database/catalogue.sql | grep -v '^[[:space:]]*--')
+if printf '%s\n' "$catalogue" | grep -q -i -E 'ON DUPLICATE KEY|^[[:space:]]*(UPDATE|DELETE|REPLACE|TRUNCATE|DROP|ALTER)[[:space:]]|INSERT[[:space:]]+IGNORE'; then
+    fail "catalogue.sql only inserts absent rows (no UPDATE/DELETE/REPLACE/ON DUPLICATE KEY/INSERT IGNORE)"
+elif [ "$(printf '%s\n' "$catalogue" | grep -c 'WHERE NOT EXISTS')" -eq 2 ] \
+     && [ "$(printf '%s\n' "$catalogue" | grep -c -E '^INSERT INTO (items|rooms) ')" -eq 2 ]; then
+    pass "catalogue.sql only inserts absent rows (two INSERT ... WHERE NOT EXISTS, nothing else writes)"
+else
+    fail "catalogue.sql only inserts absent rows" "expected exactly two INSERT ... WHERE NOT EXISTS statements"
+fi
 
 # A migration that is not in the explicit order must stop the script before
 # anything is applied.

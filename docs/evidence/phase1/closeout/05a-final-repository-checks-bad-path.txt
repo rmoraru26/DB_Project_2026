@@ -1,0 +1,18 @@
+# closeout 2026-11-17 2026-11-17T02:50:44Z: repository checks on the FINAL tree (after testing.md and the evidence READMEs were updated)
+Repository checks failed:
+ - docs/testing.md: mentions missing path scripts/p1_1_recovery.sh
+# check_repo exit status: 1
+Traceback (most recent call last):
+  File "C:/Users/USER/DB_Project_2026-improvement/tests/test_source_distribution.py", line 156, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:/Users/USER/DB_Project_2026-improvement/tests/test_source_distribution.py", line 142, in main
+    assert passed.returncode == 0, "extracted repository checks failed:\n" + passed.stdout + passed.stderr
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: extracted repository checks failed:
+Repository checks failed:
+ - docs/testing.md: mentions missing path scripts/p1_1_recovery.sh
+
+# test_source_distribution exit status: 1
+# git diff --check exit status: 0
+# trailing-blank grep exit status: 1 (1 = none)

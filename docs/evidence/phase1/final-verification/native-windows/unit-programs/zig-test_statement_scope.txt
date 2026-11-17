@@ -1,0 +1,1 @@
+<scratch>/native_unit.sh: line 35: <scratch>/native-unit-build/zig-test_statement_scope.exe: Permission denied

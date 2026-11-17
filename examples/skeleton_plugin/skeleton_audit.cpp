@@ -81,7 +81,7 @@ maria_declare_plugin(skeleton_audit)
     "skeleton_audit",            // name in INSTALL PLUGIN and information_schema.PLUGINS
     "FRANtastic",                // author
     "Counts audit events per class (tutorial skeleton)",
-    PLUGIN_LICENSE_GPL,          // the server headers are GPL
+    PLUGIN_LICENSE_BSD,          // plugin.h offers PROPRIETARY, GPL and BSD; this file is MIT (permissive)
     skeleton_init,
     skeleton_deinit,
     0x0100,                      // version 1.0, shown as PLUGIN_VERSION

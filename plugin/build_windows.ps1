@@ -50,11 +50,17 @@ Write-Host "Built $(Join-Path $OutDir 'campus_audit.dll')"
 
 if ($SkipTests) { exit 0 }
 
+# The same seven programs as UNIT_TESTS in plugin/Makefile (scripts/check_repo.py
+# compares the two lists).  The last three are header-only: each test file is
+# the whole program.
 $tests = @{
     "test_record_format"    = @("$src\tests\test_record_format.cpp", "$src\src\record_format.cpp", "$src\audit_file_check.cpp")
     "test_log_sink"         = @("$src\tests\test_log_sink.cpp", "$src\src\log_sink.cpp", "$src\audit_file_check.cpp")
     "test_automatic_errors" = @("$src\tests\test_automatic_errors.cpp", "$src\audit_file_check.cpp")
     "test_error_reporter"   = @("$src\tests\test_error_reporter.cpp", "$src\audit_error_reporter.cpp")
+    "test_runtime_config"   = @("$src\tests\test_runtime_config.cpp")
+    "test_gap_accounting"   = @("$src\tests\test_gap_accounting.cpp")
+    "test_statement_scope"  = @("$src\tests\test_statement_scope.cpp")
 }
 $failed = 0
 Push-Location $OutDir

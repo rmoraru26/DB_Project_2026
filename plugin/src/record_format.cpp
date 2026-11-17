@@ -70,9 +70,18 @@ bool name_char_allowed(unsigned char c, NameKind kind) {
     return c == '-';
 }
 
-const char* const kSystemSchemas[] = {
-    "mysql", "information_schema", "performance_schema", "sys"
-};
+// The server's own schemas, in two groups (observed on 13.0.2 with
+// lower_case_table_names=0, docs/evidence/phase1/post-audit/):
+//   * mysql and sys are ordinary schemas whose names are case-sensitive on
+//     such a server: `MySQL` and `Sys` can be created as user schemas, and
+//     MYSQL.user does not exist.  Only the exact lower-case names count.
+//     (With lower_case_table_names=1 the server reports names in lower case.)
+//   * information_schema and performance_schema are resolved
+//     case-insensitively by the server whatever lower_case_table_names is
+//     (INFORMATION_SCHEMA.SCHEMATA and Performance_Schema.threads both work),
+//     so no user schema can carry those names in any case.
+const char* const kExactSystemSchemas[] = {"mysql", "sys"};
+const char* const kCaselessSystemSchemas[] = {"information_schema", "performance_schema"};
 
 bool equals_ignore_case(const char* a, size_t alen, const char* b) {
     size_t blen = std::strlen(b);
@@ -81,6 +90,11 @@ bool equals_ignore_case(const char* a, size_t alen, const char* b) {
         if (ascii_lower(a[i]) != ascii_lower(b[i])) return false;
     }
     return true;
+}
+
+bool equals_exact(const char* a, size_t alen, const char* b) {
+    size_t blen = std::strlen(b);
+    return alen == blen && std::memcmp(a, b, alen) == 0;
 }
 
 }  // namespace
@@ -417,14 +431,20 @@ AuditResult parse_name_list(const char* text, NameKind kind, NameList* out) {
     return {AuditError::None, ""};
 }
 
+bool is_system_schema(const char* db, size_t length) {
+    if (db == nullptr || length == 0) return false;
+    for (const char* sys : kExactSystemSchemas) {
+        if (equals_exact(db, length, sys)) return true;
+    }
+    for (const char* sys : kCaselessSystemSchemas) {
+        if (equals_ignore_case(db, length, sys)) return true;
+    }
+    return false;
+}
+
 bool database_matches(const NameList& list, const char* db, size_t length) {
     if (db == nullptr || length == 0) return false;
-    if (list.match_all) {
-        for (const char* sys : kSystemSchemas) {
-            if (equals_ignore_case(db, length, sys)) return false;
-        }
-        return true;
-    }
+    if (list.match_all) return !is_system_schema(db, length);
     for (int k = 0; k < list.count; ++k) {
         if (equals_ignore_case(db, length, list.names[k])) return true;
     }

@@ -1,0 +1,32 @@
+log file: /var/log/campus_audit/campus_audit.jsonl  size: 519000 bytes
+--- 2. missing file: session state after the error
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/does_not_exist.jsonl')
+--------------
+
+ERROR 1644 (45000) at line 2: import_plugin_log: LOAD_FILE returned NULL (file missing, not readable by all, no FILE privilege, outside secure_file_priv, or larger than max_allowed_packet)
+Error	1644	import_plugin_log: LOAD_FILE returned NULL (file missing, not readable by all, no FILE privilege, outside secure_file_priv, or larger than max_allowed_packet)
+Note	4094	At line 26 in campus_audit.import_plugin_log
+time_zone after: +05:30
+--- 3. file larger than max_allowed_packet
+session max_allowed_packet: 259072  file size: 519000
+LOAD_FILE is NULL: 1
+Warning	1301	Result of load_file() was larger than max_allowed_packet (259072) - truncated
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit.jsonl')
+--------------
+
+ERROR 1301 (HY000) at line 5: Result of load_file() was larger than max_allowed_packet (259072) - truncated
+Error	1301	Result of load_file() was larger than max_allowed_packet (259072) - truncated
+Note	4094	At line 23 in campus_audit.import_plugin_log
+time_zone after: +05:30
+restored global max_allowed_packet: 16777216
+--- 4. error after the session time zone was switched (lock wait timeout on plugin_events)
+--------------
+CALL campus_audit.import_plugin_log('/var/log/campus_audit/campus_audit.jsonl')
+--------------
+
+ERROR 1205 (HY000) at line 4: Lock wait timeout exceeded; try restarting transaction
+time_zone after the failed import: +00:00   max_recursive_iterations: 100000000
+tmp_plugin_lines
+temporary table still present: 1649

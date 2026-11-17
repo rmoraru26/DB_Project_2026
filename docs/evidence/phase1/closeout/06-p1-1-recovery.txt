@@ -1,0 +1,29 @@
+# closeout 2026-11-17T04:59:32Z: the same script after the rotate_log.sh fix (reopen of the original file after an undone rename); current scripts/rotate_log.sh and 008 of the working tree, pre-fix rotate_log.sh from the backup FRANtastic-P1-backup-20261117-024313
+server 13.0.2-MariaDB-ubu2604, plugin instance 66071c491a71c-1
+active log: 128826 bytes, limit 65536
+PASS: pre-fix script: rotation done, archive import FAILED (exit 1), oversized archive left at /var/log/campus_audit/campus_audit-20261117T050006Z.jsonl (128826 bytes)
+records in that archive: 451; rows in plugin_events so far: 0
+      | '/var/log/campus_audit/campus_audit-20261117T050006Z.jsonl' has 128826 bytes, at or above max_allowed_packet = 65536: importing it in line-aligned parts of at most 64512 bytes (the file itself is not changed).
+      | Imported '/var/log/campus_audit/campus_audit-20261117T050006Z.jsonl' in 2 parts.
+      | Imported /var/log/campus_audit/campus_audit-20261117T050006Z.jsonl: 451 lines, 0 invalid, 451 new
+PASS: documented recovery (rotate_log.sh --import <archive>) exits 0 and imports in parts
+PASS: after the recovery every record of the archive and the active log is in plugin_events once (453)
+PASS: the archive is unchanged (SHA-256) and no part file is left
+      | Rotated: /var/log/campus_audit/campus_audit-20261117T050011Z.jsonl (129750 bytes); the plugin now writes to /var/log/campus_audit/campus_audit.jsonl
+      | '/var/log/campus_audit/campus_audit-20261117T050011Z.jsonl' has 129750 bytes, at or above max_allowed_packet = 65536: importing it in line-aligned parts of at most 64512 bytes (the file itself is not changed).
+      | --------------
+      | CALL campus_audit.import_plugin_log('/var/log/campus_audit/.import-parts.bwWbvMx1/part-000000')
+      | --------------
+      | 
+      | ERROR 1205 (HY000) at line 1: Lock wait timeout exceeded; try restarting transaction
+      | part 1 of '/var/log/campus_audit/campus_audit-20261117T050011Z.jsonl' could not be imported; the parts before it were imported (re-importing them is harmless)
+      | rotate_log: the archived file could not be imported; it is kept unchanged at /var/log/campus_audit/campus_audit-20261117T050011Z.jsonl.  Fix the cause above, then run: rotate_log.sh --import '/var/log/campus_audit/campus_audit-20261117T050011Z.jsonl'   (make import-log FILE=/var/log/campus_audit/campus_audit-20261117T050011Z.jsonl; safe to repeat)
+PASS: import failure in the middle (plugin_events locked): exit 1, and the message names the retry command
+PASS: after that failure: archive and new active log exist, no part file is left, nothing was imported
+PASS: the named retry imports everything: 905 records in the files and in plugin_events; archive unchanged
+      | rotate_log: the plugin could not create a new log file; the rename was undone and the plugin writes to /var/log/campus_audit/campus_audit.jsonl again (records of the failed moment are counted in Campus_audit_events_dropped and announced by an audit_gap record)
+PASS: reopen failure: exit 1, the rename was undone, no new archive name is left
+PASS: the active log keeps every earlier record and still receives new ones (38 lines)
+PASS: after the directory is writable again a reopen succeeds; plugin ACTIVE
+== 10 passed, 0 failed
+# exit status: 0

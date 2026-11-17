@@ -67,9 +67,9 @@ RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit &&
 # when (and only when) the data volume is empty.  scripts/post_start.sh
 # (make up) applies newer migrations to an older volume.  The order is the one
 # of scripts/setup_database.sh (scripts/check_repo.py checks that they agree):
-#   1x schema, 2x migrations 001-003, 30 triggers, 40 seed,
-#   5x migrations 004-006 (after the seed: 004 demotes the seeded Dana
-#   administrator, 005 then evaluates the local administrator gate),
+#   1x schema, 2x migrations 001-003, 30 triggers, 40 seed, 41 booking
+#   catalogue, 5x migrations 004-008 (after the seed: 004 demotes the seeded
+#   Dana administrator, 005 then evaluates the local administrator gate),
 #   60 application account.
 COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
 COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
@@ -77,9 +77,12 @@ COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d
 COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
 COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
 COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
 COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
 COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
 COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
 COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
 COPY database/ /usr/local/share/campus/database/
 COPY scripts/ /usr/local/share/campus/scripts/

@@ -38,6 +38,14 @@ jobs:
       - name: Shell scripts parse
         run: for f in $(git ls-files '*.sh'); do bash -n "$f"; done
 
+      - name: Credential bootstrap and installation-order tests (fake client, no server)
+        run: |
+          bash tests/shell/test_admin_auth.sh
+          bash tests/shell/test_demo_bootstrap.sh | tee demo-bootstrap.txt
+          # On the runner's file system the state-machine test must really run.
+          if grep -q '^SKIP' demo-bootstrap.txt; then echo "the demo bootstrap test was skipped"; exit 1; fi
+          bash tests/shell/test_database_setup.sh
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -75,6 +83,20 @@ jobs:
         run: |
           make examples 2>&1 | tee examples.txt
           grep -q "campus_audit.*ACTIVE.*AUDIT" examples.txt
+
+      - name: Fresh installation - the generated demo student exists, is private and the booking catalogue is loaded
+        run: |
+          test -s .demo-credentials && test "$(stat -c '%a' .demo-credentials)" = 600
+          test -s .admin-credentials && test "$(stat -c '%a' .admin-credentials)" = 600
+          # None of the generated secrets is visible to git.
+          git check-ignore -q .env && git check-ignore -q .demo-credentials && git check-ignore -q .admin-credentials
+          test -z "$(git status --porcelain -- .env .demo-credentials .admin-credentials)"
+          set -a; . ./.env; set +a
+          items=$(docker compose exec -T -e MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb mariadb -uroot -N -e "SELECT COUNT(*) FROM university_resources.items WHERE asset_tag LIKE CONCAT(name, ' _')")
+          test "$items" = 54
+
+      - name: Host-level integration tests (demo credential life cycle, log rotation, thread pool)
+        run: make test-integration 2>&1 | tee integration.txt
 
       - uses: actions/setup-python@v5
         with:
@@ -127,6 +149,7 @@ jobs:
             demo.txt
             test.txt
             examples.txt
+            integration.txt
             browser-tests.txt
             screenshots/
             make-env.txt
@@ -170,6 +193,16 @@ jobs:
           Copy-Item plugin\build\campus_audit.dll "$mdb\lib\plugin\"
           & $zig cc -target x86_64-windows-gnu -O2 "-I$mdb\include\mysql" tests\plugin\change_user.c "$mdb\lib\libmariadb.lib" -o C:\mdb\campus_change_user.exe
           if ($LASTEXITCODE -ne 0) { throw "change_user helper build failed" }
+
+      - name: Windows launcher tests that need no Docker (Windows PowerShell 5.1, fake docker and simulated database)
+        shell: powershell
+        run: |
+          # test_local_file_acl.ps1 is not run here: it requires a non-elevated
+          # session, and the hosted runner is elevated.
+          foreach ($test in 'test_launcher_url', 'test_launcher_hardening', 'test_launcher_end_to_end', 'test_demo_credentials') {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "tests\windows\$test.ps1"
+            if ($LASTEXITCODE -ne 0) { throw "$test failed" }
+          }
 
       - name: Start MariaDB, database setup and end-to-end plugin tests (incl. CHANGE_USER)
         shell: bash

@@ -1,0 +1,3 @@
+873472 <scratch>/native-work/build/campus_audit.dll
+866304 <scratch>/native-work/build/test_automatic_errors.exe
+859136 <scratch>/native-work/build/test_error_reporter.exe

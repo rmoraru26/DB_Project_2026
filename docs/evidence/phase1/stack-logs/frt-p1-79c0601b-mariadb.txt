@@ -1,0 +1,46 @@
+2026-11-16 11:30:21+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:13.0.2+maria~ubu2604 started.
+2026-11-16 11:30:21+00:00 [Warn] [Entrypoint]: /sys/fs/cgroup///memory.pressure not writable, functionality unavailable to MariaDB
+2026-11-16 11:30:21+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2026-11-16 11:30:21+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:13.0.2+maria~ubu2604 started.
+2026-11-16 11:30:21+00:00 [Note] [Entrypoint]: MariaDB upgrade not required
+2026-11-16 11:30:21 0 [Note] Starting MariaDB 13.0.2-MariaDB-ubu2604 source revision 620a4b5624222048fece7fe1789978ae0675cae2 server_uid Q9xS78N5sn2QQRBzODQbkNJF4yM= as process 1
+2026-11-16 11:30:21 0 [Note] InnoDB: Compressed tables use zlib 1.3.1
+2026-11-16 11:30:21 0 [Note] InnoDB: Number of transaction pools: 1
+2026-11-16 11:30:21 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+2026-11-16 11:30:21 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+create_uring failed: falling back to libaio
+2026-11-16 11:30:21 0 [Note] InnoDB: Using Linux native AIO
+2026-11-16 11:30:21 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388608m, innodb_buffer_pool_size=128m
+2026-11-16 11:30:21 0 [Note] InnoDB: Completed initialization of buffer pool
+2026-11-16 11:30:21 0 [Note] InnoDB: File system buffers for log disabled (block size=4096 bytes)
+2026-11-16 11:30:21 0 [Note] InnoDB: End of log at LSN=300560
+2026-11-16 11:30:22 0 [Note] InnoDB: Opened 3 undo tablespaces
+2026-11-16 11:30:22 0 [Note] InnoDB: 128 rollback segments in 3 undo tablespaces are active.
+2026-11-16 11:30:22 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+2026-11-16 11:30:22 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+2026-11-16 11:30:22 0 [Note] InnoDB: log sequence number 300560; transaction id 121
+2026-11-16 11:30:22 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+2026-11-16 11:30:22 0 [Note] Plugin 'FEEDBACK' is disabled.
+2026-11-16 11:30:22 0 [Note] Plugin 'wsrep-provider' is disabled.
+2026-11-16 11:30:22 0 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-16 11:30:22 0 [Note] InnoDB: Buffer pool(s) load completed at 261116 11:30:22
+2026-11-16 11:30:22 0 [Note] Server socket created on IP: '0.0.0.0', port: '3306'.
+2026-11-16 11:30:22 0 [Note] Server socket created on IP: '::', port: '3306'.
+2026-11-16 11:30:23 0 [Note] mariadbd: Event Scheduler: Loaded 0 events
+2026-11-16 11:30:23 0 [Note] mariadbd: ready for connections.
+Version: '13.0.2-MariaDB-ubu2604'  socket: '/run/mysqld/mysqld.sock'  port: 3306  mariadb.org binary distribution
+2026-11-16 11:31:17 199 [Warning] Access denied for user 'campus_app'@'172.24.0.3' (using password: YES)
+2026-11-16 11:31:18 221 [Warning] Access denied for user 'audit_lab_intruder'@'172.24.0.3' (using password: YES)
+2026-11-16 11:32:48 356 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+261116 11:33:02 server_audit: MariaDB Audit Plugin version 1.8.0 STARTED.
+261116 11:33:02 server_audit: Query cache is enabled with the TABLE events. Some table reads can be veiled.261116 11:33:02 server_audit: Log file name was changed to 'campus_bench_server_audit.log'.
+261116 11:33:02 server_audit: logging started to the file campus_bench_server_audit.log.
+261116 11:33:16 server_audit: logging was stopped.
+261116 11:33:17 server_audit: logging was stopped.
+261116 11:33:17 server_audit: MariaDB Audit Plugin version 1.8.0 STARTED.
+261116 11:33:17 server_audit: Query cache is enabled with the TABLE events. Some table reads can be veiled.261116 11:33:18 server_audit: Log file name was changed to 'campus_bench_server_audit.log'.
+261116 11:33:18 server_audit: logging started to the file campus_bench_server_audit.log.
+261116 11:33:29 server_audit: logging was stopped.
+261116 11:33:29 server_audit: logging was stopped.
+2026-11-16 11:33:29 433 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-16 11:34:04 485 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable

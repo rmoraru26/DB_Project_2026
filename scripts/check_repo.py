@@ -9,6 +9,16 @@
 * Migrations are numbered without gaps.
 * Docker's initdb order equals scripts/setup_database.sh (004/005 after the seed).
 * No .env or credential file is tracked by git.
+* .gitignore covers every generated credential file and local test artefact
+  (asked of `git check-ignore`), without hiding the tracked evidence files.
+* The Makefile's test targets read the generated credentials from their files.
+* Every plugin unit-test source is built by the Linux Makefile and by the
+  Windows build script, and none relies on assert().
+* The formerly published demo password is not named outside the tests that
+  prove it opens no account.
+* README.md has its sections, names the quick-start commands and the
+  credential files, links every technical document and contains none of the
+  phrases of the early draft an integration merge once restored.
 """
 import pathlib
 import re
@@ -156,12 +166,189 @@ def check_no_secrets_tracked():
         names = tracked.splitlines()
     for name in names:
         base = name.rsplit("/", 1)[-1]
-        if base == ".env" or (base.startswith(".env.") and base != ".env.example") or base.endswith((".pem", ".key")):
+        if (base == ".env" or (base.startswith(".env.") and base != ".env.example")
+                or base.endswith((".pem", ".key"))
+                or base.startswith(LOCAL_CREDENTIAL_FILES)
+                or (base.startswith(".frantastic-") and base.endswith((".tmp", ".bak")))):
             errors.append(f"credential-like file is tracked: {name}")
 
 
+# Local files that hold a generated secret (or bulky local artefacts), with the
+# temporary names their writers use.  Each must be matched by .gitignore.
+LOCAL_CREDENTIAL_FILES = (".admin-credentials", ".demo-credentials")
+MUST_BE_IGNORED = (
+    ".env", ".env.previous",
+    ".admin-credentials", ".admin-credentials.pending", ".admin-credentials.tmp.Ab12Cd34",
+    ".demo-credentials", ".demo-credentials.pending", ".demo-credentials.tmp.Ab12Cd34",
+    ".frantastic-0123456789abcdef.tmp", ".frantastic-0123456789abcdef.bak",
+    ".venv-browser/pyvenv.cfg",
+    "campus_audit.jsonl", "plugin/sink_test_append.jsonl", "plugin/audit_open_test.tmp",
+    "screenshots/01-home.png", "plugin/build/campus_audit.so",
+)
+# Tracked on purpose; an ignore rule must never hide them from `git add`.
+MUST_NOT_BE_IGNORED = (
+    ".env.example", "docs/evidence/sample-records.jsonl", "docs/evidence/phase1/example.jsonl",
+    "docs/screenshots/01-home.png", "database/seed.sql",
+)
+# Without git (the Docker test-runner's build context has no .git) the rules
+# are checked as text: these lines must be present in .gitignore.
+REQUIRED_IGNORE_LINES = (
+    ".env", ".env.*", "!.env.example", ".admin-credentials", ".admin-credentials.*",
+    ".demo-credentials", ".demo-credentials.*", ".frantastic-*.tmp", ".frantastic-*.bak",
+    ".venv-browser/", "*.jsonl", "audit_open_test.tmp", "!docs/evidence/**/*.jsonl",
+)
+# Local secrets must not reach a Docker build context either (the test-runner
+# image copies the repository root).
+REQUIRED_DOCKERIGNORE_LINES = (
+    ".env", ".env.*", ".admin-credentials", ".admin-credentials.*",
+    ".demo-credentials", ".demo-credentials.*",
+)
+
+
+def _git_ignores(path):
+    """True/False from `git check-ignore`, or None when git cannot be asked."""
+    try:
+        # --no-index: judge the patterns alone, also for files that are tracked.
+        result = subprocess.run(["git", "check-ignore", "--no-index", "-q", path], cwd=ROOT,
+                                capture_output=True, text=True)
+    except OSError:
+        return None
+    if result.returncode in (0, 1):
+        return result.returncode == 0
+    return None       # 128: not a git repository
+
+
+def check_ignore_rules():
+    """Generated credentials and local artefacts are git-ignored; tracked evidence is not."""
+    lines = {line.strip() for line in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()}
+    for required in REQUIRED_IGNORE_LINES:
+        if required not in lines:
+            errors.append(f".gitignore lacks the rule {required!r}")
+    docker_lines = {line.strip() for line in (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()}
+    for required in REQUIRED_DOCKERIGNORE_LINES:
+        if required not in docker_lines:
+            errors.append(f".dockerignore lacks the rule {required!r}")
+    if _git_ignores(".env") is None:
+        return
+    for path in MUST_BE_IGNORED:
+        if _git_ignores(path) is not True:
+            errors.append(f".gitignore does not ignore {path}")
+    for path in MUST_NOT_BE_IGNORED:
+        if _git_ignores(path) is not False:
+            errors.append(f".gitignore ignores {path}, which is tracked on purpose")
+
+
+def check_makefile_reads_credentials_from_files():
+    """The test targets take the generated credentials from their files, never from the terminal.
+
+    The recipe once read them with `read` and no redirection: it consumed
+    standard input, so in CI (stdin empty) the administrator tests were
+    silently skipped, and in a terminal `make test` waited for typed input.
+    """
+    text = (ROOT / "Makefile").read_text(encoding="utf-8")
+    for variable, source in (("TEST_ADMIN_PASSWORD", ".admin-credentials"), ("TEST_DEMO_PASSWORD", ".demo-credentials")):
+        reads = re.findall(r"read -r " + variable + r"; \}(.{0,40})", text)
+        if not reads:
+            errors.append(f"Makefile no longer reads {variable} for the test targets")
+        for after in reads:
+            if not after.startswith(" < " + source + ";"):
+                errors.append(f"Makefile reads {variable} without '< {source}' (it would read the terminal)")
+
+
+# The README is the first thing a newcomer and an evaluator read.  An
+# integration merge once replaced it by an early draft ("In development", a
+# branch table, build instructions for a directory that does not exist) and
+# every check still passed.  These are the properties that draft lacked.
+README_SECTIONS = (
+    "## Quick start", "## Features", "## Architecture", "## Why a MariaDB server plugin",
+    "## What the plugin records", "## Database design", "## Setup in detail",
+    "## Demonstration and Audit Lab", "## SQL examples", "## Experimental findings", "## Tests",
+    "## Security", "## Known limitations", "## Design decisions", "## Lessons learned", "## Team",
+    "## Documentation",
+)
+README_MUST_MENTION = (
+    "MariaDB 13.0.2", "area 11", "`make up`", "frantastic.cmd up", "`make demo`", "make test",
+    "`make doctor`", ".demo-credentials", ".admin-credentials", "INSTALL SONAME", "plugin_maturity=beta",
+)
+README_STALE_PHRASES = (
+    "In development", "is planned", "not yet integrated", "are not implemented", "is not implemented",
+    "puglin1", "git switch error-handling", "Repository Branches", "## Next Steps",
+    "alice.student@example.edu /",
+)
+
+
+def check_readme_content():
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    headings = set(line.strip() for line in text.splitlines() if line.startswith("## "))
+    for section in README_SECTIONS:
+        if section not in headings:
+            errors.append(f"README.md lacks the section {section!r}")
+    for phrase in README_MUST_MENTION:
+        if phrase not in text:
+            errors.append(f"README.md no longer mentions {phrase!r}")
+    for phrase in README_STALE_PHRASES:
+        if phrase in text:
+            errors.append(f"README.md contains the stale phrase {phrase!r}")
+    for doc in sorted((ROOT / "docs").glob("*.md")):
+        if f"docs/{doc.name}" not in text:
+            errors.append(f"README.md does not link docs/{doc.name}")
+    for extra in ("examples/README.md", "plugin/docs/error_handling.md", "examples/skeleton_plugin/README.md"):
+        if extra not in text:
+            errors.append(f"README.md does not link {extra}")
+
+
+def check_plugin_unit_tests():
+    """Every plugin/tests/test_*.cpp is a unit test that both build scripts build and run.
+
+    A test-named source that no build compiles is not a test, and the Windows
+    script once ran four of the six programs of the Linux Makefile.
+    """
+    sources = sorted(p.stem for p in (ROOT / "plugin/tests").glob("test_*.cpp"))
+    makefile = (ROOT / "plugin/Makefile").read_text(encoding="utf-8")
+    listed = re.search(r"^UNIT_TESTS\s*=\s*((?:.*\\\n)*.*)$", makefile, flags=re.M)
+    linux = sorted(listed.group(1).replace("\\\n", " ").split()) if listed else []
+    script = (ROOT / "plugin/build_windows.ps1").read_text(encoding="utf-8")
+    windows = sorted(set(re.findall(r'^\s*"(test_\w+)"\s*=\s*@\(', script, flags=re.M)))
+    if linux != sources:
+        errors.append(f"plugin/Makefile UNIT_TESTS {linux} differs from plugin/tests/test_*.cpp {sources}")
+    if windows != sources:
+        errors.append(f"plugin/build_windows.ps1 builds {windows}, but plugin/tests has {sources}")
+    # assert() disappears when NDEBUG is defined, which the optimised Zig build
+    # for Windows does: a unit test built on it passes without checking anything.
+    for name in sources:
+        code = "\n".join(line.split("//", 1)[0] for line in
+                         (ROOT / "plugin/tests" / (name + ".cpp")).read_text(encoding="utf-8").splitlines())
+        if re.search(r"\bassert\s*\(|<cassert>|<assert\.h>", code):
+            errors.append(f"plugin/tests/{name}.cpp uses assert(); use explicit checks that survive NDEBUG")
+
+
+# A demo password that an earlier version published.  Nothing that is run or
+# read by a newcomer may advertise it again; the tests that prove it no longer
+# opens any account (and this script) are the only places that name it.
+PUBLISHED_DEMO_PASSWORD = "campus-demo-" + "2026"
+MAY_NAME_PUBLISHED_PASSWORD = ("frontend/tests/", "tests/windows/", "docs/evidence/")
+
+
+def check_no_published_demo_password():
+    for path in sorted(ROOT.rglob("*")):
+        relative = path.relative_to(ROOT).as_posix()
+        if (not path.is_file() or relative.startswith((".git/", ".venv", "plugin/build/"))
+                or "/__pycache__/" in relative or relative.startswith(MAY_NAME_PUBLISHED_PASSWORD)
+                or path.suffix.lower() in (".png", ".jpg", ".jpeg", ".zip", ".so", ".dll", ".exe", ".pyc")):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if PUBLISHED_DEMO_PASSWORD in text:
+            errors.append(f"{relative} names the formerly published demo password; "
+                          "the demo credential is generated per installation (.demo-credentials)")
+
+
 for check in (check_readme_first_line, check_paths_in_docs, check_make_targets, check_makefile_paths,
-              check_dockerfiles, check_migrations, check_install_order, check_no_secrets_tracked):
+              check_dockerfiles, check_migrations, check_install_order, check_no_secrets_tracked,
+              check_ignore_rules, check_makefile_reads_credentials_from_files, check_plugin_unit_tests,
+              check_no_published_demo_password, check_readme_content):
     check()
 
 if errors:

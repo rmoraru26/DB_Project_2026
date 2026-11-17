@@ -5,7 +5,10 @@ tests**: they assert nothing, `interactive_open_log.cpp` asks for a path on stdi
 by `plugin/Makefile`, `plugin/build_windows.ps1` or CI. Their checks live on in the real unit tests
 (`../test_automatic_errors.cpp`, `../test_error_reporter.cpp`, `../test_log_sink.cpp`).
 
-| File | Was | Shows |
+The "Was" column gives each program's former path. Those files were moved here (Phase 1) and no
+longer exist under `plugin/tests/`; nothing builds or references them there.
+
+| File | Was (former path, removed) | Shows |
 |---|---|---|
 | `demo_audit_result.cpp` | `plugin/tests/test_auditerror.cpp` | how a success and a failure look as `AuditResult` |
 | `interactive_open_log.cpp` | `plugin/tests/test_open_error.cpp` | the first version of `try_open_log()` (now in `plugin/audit_file_check.cpp`) |

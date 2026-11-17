@@ -1,17 +1,18 @@
 # Examples: learn the plugin in ten minutes
 
-Six short SQL files, meant to be read and run in order. Each one starts with a comment that says
+Seven short SQL files, meant to be read and run in order. Each one starts with a comment that says
 what it shows, what it needs and where its real output is recorded. They use only statements that the
 end-to-end tests (`tests/plugin/run_plugin_tests.sh`) and the demo (`scripts/demo.sh`) already ran
 against MariaDB 13.0.2.
 
 | File | You learn | Real output |
 |---|---|---|
-| [`01_install_and_verify.sql`](01_install_and_verify.sql) | A server plugin is installed with `INSTALL SONAME`; `information_schema.PLUGINS` shows type `AUDIT` and status `ACTIVE`; the plugin adds 8 system and 11 status variables | [`demo-windows.txt`](../docs/evidence/demo-windows.txt) step 1 |
+| [`01_install_and_verify.sql`](01_install_and_verify.sql) | A server plugin is installed with `INSTALL SONAME`; `information_schema.PLUGINS` shows type `AUDIT` and status `ACTIVE`; the plugin adds 9 system and 11 status variables | [`demo-windows.txt`](../docs/evidence/demo-windows.txt) step 1 |
 | [`02_cause_events.sql`](02_cause_events.sql) | A booking, a *rejected* statement and a rolled-back change look different to an audit plugin than to a trigger | [`sample-records.jsonl`](../docs/evidence/sample-records.jsonl) |
 | [`03_read_the_log.sql`](03_read_the_log.sql) | The log is JSON Lines; `import_plugin_log()` and the views join it with the trigger-based row history | [`demo-windows.txt`](../docs/evidence/demo-windows.txt) steps 3-8 |
 | [`04_configure_and_break_it.sql`](04_configure_and_break_it.sql) | Dynamic variables, filtering, and what the plugin does with invalid values (ER 1231, old value kept) | [`plugin-tests-windows.txt`](../docs/evidence/plugin-tests-windows.txt) |
 | [`05_unload.sql`](05_unload.sql) | The shutdown path: `plugin_stop` record, clean `UNINSTALL`, reinstall as a new instance | [`plugin-tests-windows.txt`](../docs/evidence/plugin-tests-windows.txt) |
+| [`07_what_table_events_miss.sql`](07_what_table_events_miss.sql) | What the server's table events do not report (DML under `LOCK TABLES`; trigger DDL arrives as a *read*), and the opt-in `campus_audit_statement_scope = 'SESSION'` that records those statements | [`docs/evidence/phase1/`](../docs/evidence/phase1/README.md), `make examples` output |
 | [`06_skeleton_plugin.sql`](06_skeleton_plugin.sql) | **Write your own:** the 60-line tutorial plugin [`skeleton_plugin/`](skeleton_plugin/README.md) loaded next to campus_audit, counting every event the server hands it | [`12-skeleton-plugin.txt`](../docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt) |
 
 ## Run them
@@ -31,7 +32,7 @@ mariadb --force --table -uroot -p < examples/02_cause_events.sql
 mariadb --force --table -uroot -p < examples/03_read_the_log.sql
 ```
 
-`--force` keeps the client running after the deliberate errors in examples 02, 04 and 05. The database
+`--force` keeps the client running after the deliberate errors in examples 02, 04, 05 and 07. The database
 objects they use (`university_resources`, `campus_audit`) are created by `scripts/setup_database.sh`.
 
 ## What to look for
@@ -48,3 +49,6 @@ objects they use (`university_resources`, `campus_audit`) are created by `script
   `audit_gap` record states how many events were dropped
   ([docs/experiments.md](../docs/experiments.md), experiment 4).
 * **Example 04:** every rejected `SET GLOBAL` leaves the previous value in force.
+* **Example 07, last result:** the first `LOCK TABLES` is followed by nothing until the next
+  ordinary statement; the second, run with scope `SESSION`, by every statement executed under it,
+  each marked `session` in the `scope` column, including the one that failed with error 1062.

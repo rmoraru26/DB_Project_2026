@@ -1,0 +1,90 @@
+# post-audit 2026-11-17 2026-11-17T02:28:01Z: the NEW tests/database/test_demo_student.sh and test_catalogue.sh against the PRE-FIX database/ from the backup taken before the post-audit changes (control run: the new checks must fail)
+plugin: ACTIVE 1.2.0
+applied database/migrations/007_local_demo_student.sql
+applied database/catalogue.sql
+
+######## tests/database/test_demo_student.sh
+PASS: scratch copy of the users table created
+PASS: before the migration the scratch table has no demo constraint
+PASS: a conflicting non-student row stops the migration with a clear message (SQLSTATE 45000)
+PASS: the conflicting row was not demoted or removed by the migration
+PASS: and no constraint was added in that case
+PASS: migration 007 applies
+PASS: the migration adds chk_users_demo_is_student
+PASS: migration 007 re-runs without error
+PASS: re-running does not duplicate the constraint
+PASS: the migration itself creates no account
+PASS: bootstrap on an empty table reports CREATED
+PASS: the created row is an active student named Demo Student
+PASS: a second bootstrap reports EXISTS
+PASS: and leaves the stored hash unchanged (a restart cannot rotate the password)
+PASS: rotate reports ROTATED
+PASS: and replaces only the hash; the row is still the one student
+PASS: bootstrap refuses a value that is not a Werkzeug hash
+PASS: rotate refuses a value that is not a Werkzeug hash
+PASS: rotate refuses NULL
+PASS: a refused call changed nothing
+FAIL: bootstrap_local_demo_student inside an open transaction
+      EXISTS
+open=0 probe=1
+FAIL: after the caller's ROLLBACK its row is gone (it was not committed by bootstrap_local_demo_student)
+      expected '0', got '1'
+FAIL: rotate_local_demo_student inside an open transaction
+      --------------
+INSERT INTO users (full_name, email, password_hash, role) VALUES ('Txn Probe', 'txn.probe@example.edu', 'x', 'student')
+--------------
+
+ERROR 1062 (23000) at line 2: Duplicate entry 'txn.probe@example.edu' for key 'uq_users_email'
+ROTATED
+open=0 probe=1
+FAIL: after the caller's ROLLBACK its row is gone (it was not committed by rotate_local_demo_student)
+      expected '0', got '1'
+FAIL: the refusals inside a transaction changed nothing
+      expected 'scrypt:32768:8:1$testsalt$bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', got 'pbkdf2:sha256:1$testsalt$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+PASS: UPDATE to the administrator role is refused by the CHECK constraint
+PASS: the constraint also covers a differently cased address (the collation is case-insensitive)
+PASS: documented limit: with check_constraint_checks = 0 a session can bypass the constraint (defence in depth, not a barrier against root)
+PASS: other accounts may still be administrators
+PASS: rotate without the demo row: MISSING, no row created, other rows kept
+PASS: installed database: chk_users_demo_is_student exists
+PASS: installed database: both procedures exist (SQL SECURITY DEFINER)
+PASS: installed database: no account was granted EXECUTE on the credential procedures
+NOTE: the installed database has no demo account yet (make up creates it); testing the constraint with an INSERT
+PASS: installed database: the administrator connection cannot give the demo identity the admin role (ER 4025)
+PASS: installed database: the demo account row is exactly as before this test
+== 30 passed, 5 failed
+######## tests/database/test_demo_student.sh: exit status 1
+
+######## tests/database/test_catalogue.sh
+PASS: installed: 18 item types, each with copies A, B and C (54 rows)
+PASS: installed: every item type has exactly three copies
+PASS: installed: the five rooms of the booking page exist, each once
+PASS: installed: catalogue rooms and items are bookable (status available) unless changed locally
+PASS: installed: catalogue.sql re-runs without error
+PASS: installed: two more runs changed no row of items or rooms and wrote no history row (rows, ids, updated_at, audit_events count identical)
+PASS: scratch copies of items and rooms created (empty)
+PASS: fresh database: catalogue.sql applies
+PASS: fresh database: 54 items and 5 rooms
+PASS: fresh database: items are numbered in the order of the booking page (Vacuum A first, Gameboy C last)
+PASS: fresh database: rooms in the order of the booking page with their capacities
+PASS: fresh database: categories as on the booking page
+PASS: existing database: catalogue.sql applies
+PASS: existing database: the removed rows are back, nothing is duplicated (55 items incl. the local one, 6 rooms)
+PASS: existing database: locally changed rows keep their status, description, capacity and building
+PASS: existing database: locally added rows are kept
+PASS: existing database: every row that existed before the run is byte-for-byte unchanged (ids, values, updated_at)
+PASS: three further runs change nothing
+PASS: two overlapping runs under READ COMMITTED both succeed
+FAIL: two overlapping runs under READ COMMITTED create no duplicate room (5 rooms, 5 distinct names)
+      expected '5|5', got '10|5'
+PASS: the overlapping runs left the existing items unchanged
+PASS: the catalogue lock is released after the runs
+FAIL: run while the lock is held
+      
+FAIL: that run changed nothing (Cinema Room still missing, 4 rooms)
+      expected '4', got '9'
+== 21 passed, 3 failed
+######## tests/database/test_catalogue.sh: exit status 1
+
+######## overall exit status 1
+# exit status: 1

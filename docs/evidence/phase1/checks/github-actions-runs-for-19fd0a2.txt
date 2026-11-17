@@ -1,0 +1,12 @@
+run 43534005238  attempt 1  workflow 'CI'  event=push  branch=submission/frantastic-final-review-isolated
+   head_sha=19fd0a219930dd986eab5f9d53c1fe18c6ecd698  status=completed  conclusion=success
+   created=2026-11-14T00:24:45Z  updated=2026-11-14T00:32:08Z  url=https://github.com/rmoraru26/DB_Project_2026/actions/runs/43534005238
+   job 132258440902: Unit tests and static checks (no server)  -> success  (2026-11-14T00:24:47Z .. 2026-11-14T00:26:09Z, runner ['ubuntu-24.04'])
+   job 132258974471: Build the DLL and load it into native Windows MariaDB 13.0.2  -> success  (2026-11-14T00:26:11Z .. 2026-11-14T00:32:08Z, runner ['windows-2022'])
+   job 132258974521: make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)  -> success  (2026-11-14T00:26:11Z .. 2026-11-14T00:30:21Z, runner ['ubuntu-24.04'])
+run 43534008497  attempt 1  workflow 'CI'  event=pull_request  branch=submission/frantastic-final-review-isolated
+   head_sha=19fd0a219930dd986eab5f9d53c1fe18c6ecd698  status=completed  conclusion=success
+   created=2026-11-14T00:24:47Z  updated=2026-11-14T00:31:03Z  url=https://github.com/rmoraru26/DB_Project_2026/actions/runs/43534008497
+   job 132258451679: Unit tests and static checks (no server)  -> success  (2026-11-14T00:24:48Z .. 2026-11-14T00:25:44Z, runner ['ubuntu-24.04'])
+   job 132258814689: Build the DLL and load it into native Windows MariaDB 13.0.2  -> success  (2026-11-14T00:25:46Z .. 2026-11-14T00:31:02Z, runner ['windows-2022'])
+   job 132258815055: make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)  -> success  (2026-11-14T00:25:46Z .. 2026-11-14T00:30:20Z, runner ['ubuntu-24.04'])

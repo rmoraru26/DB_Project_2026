@@ -1,0 +1,144 @@
+2026-11-16 11:35:22+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:13.0.2+maria~ubu2604 started.
+2026-11-16 11:35:23+00:00 [Warn] [Entrypoint]: /sys/fs/cgroup///memory.pressure not writable, functionality unavailable to MariaDB
+2026-11-16 11:35:23+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2026-11-16 11:35:23+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:13.0.2+maria~ubu2604 started.
+2026-11-16 11:35:23+00:00 [Note] [Entrypoint]: Initializing database files
+2026-11-16 11:35:23 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+create_uring failed: falling back to libaio
+2026-11-16 11:35:30+00:00 [Note] [Entrypoint]: Database files initialized
+2026-11-16 11:35:30+00:00 [Note] [Entrypoint]: Starting temporary server
+2026-11-16 11:35:30+00:00 [Note] [Entrypoint]: Waiting for server startup
+2026-11-16 11:35:30 0 [Note] Starting MariaDB 13.0.2-MariaDB-ubu2604 source revision 620a4b5624222048fece7fe1789978ae0675cae2 server_uid UArVwV7nxwdqP30sJy8p1hTS0Q4= as process 103
+2026-11-16 11:35:30 0 [Note] InnoDB: Compressed tables use zlib 1.3.1
+2026-11-16 11:35:30 0 [Note] InnoDB: Number of transaction pools: 1
+2026-11-16 11:35:30 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+2026-11-16 11:35:30 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+create_uring failed: falling back to libaio
+2026-11-16 11:35:30 0 [Note] InnoDB: Using Linux native AIO
+2026-11-16 11:35:30 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388608m, innodb_buffer_pool_size=128m
+2026-11-16 11:35:30 0 [Note] InnoDB: Completed initialization of buffer pool
+2026-11-16 11:35:30 0 [Note] InnoDB: File system buffers for log disabled (block size=4096 bytes)
+2026-11-16 11:35:30 0 [Note] InnoDB: End of log at LSN=45418
+2026-11-16 11:35:30 0 [Note] InnoDB: Opened 3 undo tablespaces
+2026-11-16 11:35:30 0 [Note] InnoDB: 128 rollback segments in 3 undo tablespaces are active.
+2026-11-16 11:35:30 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+2026-11-16 11:35:30 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+2026-11-16 11:35:30 0 [Note] InnoDB: log sequence number 45418; transaction id 14
+2026-11-16 11:35:30 0 [Note] Plugin 'FEEDBACK' is disabled.
+2026-11-16 11:35:30 0 [Note] Plugin 'wsrep-provider' is disabled.
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_file_path=/var/log/campus_audit/campus_audit.jsonl'
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_databases=university_resources'
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_connections=FAILED'
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_log_reads=OFF'
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_max_sql_length=1024'
+2026-11-16 11:35:30 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_readable_by_all=ON'
+2026-11-16 11:35:31 0 [Note] mariadbd: Event Scheduler: Loaded 0 events
+2026-11-16 11:35:31 0 [Note] Replication not automatically started: --skip-slave-start was specified
+2026-11-16 11:35:31 0 [Note] mariadbd: ready for connections.
+Version: '13.0.2-MariaDB-ubu2604'  socket: '/run/mysqld/mysqld.sock'  port: 0  mariadb.org binary distribution
+2026-11-16 11:35:31+00:00 [Note] [Entrypoint]: Temporary server started.
+2026-11-16 11:35:33+00:00 [Note] [Entrypoint]: Securing system users (equivalent to running mysql_secure_installation)
+
+2026-11-16 11:35:33+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/10-schema.sql
+
+
+2026-11-16 11:35:34+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/20-migration-001.sql
+
+
+2026-11-16 11:35:34+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/21-migration-002.sql
+
+
+2026-11-16 11:35:35+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/22-migration-003.sql
+
+
+2026-11-16 11:35:35+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/30-triggers.sql
+
+
+2026-11-16 11:35:36+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/40-seed.sql
+
+
+2026-11-16 11:35:36+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/41-catalogue.sql
+
+
+2026-11-16 11:35:36+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/50-migration-004.sql
+
+
+2026-11-16 11:35:36+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/51-migration-005.sql
+
+
+2026-11-16 11:35:36+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/52-migration-006.sql
+
+
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/53-migration-007.sql
+
+
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/54-migration-008.sql
+
+
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: sourcing /docker-entrypoint-initdb.d/60-app-account.sh
+
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: Stopping temporary server
+2026-11-16 11:35:37 0 [Note] mariadbd (initiated by: unknown): Normal shutdown
+2026-11-16 11:35:37 0 [Note] InnoDB: FTS optimize thread exiting.
+2026-11-16 11:35:37 0 [Note] InnoDB: Starting shutdown...
+2026-11-16 11:35:37 0 [Note] InnoDB: Dumping buffer pool(s) to /var/lib/mysql/ib_buffer_pool
+2026-11-16 11:35:37 0 [Note] InnoDB: Buffer pool(s) dump completed at 261116 11:35:37
+2026-11-16 11:35:37 0 [Note] InnoDB: Removed temporary tablespace data file: "./ibtmp1"
+2026-11-16 11:35:37 0 [Note] Shutdown completed; log sequence number 252449; transaction id 91
+2026-11-16 11:35:37 0 [Note] mariadbd: Shutdown complete
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: Temporary server stopped
+
+2026-11-16 11:35:37+00:00 [Note] [Entrypoint]: MariaDB init process done. Ready for start up.
+
+2026-11-16 11:35:37 0 [Note] Starting MariaDB 13.0.2-MariaDB-ubu2604 source revision 620a4b5624222048fece7fe1789978ae0675cae2 server_uid UArVwV7nxwdqP30sJy8p1hTS0Q4= as process 1
+2026-11-16 11:35:38 0 [Note] InnoDB: Compressed tables use zlib 1.3.1
+2026-11-16 11:35:38 0 [Note] InnoDB: Number of transaction pools: 1
+2026-11-16 11:35:38 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+2026-11-16 11:35:38 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+create_uring failed: falling back to libaio
+2026-11-16 11:35:38 0 [Note] InnoDB: Using Linux native AIO
+2026-11-16 11:35:38 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388608m, innodb_buffer_pool_size=128m
+2026-11-16 11:35:38 0 [Note] InnoDB: Completed initialization of buffer pool
+2026-11-16 11:35:38 0 [Note] InnoDB: File system buffers for log disabled (block size=4096 bytes)
+2026-11-16 11:35:38 0 [Note] InnoDB: End of log at LSN=252449
+2026-11-16 11:35:38 0 [Note] InnoDB: Opened 3 undo tablespaces
+2026-11-16 11:35:38 0 [Note] InnoDB: 128 rollback segments in 3 undo tablespaces are active.
+2026-11-16 11:35:38 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+2026-11-16 11:35:38 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+2026-11-16 11:35:38 0 [Note] InnoDB: log sequence number 252449; transaction id 92
+2026-11-16 11:35:38 0 [Note] Plugin 'FEEDBACK' is disabled.
+2026-11-16 11:35:38 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+2026-11-16 11:35:38 0 [Note] Plugin 'wsrep-provider' is disabled.
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_file_path=/var/log/campus_audit/campus_audit.jsonl'
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_databases=university_resources'
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_connections=FAILED'
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_log_reads=OFF'
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_max_sql_length=1024'
+2026-11-16 11:35:38 0 [Warning] mariadbd: unknown variable 'loose_campus_audit_readable_by_all=ON'
+2026-11-16 11:35:38 0 [Note] InnoDB: Buffer pool(s) load completed at 261116 11:35:38
+2026-11-16 11:35:39 0 [Note] Server socket created on IP: '0.0.0.0', port: '3306'.
+2026-11-16 11:35:39 0 [Note] Server socket created on IP: '::', port: '3306'.
+2026-11-16 11:35:39 0 [Note] mariadbd: Event Scheduler: Loaded 0 events
+2026-11-16 11:35:39 0 [Note] mariadbd: ready for connections.
+Version: '13.0.2-MariaDB-ubu2604'  socket: '/run/mysqld/mysqld.sock'  port: 3306  mariadb.org binary distribution
+2026-11-16 11:35:45 20 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-16 18:03:35 13711 [Warning] Access denied for user 'nobody_demo'@'localhost' (using password: YES)
+2026-11-16 18:07:32 13868 [Warning] mariadbd: campus_audit: The audit log path is empty
+2026-11-16 18:07:32 13869 [Warning] mariadbd: campus_audit: campus_audit_file_path cannot be NULL
+2026-11-16 18:07:33 13870 [Warning] mariadbd: campus_audit: Cannot open audit log '/var/log/campus_audit/no_such_dir_1794852451_3491/x.jsonl': No such file or directory (errno 2)
+2026-11-16 18:07:33 13871 [Warning] mariadbd: campus_audit: The audit log path names a directory, not a file: some_dir/
+2026-11-16 18:07:33 13872 [Warning] mariadbd: campus_audit: Cannot open audit log '/var/log/campus_audit/no_such_dir_1794852451_3491/x.jsonl': No such file or directory (errno 2)
+2026-11-16 18:07:33 13874 [Warning] mariadbd: campus_audit: unsupported character in database name 'bad name'
+2026-11-16 18:07:33 13875 [Warning] mariadbd: campus_audit: empty database name in list
+2026-11-16 18:07:33 13876 [Warning] mariadbd: campus_audit: '*' cannot be combined with explicit database names
+2026-11-16 18:07:33 13877 [Warning] mariadbd: campus_audit: unsupported character in user name 'x;DROP'
+2026-11-16 18:07:33 13882 [Warning] mariadbd: campus_audit: Cannot open audit log '/root/campus_audit_denied.jsonl': Permission denied (errno 13)
+2026-11-16 18:07:41 14026 [Warning] Access denied for user 'ca_test_user'@'172.25.0.4' (using password: YES)
+2026-11-16 18:07:42 14044 [Warning] Access denied for user 'ca_test_user'@'172.25.0.4' (using password: YES)
+2026-11-16 18:07:42 14052 [Warning] Access denied for user 'ca_test_user'@'172.25.0.4' (using password: YES)
+2026-11-16 18:07:46 14069 [Warning] Access denied for user 'ca_test_user'@'172.25.0.4' (using password: YES)
+2026-11-16 18:07:57 14211 [Warning] mariadbd: campus_audit: Write to audit log failed: No space left on device (errno 28); audit records are being dropped (fail-open), retrying every 5 s
+2026-11-16 18:08:04 14264 [Warning] Plugin 'campus_audit' is of maturity level beta while the server is stable
+2026-11-16 18:08:28 14551 [Warning] Access denied for user 'pwhash_test_5952'@'172.25.0.4' (using password: YES)
+2026-11-16 18:09:33 14743 [Warning] Access denied for user 'campus_app'@'172.25.0.4' (using password: YES)
+2026-11-16 18:09:35 14768 [Warning] Access denied for user 'audit_lab_intruder'@'172.25.0.4' (using password: YES)

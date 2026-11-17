@@ -1,0 +1,17 @@
+### post_start (rerun with MSYS path conversion off) 2026-11-14T02:05:14Z
+-> applying idempotent migrations and refreshing campus_app (existing data is kept)
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+(SKIP_SEED=1: seed.sql not loaded)
+-> database/migrations/004_remove_shared_admin.sql
+-> database/migrations/005_local_admin_bootstrap_state.sql
+-> database/migrations/006_cancelled_loan_status.sql
+-> application account campus_app
+Database setup complete.
+-> application account campus_app (password from .env)
+-> installing the campus_audit plugin
+-> campus_audit plugin: ACTIVE
+rc=0

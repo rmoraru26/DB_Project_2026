@@ -21,7 +21,7 @@ $project = Join-Path $root 'project copy'
 $bin = Join-Path $root 'fake bin'
 $log = Join-Path $root 'docker calls.log'
 New-Item -ItemType Directory -Path (Join-Path $project 'scripts'), $bin | Out-Null
-foreach ($file in 'frantastic.cmd', 'frantastic.ps1', '.env.example', 'scripts/windows_security.ps1', 'scripts/windows_compose_url.ps1', 'scripts/windows_launcher.ps1') {
+foreach ($file in 'frantastic.cmd', 'frantastic.ps1', '.env.example', 'scripts/windows_security.ps1', 'scripts/windows_compose_url.ps1', 'scripts/windows_launcher.ps1', 'scripts/windows_demo_credentials.ps1') {
     Copy-Item -LiteralPath (Join-Path $repoRoot $file) -Destination (Join-Path $project $file)
 }
 $fakeDocker = @(
@@ -76,7 +76,11 @@ try {
     Assert-True ($resolved -ceq (Join-Path $bin 'docker.cmd')) 'the fake docker.cmd is the first docker on PATH'
 
     $r = Invoke-Launcher 'help'
-    Assert-True ($r.ExitCode -eq 0 -and $r.Text -like '*Usage: .\frantastic.cmd up|demo|test|down|reset-admin*' -and $r.Calls.Count -eq 0) 'help: dispatched without any Docker call'
+    Assert-True ($r.ExitCode -eq 0 -and $r.Text -like '*Usage: .\frantastic.cmd up|demo|test|down|reset-admin|reset-demo*' -and $r.Calls.Count -eq 0) 'help: dispatched without any Docker call'
+    Assert-True ($r.Text -notlike '*campus-demo-2026*' -and $r.Text -like '*reset-demo*.demo-credentials*') 'help: names the demo credential file, no shared password'
+
+    $r = Invoke-Launcher 'reset-demo'
+    Assert-True ($r.ExitCode -eq 1 -and $r.Text -like '*No .env file*' -and @($r.Calls | Where-Object { $_ -like 'ARGS compose exec*' }).Count -eq 0) 'reset-demo without .env: stops before any container command'
 
     $r = Invoke-Launcher 'demo'
     Assert-True ($r.ExitCode -eq 1 -and $r.Text -like '*No .env file*' -and @($r.Calls | Where-Object { $_ -like 'ARGS compose exec*' }).Count -eq 0) 'demo without .env: stops before any container command'

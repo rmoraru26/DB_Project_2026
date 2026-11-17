@@ -30,6 +30,14 @@ booking's literal values (`docs/evidence/exp-server-audit.txt`).
 | schema, table, query id, error code | what was accessed and the outcome | low |
 | digest (identifiers, keywords) | which kind of statement | table/column names; long statements cut at `max_sql_length` |
 
+With `campus_audit_statement_scope = SESSION` (plugin 1.2.0) the plugin additionally writes
+`statement` records for statements that raise no table event (`"scope":"session"`). They have the
+same fields as every other statement record and the same literal-free digest; nothing new about
+their content is recorded, only more statements: `SET`, `COMMIT`, `ROLLBACK`, DML under
+`LOCK TABLES`, view and routine DDL. `SET @app_user_id = ?` appears with the value masked;
+`SET PASSWORD = ?` and `CREATE USER ... IDENTIFIED BY ?` likewise. The keyword `NULL` is a keyword,
+not a literal, and stays visible.
+
 Retention and access are the administrator's responsibility.  The plugin creates its log without
 any permission for other OS users.  But `LOAD_FILE()`, which the project's import uses, reads only
 files that are readable by all (`S_IROTH`, checked in `Item_load_file::val_str`), so on Linux the
@@ -106,13 +114,71 @@ is written as a `config_change` record followed by the attributed `SET GLOBAL` s
 uninstall/shutdown writes `plugin_stop` with counters, so changes are visible in the log itself.
 The file is not signed or hash-chained; forwarding it to a separate log host would be the next step.
 
+What the default configuration does **not** record, measured on 13.0.2 (`docs/experiments.md`,
+experiments 21 to 24):
+
+- `DROP TRIGGER` on a row-history trigger. The server reports trigger DDL as *read* access to the
+  trigger's table, so it is recorded only with `campus_audit_log_reads = ON`. Somebody with the
+  TRIGGER privilege can therefore switch off the row history of one table without a plugin record.
+  The compensating control is a comparison, not a log: `make doctor` checks that every trigger of
+  `database/triggers.sql` exists and names the missing ones, and `make migrate` re-creates them.
+- Statements under `LOCK TABLES`, `DROP VIEW`, routine DDL, `COMMIT` and `ROLLBACK`. They are
+  recorded with `campus_audit_statement_scope = SESSION`.
+- With both options on, one case remains: table-less DDL that names a watched object with a
+  qualified name from a session whose default schema is not watched and whose last table access was
+  to another schema. The audit API names no object for such a statement.
+
+An installation that needs these statements in its trail should set both options in the server's
+option file (`loose_campus_audit_statement_scope = SESSION`, `loose_campus_audit_log_reads = ON`)
+and accept the larger log.
+
 ## Secrets in the repository
 
-- No real passwords are committed.  `.env.example` contains placeholders; `.env` is git-ignored and
-  `scripts/check_repo.py` fails CI if a `.env`, `.pem` or `.key` file is tracked.
-- The student demo password `campus-demo-2026` is intentionally public and can authenticate only
-  seeded student identities. The seeded Dana identity is migrated to the student role; no seeded
-  administrator uses this password. Never reuse it outside a local demo database.
+- No password is committed, and none is shared between installations. `.env.example` contains
+  placeholders. `.env`, `.admin-credentials`, `.demo-credentials`, their `.pending` and temporary
+  forms and the Windows writer's staging files are git-ignored and excluded from Docker build
+  contexts. `scripts/check_repo.py` fails CI if one of these ignore rules is missing (it asks
+  `git check-ignore` for each file name), if such a file is tracked, or if a `.pem` or `.key` file
+  is tracked. The Git history of every branch was searched for file names of this kind on
+  2026-11-15: none was ever committed (`docs/evidence/phase1/`).
+- **Seeded identities cannot log in.** `database/seed.sql` stores the placeholder
+  `TEST_HASH_NOT_FOR_LOGIN` for the three fictional people; it is not a hash of anything. A
+  pre-release version stored hashes of a demo password that was published in its documentation.
+  That password is no longer named anywhere outside the tests which prove that it opens no
+  account, and `scripts/check_repo.py` refuses its reintroduction. A database volume created by
+  that version still holds those hashes: `make doctor` warns about it and prints the statement that
+  disables them.
+- **The demo student is generated per installation** (`demo.student@frantastic.local`):
+
+  | Property | How it is achieved |
+  |---|---|
+  | random password | `secrets.token_urlsafe(18)`: 144 bits, 24 characters, generated in the web container (`frontend/bootstrap_demo.py`) |
+  | stored as a hash | the same Werkzeug function as every registration; only the hash reaches MariaDB, through `bootstrap_local_demo_student()` (migration 007) |
+  | plain text in one place | `.demo-credentials` in the project folder: mode 0600 on Linux, an owner-only DACL on Windows; two lines, e-mail address and password |
+  | never printed | it travels in environment variables of `docker compose exec -e NAME`; the launchers print the file's name, not its content (tested: no generated password in any output) |
+  | student only | inserted with the role `student`; the web account can neither change roles nor call the procedures (ER 1143, ER 1370) — this grant is the primary protection. The CHECK constraint `chk_users_demo_is_student` is defence in depth: it refuses any other role for this address in an ordinary write by any account, `root` included (ER 4025), but `root` can bypass it deliberately (`SET SESSION check_constraint_checks = 0`, or dropping the constraint). The web account can, under its column grants, create a student at this address through `/register` before the bootstrap does, and change the row's password hash through the password-change page |
+  | not rotated by a restart | `bootstrap_local_demo_student()` never changes an existing row; an ordinary start only verifies the saved password against the stored hash |
+  | safe to retry | the new password is written to `.demo-credentials.pending` before MariaDB is changed and promoted afterwards; the next start completes or discards a leftover pending file according to what MariaDB holds |
+
+  The ordinary start (`make up`, `frantastic.cmd up`) therefore has exactly five outcomes:
+
+  | Credential file | Account in MariaDB | What happens |
+  |---|---|---|
+  | absent | absent | a password is generated, the account created, the file saved |
+  | present | matches | nothing |
+  | present | absent (database volume re-created) | the account is created with the **saved** password; the file is not replaced |
+  | absent | present (volume from another checkout, or the file was deleted) | **nothing is changed**; a notice names the recovery |
+  | present | present, does not match (password changed in the web app, or a foreign file) | **nothing is changed**; a notice names the recovery |
+
+  **Recovery** is explicit: `make reset-demo` (Windows: `frantastic.cmd reset-demo`) generates a new
+  password, replaces the stored hash through `rotate_local_demo_student()`, verifies the login and
+  replaces the file. It refuses to act if the account is not a student. A malformed credential
+  file, a symbolic link in its place, or two files that both disagree with MariaDB stop the start
+  with an error and are left untouched.
+
+  What this does not protect against: anyone who can read the project folder as the same OS user
+  can read the file, and anyone with the MariaDB administrator password can replace the hash. The
+  account is meant for a demonstration on `127.0.0.1`.
 - `make up` reconciles the canonical local administrator with the database's one-time bootstrap gate.
   The generated credential is saved with mode 0600 and is never printed by setup. Windows setup
   disables inherited access and verifies that only the current user, SYSTEM and local Administrators
@@ -160,6 +226,8 @@ The file is not signed or hash-chained; forwarding it to a separate log host wou
   | `database/app_account.sh` | Fixed account/privilege statements, validated host, generated native-password hashes | Controlled SQL construction. Host regex excludes quotes; password hashes are generated by the helper and hash shape is constrained by the MariaDB client syntax. |
   | `scripts/repair_credentials.sh` | Generated native-password hashes | Generated values, checked as `*` plus 40 hex digits before SQL. No user SQL is accepted. |
   | `scripts/provision_local_admin_db.sh` | Generated Werkzeug hash passed to a fixed stored-procedure call | Generated value restricted to hash characters excluding SQL quote/backslash; the database routine controls account identity and role. |
+  | `scripts/provision_local_demo_db.sh` | Generated Werkzeug hash passed to a fixed stored-procedure call | The same pattern and the same restriction; the procedures of migration 007 fix the account identity and role and check the hash prefix again. |
+  | `scripts/rotate_log.sh` | The server's own log path and a timestamp, the operator's `--import <file>` argument, and the names of the temporary part files (`<dir>/.import-parts.XXXXXXXX/part-NNNNNN`), in a `CALL import_plugin_log('...')` | The log path is read from `@@GLOBAL.campus_audit_file_path`; the `--import` argument comes from the operator who already holds the administrator password; the part names are generated by `mktemp` and `split`. Any path containing a quote or backslash is refused before any SQL is built. The part files are copies of an existing log, readable by all like the log itself (the log directory keeps other users out) and removed after the import. |
   | `tests/plugin/run_plugin_tests.sh`, `tests/database/test_native_password_hash.sh` | Run IDs, generated fixture accounts/passwords; one test SQL literal has explicit escaping | Test-only generated data. The password-hash test exercises quotes and backslashes through `sql_literal`; not a production query interface. |
 
   No remaining application SQL site was found where browser-controlled data changes SQL syntax. The
@@ -181,8 +249,8 @@ The file is not signed or hash-chained; forwarding it to a separate log host wou
 - `login?next=` accepts only the value `lab`, so it cannot be used as an open redirect.
 - The app is served by waitress, a production WSGI server (`python app.py`, also in Docker); Flask's
   development server and debug mode are not used.
-- Not implemented: HTTPS (the demo binds to 127.0.0.1). The student demo password is public and
-  intended only for local learning. Do not expose the demo app beyond `127.0.0.1` with seed data loaded.
+- Not implemented: HTTPS (the demo binds to 127.0.0.1). The generated demo and administrator
+  accounts are meant for local use; do not expose the demo app beyond `127.0.0.1`.
 
 ## Plugin event-loss counters
 
@@ -202,8 +270,8 @@ restart before that write cannot preserve the unfinished count.
 
 ## Runtime configuration synchronization
 
-The event callback reads dynamic scalar settings (`log_reads`, `connections`, `max_sql_length`) from
-atomic runtime copies. MariaDB's plugin variable update callbacks publish validated values into those
+The event callback reads dynamic scalar settings (`log_reads`, `connections`, `statement_scope`,
+`max_sql_length`) from atomic runtime copies. MariaDB's plugin variable update callbacks publish validated values into those
 copies; callback reads use relaxed atomic operations because each scalar has no dependent data and
 does not publish pointers. String filters use the existing reader/writer lock, and log-path state uses
 the sink mutex. This avoids unsynchronized C++ scalar accesses without adding a mutex to the hot path.

@@ -18,6 +18,7 @@ run_suite() {
 run_suite "Plugin C++ unit tests" make -C plugin test
 run_suite "Repository checks" bash -c 'python3 scripts/check_repo.py && python3 tests/test_source_distribution.py'
 run_suite "Administrator credential and diagnostic tests" bash tests/shell/test_admin_auth.sh
+run_suite "Demo-student credential bootstrap (state machine, no server)" bash tests/shell/test_demo_bootstrap.sh
 run_suite "Database installation order and account SQL (no server)" bash tests/shell/test_database_setup.sh
 # Container-to-container tests use the private Compose network, not a public
 # endpoint. Disable TLS and its default certificate-verification policy so
@@ -30,14 +31,15 @@ export CHANGE_USER_CLIENT=/usr/local/bin/campus_change_user
 export CU_HOST=${DB_HOST:-mariadb}
 export CU_PORT=${DB_PORT:-3306}
 run_suite "Plugin integration tests" bash tests/plugin/run_plugin_tests.sh
-run_suite "Database tests" bash -c 'bash tests/database/test_legacy_admin_migration.sh && bash tests/database/test_cancelled_loan_migration.sh && bash tests/database/test_audit_triggers.sh && bash tests/database/test_app_account_grants.sh && bash tests/database/test_native_password_hash.sh && bash tests/database/run_database_tests.sh'
+run_suite "Database tests" bash -c 'bash tests/database/test_legacy_admin_migration.sh && bash tests/database/test_cancelled_loan_migration.sh && bash tests/database/test_audit_triggers.sh && bash tests/database/test_app_account_grants.sh && bash tests/database/test_demo_student.sh && bash tests/database/test_catalogue.sh && bash tests/database/test_log_import.sh && bash tests/database/test_native_password_hash.sh && bash tests/database/run_database_tests.sh'
 
 export RUN_DB_TESTS=1
 export DB_USER=${APP_DB_USER:-campus_app}
 export DB_PASSWORD=${CAMPUS_APP_PASSWORD:?CAMPUS_APP_PASSWORD is required for application tests}
 export SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required for application tests}
 app_command=(/opt/frantastic-test-venv/bin/python -m pytest -q frontend/tests)
-if [ -n "${TEST_ADMIN_EMAIL:-}" ] && [ -n "${TEST_ADMIN_PASSWORD:-}" ]; then export TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; fi
+if [ -n "${TEST_ADMIN_EMAIL:-}" ] && [ -n "${TEST_ADMIN_PASSWORD:-}" ]; then export TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; else unset TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; fi
+if [ -n "${TEST_DEMO_EMAIL:-}" ] && [ -n "${TEST_DEMO_PASSWORD:-}" ]; then export TEST_DEMO_EMAIL TEST_DEMO_PASSWORD; else unset TEST_DEMO_EMAIL TEST_DEMO_PASSWORD; fi
 run_suite "Application and Audit Lab tests" "${app_command[@]}"
 
 passed=0; failed=0; skipped=0

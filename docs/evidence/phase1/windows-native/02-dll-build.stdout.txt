@@ -1,0 +1,2 @@
+Building campus_audit.dll against <scratch>\win-native\mdb\mariadb-13.0.2-winx64\include\mysql\server
+Built <scratch>\win-native\build2\campus_audit.dll

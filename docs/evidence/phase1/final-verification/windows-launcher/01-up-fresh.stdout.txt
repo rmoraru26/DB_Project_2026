@@ -1,0 +1,588 @@
+Using the existing .env without changing it.
+#1 [internal] load local bake definitions
+#1 reading from stdin 819B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 30B 0.0s
+#2 transferring dockerfile: 5.70kB 0.1s done
+#2 DONE 0.2s
+
+#3 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 372B 0.0s done
+#4 DONE 0.2s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 715.03kB 0.2s done
+#6 DONE 0.4s
+
+#7 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [build 3/9] WORKDIR /src/plugin
+#8 CACHED
+
+#9 [build 4/9] COPY plugin/ ./
+#9 DONE 0.3s
+
+#10 [build 5/9] RUN make clean && make test && make plugin
+#10 0.481 rm -rf build
+#10 0.484 mkdir -p build
+#10 0.493 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+#10 3.027 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+#10 4.731 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+#10 5.913 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+#10 6.933 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+#10 7.844 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+#10 8.030 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+#10 8.693 == test_record_format
+#10 8.697 PASS: JSON plain string
+#10 8.697 PASS: JSON quotes and backslashes escaped
+#10 8.697 PASS: JSON newline/tab/CR escaped
+#10 8.697 PASS: JSON control characters escaped
+#10 8.697 PASS: JSON embedded NUL escaped, length respected
+#10 8.697 PASS: JSON valid UTF-8 kept as is
+#10 8.697 PASS: JSON invalid UTF-8 replaced by U+FFFD
+#10 8.697 PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+#10 8.697 PASS: JSON overlong encoding rejected
+#10 8.697 PASS: JSON NULL pointer becomes null
+#10 8.697 PASS: JSON empty string stays empty string
+#10 8.697 PASS: JSON overflow detected instead of writing past the buffer
+#10 8.697 PASS: JSON overflow keeps buffer NUL-terminated
+#10 8.697 PASS: bounded field cut before a multi-byte character
+#10 8.697 PASS: JSON numbers, booleans and null
+#10 8.697 PASS: digest masks string and number literals
+#10 8.697 PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+#10 8.697 PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+#10 8.697 PASS: the same rule hides the rest of a default-mode escaped quote
+#10 8.697 PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+#10 8.697 PASS: digest hides passwords given as literals
+#10 8.697 PASS: digest hides password hashes
+#10 8.697 PASS: digest masks hex, bit, national and introducer literals
+#10 8.697 PASS: digest masks decimals and exponents
+#10 8.697 PASS: digest keeps identifiers containing digits and backtick identifiers
+#10 8.697 PASS: digest keeps doubled backticks inside identifiers
+#10 8.697 PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+#10 8.697 PASS: digest removes all comment styles including executable comments
+#10 8.697 PASS: digest collapses whitespace
+#10 8.697 PASS: '--' without trailing space is not a comment
+#10 8.697 PASS: digest of empty statement
+#10 8.697 PASS: digest handles an unterminated string
+#10 8.697 PASS: digest handles an unterminated comment
+#10 8.697 PASS: digest keeps variable names but masks quoted ones
+#10 8.697 PASS: digest truncates at max length and reports it
+#10 8.697 PASS: digest never ends inside a UTF-8 sequence
+#10 8.697 PASS: digest with max length 0 is empty and marked truncated
+#10 8.697 PASS: 100 kB literal collapses to one '?'
+#10 8.697 PASS: digest of a NULL statement
+#10 8.697 PASS: database list parsed and trimmed
+#10 8.697 PASS: database match is case-insensitive
+#10 8.697 PASS: database match needs the whole name
+#10 8.697 PASS: NULL database never matches
+#10 8.697 PASS: empty database list watches nothing
+#10 8.697 PASS: empty list matches nothing
+#10 8.697 PASS: '*' accepted for databases
+#10 8.697 PASS: '*' matches user schemas
+#10 8.697 PASS: '*' never matches system schemas
+#10 8.697 PASS: the four system schemas are recognised
+#10 8.697 PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+#10 8.697 PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+#10 8.697 PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+#10 8.697 PASS: user schemas, prefixes and empty names are not system schemas
+#10 8.697 PASS: empty element rejected
+#10 8.697 PASS: trailing comma rejected
+#10 8.697 PASS: space inside a name rejected
+#10 8.697 PASS: punctuation rejected
+#10 8.697 PASS: '*' cannot be mixed with names
+#10 8.697 PASS: '*' rejected for users
+#10 8.697 PASS: more than 16 names rejected
+#10 8.697 PASS: name longer than 128 characters rejected
+#10 8.697 PASS: user list with '.', '-' and '@' accepted
+#10 8.697 PASS: user match is exact and case-sensitive
+#10 8.697 PASS: user match needs the whole name
+#10 8.697 PASS: user match: a login that is only a prefix of an excluded name is still audited
+#10 8.697 PASS: timestamp of the epoch
+#10 8.697 PASS: timestamp 2026-10-25
+#10 8.697 PASS: timestamp on a leap day
+#10 8.697 PASS: timestamp one second before the epoch
+#10 8.697 PASS: timestamp exactly one day before the epoch
+#10 8.697 PASS: bounded_length stops at the limit and accepts NULL
+#10 8.697 PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+#10 8.697 PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+#10 8.697 PASS: login name is the part of the account before '['
+#10 8.697 PASS: account without '[', NULL account and the length bound
+#10 8.697 Failures: 0
+#10 8.698 == test_log_sink
+#10 8.701 PASS: NULL path rejected
+#10 8.701 PASS: empty path rejected
+#10 8.701 PASS: directory-like path rejected
+#10 8.701 PASS: directory-like path ending in a backslash rejected
+#10 8.701 PASS: control character in path rejected
+#10 8.701 PASS: over-long path rejected
+#10 8.701 PASS: missing directory reported as open_Failed
+#10 8.701 PASS: open failure message carries errno
+#10 8.701 PASS: sink stays closed after failed open
+#10 8.701 PASS: write on closed sink fails
+#10 8.701 PASS: valid path opened
+#10 8.701 PASS: first record written
+#10 8.701 PASS: failed re-open keeps the previous file open
+#10 8.701 PASS: previous file still writable
+#10 8.701 PASS: re-opened file is appended to
+#10 8.701 PASS: file holds all records in order
+#10 8.701 PASS: a newly created log file has no permission bits for others
+#10 8.701 PASS: readable_by_all: an existing log file becomes readable by others
+#10 8.701 PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+#10 8.701 PASS: opened for EBADF test
+#10 8.701 PASS: write on a dead descriptor reported as write_Failed
+#10 8.701 PASS: write failure message carries errno
+#10 8.701 PASS: /dev/full write reported as write_Failed (ENOSPC)
+#10 8.701 Failures: 0
+#10 8.702 == test_automatic_errors
+#10 8.704 PASS: Empty path
+#10 8.704 PASS: Missing directory
+#10 8.704 PASS: Valid path
+#10 8.704 PASS: validate: NULL path
+#10 8.704 PASS: validate: empty path
+#10 8.704 PASS: validate: trailing forward slash
+#10 8.704 PASS: validate: trailing backslash
+#10 8.704 PASS: validate: newline in path
+#10 8.704 PASS: validate: DEL in path
+#10 8.704 PASS: validate: 513-byte path
+#10 8.704 PASS: validate: 512-byte path
+#10 8.704 PASS: validate: lexically valid path
+#10 8.704 PASS: validate: no file is created
+#10 8.704 Failures: 0
+#10 8.705 == test_error_reporter
+#10 8.707 Reported: Cannot open audit log
+#10 8.707 PASS: all reporter checks
+#10 8.708 == test_runtime_config
+#10 8.712 PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+#10 8.712 PASS: six reader threads completed 100000 reads each while one thread wrote
+#10 8.712 PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+#10 8.712 PASS: after the writer finished every setting holds the last value stored
+#10 8.712 Checks: 4, Failures: 0
+#10 8.712 == test_gap_accounting
+#10 8.714 PASS: a new accounting object has lost nothing
+#10 8.714 PASS: every lost event is counted
+#10 8.714 PASS: a marker that could not be written is reported as not written
+#10 8.714 PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+#10 8.714 PASS: events lost after the failed marker are added to the same outage
+#10 8.714 PASS: a written marker is reported as written
+#10 8.714 PASS: only a written marker resets the count
+#10 8.714 PASS: a new outage starts counting from zero
+#10 8.714 Checks: 8, Failures: 0
+#10 8.714 == test_statement_scope
+#10 8.715 PASS: TABLES: a statement without any fact is not recorded
+#10 8.715 PASS: a statement with a recorded table event is recorded without extra marks
+#10 8.715 PASS: an accepted SET GLOBAL campus_audit_* is recorded
+#10 8.715 PASS: SESSION: a statement with a recorded table event is not marked scope=session
+#10 8.715 PASS: TABLES: a refusal outside a watched default schema is not recorded
+#10 8.715 PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+#10 8.715 PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+#10 8.715 PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+#10 8.715 PASS: TABLES: the latch alone records nothing
+#10 8.715 PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+#10 8.715 PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+#10 8.715 PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+#10 8.715 PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+#10 8.715 PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+#10 8.715 PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+#10 8.715 PASS: SESSION: a table-less refusal carries both marks
+#10 8.715 PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+#10 8.715 PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+#10 8.715 PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+#10 8.715 PASS: SESSION: with both conditions met the statement is recorded
+#10 8.715 PASS: Query and Execute are SQL commands
+#10 8.715 PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+#10 8.715 PASS: the command name must match exactly; NULL and empty names are not SQL commands
+#10 8.715 PASS: an unrecorded table event marks the statement as seen, not as recorded
+#10 8.715 PASS: a recorded event of the same statement sets the latch
+#10 8.715 PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+#10 8.715 PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+#10 8.715 PASS: and a recorded event sets it again
+#10 8.715 PASS: LOCK TABLES on a watched table: one table event, recorded
+#10 8.715 PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+#10 8.715 PASS: UPDATE under LOCK TABLES: recorded
+#10 8.715 PASS: a failing statement under LOCK TABLES: recorded
+#10 8.715 PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+#10 8.715 PASS: the next statement on another schema is not recorded
+#10 8.715 PASS: and ends rule (b): a following table-less statement is not recorded
+#10 8.715 PASS: TABLES: LOCK TABLES on a watched table is recorded
+#10 8.715 PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+#10 8.715 PASS: rule (a): DROP VIEW in a watched default schema is recorded
+#10 8.715 PASS: rule (a): COMMIT in a watched default schema is recorded
+#10 8.715 PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+#10 8.715 PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+#10 8.715 PASS: INSERT into a watched table from another default schema is recorded
+#10 8.715 PASS: rule (b): the COMMIT that follows it is recorded
+#10 8.715 PASS: a statement on other tables is not recorded
+#10 8.715 PASS: and the COMMIT after that one is not recorded
+#10 8.715 PASS: a statement that touches another schema and a watched table is recorded
+#10 8.715 PASS: rule (b) holds after it
+#10 8.715 PASS: the order of its table events does not matter
+#10 8.715 PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+#10 8.715 PASS: the firing statement is recorded once, unmarked
+#10 8.715 PASS: the COMMIT after it is recorded: nothing is left open
+#10 8.715 PASS: TABLES: the same sequence gives exactly the firing statement
+#10 8.715 PASS: a routine's INSERT into a watched table is recorded as its own statement
+#10 8.715 PASS: a routine's SELECT from another schema is not recorded
+#10 8.715 PASS: the CALL itself raised no table event and is recorded, scope=session
+#10 8.715 PASS: a statement on a watched table
+#10 8.715 PASS: the Quit command that ends the connection is not recorded as a statement
+#10 8.715 PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+#10 8.715 PASS: a statement that also touched another user schema is classified and not recorded
+#10 8.715 PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+#10 8.715 PASS: rule (b): a system-schema event does not clear the latch
+#10 8.715 PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+#10 8.715 PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+#10 8.715 Checks: 63, Failures: 0
+#10 8.718 All unit test programs passed.
+#10 8.724 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+#10 8.724   -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+#10 8.724   src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+#10 11.78 built build/campus_audit.so (services: /usr/lib/x86_64-linux-gnu/libmysqlservices.a)
+#10 DONE 11.8s
+
+#11 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#11 DONE 0.2s
+
+#12 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#12 DONE 0.8s
+
+#13 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#13 DONE 0.3s
+
+#14 [build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#14 DONE 0.6s
+
+#15 [stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#15 CACHED
+
+#16 [stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#16 CACHED
+
+#17 [stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#17 CACHED
+
+#18 [stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#18 CACHED
+
+#19 [stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#19 DONE 0.1s
+
+#20 [stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#20 DONE 0.5s
+
+#21 [stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#21 DONE 0.5s
+
+#22 [stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#22 DONE 0.2s
+
+#23 [stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#23 DONE 0.2s
+
+#24 [stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#24 DONE 0.2s
+
+#25 [stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#25 DONE 0.2s
+
+#26 [stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#26 DONE 0.2s
+
+#27 [stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#27 DONE 0.2s
+
+#28 [stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#28 DONE 0.2s
+
+#29 [stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#29 DONE 0.2s
+
+#30 [stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#30 DONE 0.2s
+
+#31 [stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#31 DONE 0.2s
+
+#32 [stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#32 DONE 0.2s
+
+#33 [stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#33 DONE 0.3s
+
+#34 [stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#34 DONE 0.2s
+
+#35 [stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#35 DONE 0.2s
+
+#36 [stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#36 DONE 0.2s
+
+#37 [stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#37 DONE 0.2s
+
+#38 [stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#38 DONE 0.3s
+
+#39 [stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#39 0.467 + init_script=/docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.467 + chmod 0644 /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.484 + test -f /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.484 + test -r /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.484 + test ! -x /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.484 + stat -c %a /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.490 + test 644 = 644
+#39 DONE 0.5s
+
+#40 exporting to image
+#40 exporting layers
+#40 exporting layers 5.7s done
+#40 exporting manifest sha256:658fb0765a1b60d1ed0f5c4f3301e75694e12063adca129c3ba1bd284d9526a2
+#40 exporting manifest sha256:658fb0765a1b60d1ed0f5c4f3301e75694e12063adca129c3ba1bd284d9526a2 0.2s done
+#40 exporting config sha256:9dbe1376c31224edad8f9bdb9d008b8798b7be66764e186250215dc59c9c45c8 0.1s done
+#40 exporting attestation manifest sha256:02940fab7ae47bc0afca3ad38648c0d545b370d0e91892f0ef07cfd2d3521261 0.1s done
+#40 exporting manifest list sha256:a17068ed560a54ca50285bf2a0878ac73d0dea30fdb881bf206597a8522619ef
+#40 exporting manifest list sha256:a17068ed560a54ca50285bf2a0878ac73d0dea30fdb881bf206597a8522619ef 0.1s done
+#40 naming to docker.io/library/frt-finalw-28f2fc09-mariadb:13.0.2 done
+#40 unpacking to docker.io/library/frt-finalw-28f2fc09-mariadb:13.0.2
+#40 unpacking to docker.io/library/frt-finalw-28f2fc09-mariadb:13.0.2 2.0s done
+#40 DONE 8.3s
+
+#41 resolving provenance for metadata file
+#41 DONE 0.2s
+-> applying idempotent migrations and refreshing campus_app (existing data is kept)
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+(SKIP_SEED=1: seed.sql not loaded)
+-> database/catalogue.sql
+-> database/migrations/004_remove_shared_admin.sql
+-> database/migrations/005_local_admin_bootstrap_state.sql
+-> database/migrations/006_cancelled_loan_status.sql
+-> database/migrations/007_local_demo_student.sql
+-> database/migrations/008_import_plugin_log_errors.sql
+-> application account campus_app
+Database setup complete.
+-> application account campus_app (password from .env)
+-> installing the campus_audit plugin
+-> campus_audit plugin: ACTIVE
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.53kB done
+#1 DONE 0.0s
+
+#2 [mariadb internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 5.70kB 0.0s done
+#2 DONE 0.2s
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 318B 0.0s done
+#3 DONE 0.3s
+
+#4 [web internal] load metadata for docker.io/library/python:3.13.17-slim
+#4 ...
+
+#5 [mariadb internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 DONE 0.3s
+
+#6 [mariadb internal] load .dockerignore
+#6 transferring context: 372B done
+#6 DONE 0.1s
+
+#7 [mariadb internal] load build context
+#7 DONE 0.0s
+
+#8 [mariadb build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#8 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#8 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#8 DONE 0.1s
+
+#7 [mariadb internal] load build context
+#7 transferring context: 5.69kB 0.0s done
+#7 DONE 0.1s
+
+#9 [mariadb stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#9 CACHED
+
+#10 [mariadb stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#10 CACHED
+
+#11 [mariadb stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#11 CACHED
+
+#12 [mariadb stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#12 CACHED
+
+#13 [mariadb stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#13 CACHED
+
+#14 [mariadb build 4/9] COPY plugin/ ./
+#14 CACHED
+
+#15 [mariadb stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#15 CACHED
+
+#16 [mariadb stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#16 CACHED
+
+#17 [mariadb stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#17 CACHED
+
+#18 [mariadb stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#18 CACHED
+
+#19 [mariadb stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#19 CACHED
+
+#20 [mariadb build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#20 CACHED
+
+#21 [mariadb build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#21 CACHED
+
+#22 [mariadb build 5/9] RUN make clean && make test && make plugin
+#22 CACHED
+
+#23 [mariadb build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#23 CACHED
+
+#24 [mariadb stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#24 CACHED
+
+#25 [mariadb stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#25 CACHED
+
+#26 [mariadb stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#26 CACHED
+
+#27 [mariadb stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#27 CACHED
+
+#28 [mariadb stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#28 CACHED
+
+#29 [mariadb build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#29 CACHED
+
+#30 [mariadb build 3/9] WORKDIR /src/plugin
+#30 CACHED
+
+#31 [mariadb stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#31 CACHED
+
+#32 [mariadb stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#32 CACHED
+
+#33 [mariadb stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#33 CACHED
+
+#34 [mariadb stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#34 CACHED
+
+#35 [mariadb stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#35 CACHED
+
+#36 [mariadb stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#36 CACHED
+
+#37 [mariadb stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#37 CACHED
+
+#38 [mariadb stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#38 CACHED
+
+#39 [mariadb build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#39 CACHED
+
+#40 [mariadb stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#40 CACHED
+
+#41 [mariadb stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#41 CACHED
+
+#4 [web internal] load metadata for docker.io/library/python:3.13.17-slim
+#4 ...
+
+#42 [auth] library/python:pull token for registry-1.docker.io
+#42 DONE 0.0s
+
+#43 [mariadb] exporting to image
+#43 exporting layers 0.0s done
+#43 exporting manifest sha256:658fb0765a1b60d1ed0f5c4f3301e75694e12063adca129c3ba1bd284d9526a2 0.0s done
+#43 exporting config sha256:9dbe1376c31224edad8f9bdb9d008b8798b7be66764e186250215dc59c9c45c8 0.0s done
+#43 exporting attestation manifest sha256:c60ffd26fafed3bfa972fc6b7facf4512d5ffeda2dc73ab2f6cc9c1c27c1d519 0.2s done
+#43 exporting manifest list sha256:06c6d7893a972efd782dd1bbfe041ad085b0f0f2aa57a82128d810492bb9dbee 0.1s done
+#43 naming to docker.io/library/frt-finalw-28f2fc09-mariadb:13.0.2 0.0s done
+#43 unpacking to docker.io/library/frt-finalw-28f2fc09-mariadb:13.0.2 0.0s done
+#43 DONE 0.7s
+
+#4 [web internal] load metadata for docker.io/library/python:3.13.17-slim
+#4 DONE 2.6s
+
+#44 [mariadb] resolving provenance for metadata file
+#44 DONE 0.1s
+
+#45 [web internal] load .dockerignore
+#45 transferring context: 91B 0.0s done
+#45 DONE 0.4s
+
+#46 [web internal] load build context
+#46 DONE 0.0s
+
+#47 [web 1/6] FROM docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962
+#47 resolve docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 0.1s done
+#47 DONE 0.1s
+
+#46 [web internal] load build context
+#46 transferring context: 2.59MB 0.7s done
+#46 DONE 0.8s
+
+#48 [web 3/6] COPY requirements.txt requirements-dev.txt ./
+#48 CACHED
+
+#49 [web 2/6] WORKDIR /app
+#49 CACHED
+
+#50 [web 4/6] RUN pip install --no-cache-dir -r requirements-dev.txt
+#50 CACHED
+
+#51 [web 5/6] COPY . .
+#51 DONE 0.4s
+
+#52 [web 6/6] RUN useradd --create-home --uid 10001 web
+#52 DONE 1.3s
+
+#53 [web] exporting to image
+#53 exporting layers
+#53 exporting layers 0.7s done
+#53 exporting manifest sha256:91c94202f195a458dfcd3e10223157e06cd18d66aa26357f5965647da8b53cf4 0.1s done
+#53 exporting config sha256:52aeb814c424a1bc5f33554ff944ea194477de62c6dc3206a35c895bdb207585 0.1s done
+#53 exporting attestation manifest sha256:c70e001c7f0629bb7d143d907660a77bf9eb4a464f67f6d206d5f4a7a3c6d44d 0.1s done
+#53 exporting manifest list sha256:e7c377a9d7d58447e34a309ac28ed6bab85fb3728f1601f583bd4d5b0638132b
+#53 exporting manifest list sha256:e7c377a9d7d58447e34a309ac28ed6bab85fb3728f1601f583bd4d5b0638132b 0.1s done
+#53 naming to docker.io/library/frt-finalw-28f2fc09-web:latest done
+#53 unpacking to docker.io/library/frt-finalw-28f2fc09-web:latest
+#53 unpacking to docker.io/library/frt-finalw-28f2fc09-web:latest 0.3s done
+#53 DONE 1.4s
+
+#54 [web] resolving provenance for metadata file
+#54 DONE 0.0s
+CREATED
+First local administrator was provisioned and verified. Credential saved locally (not displayed).
+Demo student was created and verified (role: student).
+Demo student login: demo.student@frantastic.local; password on line 2 of .demo-credentials (private local file; not printed).
+FRANtastic is ready at http://127.0.0.1:25091/lab
+Student login: open .demo-credentials (line 1 e-mail address, line 2 password), for example: notepad .demo-credentials
+Administrator credential: .admin-credentials (private local file; not printed)

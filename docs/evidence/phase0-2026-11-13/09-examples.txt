@@ -1,0 +1,232 @@
+### examples 2026-11-14T02:10:34Z
+
+######## examples/01_install_and_verify.sql
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY  | PLUGIN_MATURITY | PLUGIN_AUTH_VERSION |
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
+| campus_audit | ACTIVE        | AUDIT       | campus_audit.so | Beta            | 1.1.1               |
++--------------+---------------+-------------+-----------------+-----------------+---------------------+
++------------------------------+------------------------------------------+
+| Variable_name                | Value                                    |
++------------------------------+------------------------------------------+
+| campus_audit_connections     | FAILED                                   |
+| campus_audit_databases       | university_resources                     |
+| campus_audit_exclude_users   |                                          |
+| campus_audit_file_path       | /var/log/campus_audit/campus_audit.jsonl |
+| campus_audit_log_reads       | OFF                                      |
+| campus_audit_max_sql_length  | 1024                                     |
+| campus_audit_readable_by_all | ON                                       |
+| campus_audit_reopen_now      | OFF                                      |
++------------------------------+------------------------------------------+
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 90246                                    |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 294                                      |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
+exit=0
+
+######## examples/02_cause_events.sql
+--------------
+INSERT INTO rooms (name, capacity) VALUES ('Broken room', 0)
+--------------
+
+ERROR 4025 (23000) at line 35: CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
++----------+----------+
+| name     | capacity |
++----------+----------+
+| Room 201 |        8 |
++----------+----------+
+exit=0
+
+######## examples/03_read_the_log.sql
+*************************** 1. row ***************************
+tail_of_log: _resources","table":"bookings"}
+{"ts":"2026-11-14T02:10:35.857735Z","seq":296,"instance":"660330253e83f-1","event":"table_write","conn":823,"query_id":3925,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-14T02:10:35.873794Z","seq":297,"instance":"660330253e83f-1","event":"statement","conn":823,"query_id":3925,"account":"root[root] @ localhost []","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @app_user_id, room_id, CURRENT_DATE + INTERVAL @day DAY + INTERVAL ? HOUR, CURRENT_DATE + INTERVAL @day DAY + INTERVAL ? HOUR FROM rooms WHERE name = ?","sql_digest_truncated":false}
+{"ts":"2026-11-14T02:10:35.883467Z","seq":298,"instance":"660330253e83f-1","event":"table_write","conn":823,"query_id":3927,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"rooms"}
+{"ts":"2026-11-14T02:10:35.883494Z","seq":299,"instance":"660330253e83f-1","event":"table_write","conn":823,"query_id":3927,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-14T02:10:35.883609Z","seq":300,"instance":"660330253e83f-1","event":"statement","conn":823,"query_id":3927,"account":"root[root] @ localhost []","db":"university_resources","command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO rooms (name, capacity) VALUES (?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-14T02:10:35.884137Z","seq":301,"instance":"660330253e83f-1","event":"table_write","conn":823,"query_id":3929,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"rooms"}
+{"ts":"2026-11-14T02:10:35.884151Z","seq":302,"instance":"660330253e83f-1","event":"table_write","conn":823,"query_id":3929,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"university_resources","table":"audit_events"}
+{"ts":"2026-11-14T02:10:35.884590Z","seq":303,"instance":"660330253e83f-1","event":"statement","conn":823,"query_id":3929,"account":"root[root] @ localhost []","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"UPDATE rooms SET capacity = capacity + ? WHERE name = ?","sql_digest_truncated":false}
+
++------------------------------------------+-------------+-----------------------+----------------+
+| log_file                                 | total_lines | invalid_lines_skipped | newly_imported |
++------------------------------------------+-------------+-----------------------+----------------+
+| /var/log/campus_audit/campus_audit.jsonl |         304 |                     0 |              9 |
++------------------------------------------+-------------+-----------------------+----------------+
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+| event_time                 | event_type  | table_name   | db_user | connection_id | query_id | err  | sql_digest                                                             |
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
+| 2026-11-14 02:10:35.884151 | table_write | audit_events | root    |           823 |     3929 |    0 | UPDATE rooms SET capacity = capacity + ? WHERE name = ?                |
+| 2026-11-14 02:10:35.884137 | table_write | rooms        | root    |           823 |     3929 |    0 | UPDATE rooms SET capacity = capacity + ? WHERE name = ?                |
+| 2026-11-14 02:10:35.883494 | table_write | audit_events | root    |           823 |     3927 | 4025 | INSERT INTO rooms (name, capacity) VALUES (?, ?)                       |
+| 2026-11-14 02:10:35.883467 | table_write | rooms        | root    |           823 |     3927 | 4025 | INSERT INTO rooms (name, capacity) VALUES (?, ?)                       |
+| 2026-11-14 02:10:35.857735 | table_write | audit_events | root    |           823 |     3925 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
+| 2026-11-14 02:10:35.857703 | table_write | bookings     | root    |           823 |     3925 |    0 | INSERT INTO bookings (user_id, room_id, start_time, end_time) SELECT @ |
++----------------------------+-------------+--------------+---------+---------------+----------+------+------------------------------------------------------------------------+
++----------+-----------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+| event_id | entity_table    | action | entity_id | app_user | event_source | plugin_query_id | sql_digest                                                   |
++----------+-----------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
+|       66 | bookings        | INSERT | 9         |        1 | application  |            3925 | INSERT INTO bookings (user_id, room_id, start_time, end_time |
+|       65 | bookings        | INSERT | 8         |        1 | application  |            3876 | INSERT INTO bookings (user_id, room_id, start_time, end_time |
+|       64 | audit_lab_notes | DELETE | 10        |     NULL | direct_sql   |            3749 | DELETE FROM audit_lab_notes WHERE label LIKE ?               |
++----------+-----------------+--------+-----------+----------+--------------+-----------------+--------------------------------------------------------------+
++----------------------------+--------------------+-------------+------------+
+| event_time                 | attempted_user     | client_host | error_code |
++----------------------------+--------------------+-------------+------------+
+| 2026-11-14 02:10:34.422170 | nobody_demo        | localhost   |       1045 |
+| 2026-11-14 02:08:20.559666 | audit_lab_intruder | NULL        |       1045 |
+| 2026-11-14 02:08:19.791570 | campus_app         | NULL        |       1045 |
++----------------------------+--------------------+-------------+------------+
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 92972                                    |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 303                                      |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 0                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
+exit=0
+
+######## examples/04_configure_and_break_it.sql
++---------------------------------+
+| @@GLOBAL.campus_audit_databases |
++---------------------------------+
+| university_resources            |
++---------------------------------+
++----------+
+| COUNT(*) |
++----------+
+|        3 |
++----------+
+--------------
+SET GLOBAL campus_audit_databases = 'bad name'
+--------------
+
+ERROR 1231 (42000) at line 31: Variable 'campus_audit_databases' can't be set to the value of 'bad name'
+--------------
+SET GLOBAL campus_audit_databases = 'a,,b'
+--------------
+
+ERROR 1231 (42000) at line 32: Variable 'campus_audit_databases' can't be set to the value of 'a,,b'
+--------------
+SET GLOBAL campus_audit_databases = '*,a'
+--------------
+
+ERROR 1231 (42000) at line 33: Variable 'campus_audit_databases' can't be set to the value of '*,a'
+--------------
+SET GLOBAL campus_audit_exclude_users = 'x;DROP'
+--------------
+
+ERROR 1231 (42000) at line 34: Variable 'campus_audit_exclude_users' can't be set to the value of 'x;DROP'
+--------------
+SET GLOBAL campus_audit_connections = 'SOMETIMES'
+--------------
+
+ERROR 1231 (42000) at line 35: Variable 'campus_audit_connections' can't be set to the value of 'SOMETIMES'
+--------------
+SET GLOBAL campus_audit_file_path = ''
+--------------
+
+ERROR 1231 (42000) at line 36: Variable 'campus_audit_file_path' can't be set to the value of ''
+--------------
+SET GLOBAL campus_audit_file_path = NULL
+--------------
+
+ERROR 1231 (42000) at line 37: Variable 'campus_audit_file_path' can't be set to the value of 'NULL'
+--------------
+SET GLOBAL campus_audit_file_path = 'no_such_directory/x.jsonl'
+--------------
+
+ERROR 1231 (42000) at line 38: Variable 'campus_audit_file_path' can't be set to the value of 'no_such_directory/x.jsonl'
++---------+------+------------------------------------------------------------------------------------------------------+
+| Level   | Code | Message                                                                                              |
++---------+------+------------------------------------------------------------------------------------------------------+
+| Warning | 1105 | campus_audit: Cannot open audit log 'no_such_directory/x.jsonl': No such file or directory (errno 2) |
+| Error   | 1231 | Variable 'campus_audit_file_path' can't be set to the value of 'no_such_directory/x.jsonl'           |
++---------+------+------------------------------------------------------------------------------------------------------+
++---------------------------------+------------------------------------------+
+| @@GLOBAL.campus_audit_databases | @@GLOBAL.campus_audit_file_path          |
++---------------------------------+------------------------------------------+
+| university_resources            | /var/log/campus_audit/campus_audit.jsonl |
++---------------------------------+------------------------------------------+
++--------------------------------+------------------------------------------+
+| Variable_name                  | Value                                    |
++--------------------------------+------------------------------------------+
+| Campus_audit_bytes_written     | 96633                                    |
+| Campus_audit_events_dropped    | 0                                        |
+| Campus_audit_events_filtered   | 0                                        |
+| Campus_audit_events_unexpected | 0                                        |
+| Campus_audit_events_written    | 319                                      |
+| Campus_audit_file              | /var/log/campus_audit/campus_audit.jsonl |
+| Campus_audit_last_error        |                                          |
+| Campus_audit_open_failures     | 0                                        |
+| Campus_audit_reopens           | 1                                        |
+| Campus_audit_state             | ACTIVE                                   |
+| Campus_audit_write_failures    | 0                                        |
++--------------------------------+------------------------------------------+
+exit=0
+
+######## examples/05_unload.sql
++--------------+
+| still_active |
++--------------+
+|            0 |
++--------------+
+--------------
+UNINSTALL SONAME 'campus_audit'
+--------------
+
+ERROR 1305 (42000) at line 16: SONAME campus_audit.so does not exist
++--------------+---------------+
+| PLUGIN_NAME  | PLUGIN_STATUS |
++--------------+---------------+
+| campus_audit | ACTIVE        |
++--------------+---------------+
+exit=0
+
+######## examples/06_skeleton_plugin.sql
++----------------+---------------+-------------+-------------------+-----------------+
+| PLUGIN_NAME    | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY    | PLUGIN_MATURITY |
++----------------+---------------+-------------+-------------------+-----------------+
+| campus_audit   | ACTIVE        | AUDIT       | campus_audit.so   | Beta            |
+| skeleton_audit | ACTIVE        | AUDIT       | skeleton_audit.so | Beta            |
++----------------+---------------+-------------+-------------------+-----------------+
++----------------------------------+-------+
+| Variable_name                    | Value |
++----------------------------------+-------+
+| Skeleton_audit_connection_events | 0     |
+| Skeleton_audit_general_events    | 4     |
+| Skeleton_audit_table_events      | 0     |
++----------------------------------+-------+
++-------+
+| rooms |
++-------+
+|     3 |
++-------+
++----------------------------------+-------+
+| Variable_name                    | Value |
++----------------------------------+-------+
+| Skeleton_audit_connection_events | 0     |
+| Skeleton_audit_general_events    | 10    |
+| Skeleton_audit_table_events      | 1     |
++----------------------------------+-------+
+exit=0

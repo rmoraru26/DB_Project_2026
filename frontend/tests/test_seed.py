@@ -161,6 +161,33 @@ def test_seed_is_independent_of_the_web_application():
     assert "import seed" not in app_source and "from seed" not in app_source
 
 
+def test_installation_catalogue_equals_the_catalogue_of_this_utility():
+    """database/catalogue.sql (loaded by every installation path) and seed.py list the same rows, in the same order."""
+    import re
+    catalogue_file = FRONTEND.parent / "database" / "catalogue.sql"
+    if not catalogue_file.exists():
+        pytest.skip("database/catalogue.sql is not part of this tree (the web image holds only frontend/)")
+    sql = "\n".join(line for line in catalogue_file.read_text(encoding="utf-8").splitlines()
+                    if not line.lstrip().startswith("--"))
+    items_part, rooms_part = sql.split("INSERT INTO rooms", 1)
+    types = re.findall(r"SELECT\s+\d+(?: AS position)?, '([^']+)'(?: AS name)?, '([^']+)'(?: AS category)?", items_part)
+    copies = re.findall(r"SELECT '([A-Z])'(?: AS copy)?", items_part)
+    from_installation = [(name, category, f"{name} {copy}") for name, category in types for copy in copies]
+    rooms_installation = [(name, int(capacity)) for name, capacity in
+                          re.findall(r"SELECT\s+\d+(?: AS position)?, '([^']+)'(?: AS name)?, (\d+)", rooms_part)]
+
+    from_utility = re.findall(r"\('([^']+)', '([^']+)', '([^']+)', 'available'\)", seed.ITEMS_SQL)
+    rooms_utility = [(name, int(capacity)) for name, capacity in
+                     re.findall(r"\('([^']+)', (\d+), 'available'\)", seed.ROOMS_SQL)]
+    assert copies == ["A", "B", "C"] and len(types) == 18
+    assert from_installation == from_utility and len(from_utility) == 54
+    assert rooms_installation == rooms_utility and len(rooms_utility) == 5
+    # And both equal what the booking pages offer (app.py: items_home / rooms_home).
+    app_source = (FRONTEND / "app.py").read_text(encoding="utf-8")
+    for name in {name for name, _ in types} | {name for name, _ in rooms_installation}:
+        assert f'"{name}"' in app_source, name
+
+
 def test_seed_still_holds_the_official_catalogue():
     assert seed.ITEMS_SQL.count("'available')") == 54 and seed.ROOMS_SQL.count("'available')") == 5
     for name in ("Vacuum A", "Settlers of Catan C", "Gameboy C"):

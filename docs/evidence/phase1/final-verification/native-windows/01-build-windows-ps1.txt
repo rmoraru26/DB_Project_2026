@@ -1,0 +1,31 @@
+# 2026-11-17T04:29:03Z powershell.exe -NoProfile -ExecutionPolicy Bypass -File plugin/build_windows.ps1 -MariaDBDir <scratch>\native-work\mariadb-13.0.2-winx64 -Zig <scratch-p1>\win-native\zig\zig-x86_64-windows-0.16.0\zig.exe -OutDir <scratch>\native-work\build
+Building campus_audit.dll against <scratch>\native-work\mariadb-13.0.2-winx64\include\mysql\server
+Built <scratch>\native-work\build\campus_audit.dll
+PASS: Empty path
+PASS: Missing directory
+PASS: Valid path
+PASS: validate: NULL path
+PASS: validate: empty path
+PASS: validate: trailing forward slash
+PASS: validate: trailing backslash
+PASS: validate: newline in path
+PASS: validate: DEL in path
+PASS: validate: 513-byte path
+PASS: validate: 512-byte path
+PASS: validate: lexically valid path
+PASS: validate: no file is created
+Failures: 0
+OK: test_automatic_errors
+Program 'test_error_reporter.exe' failed to run: An Application Control policy has blocked this fileAt C:\Users\USER\Ap
+pData\Local\Temp\claude\0e737d203691d5d5\5bbd884c-6c21-4741-aef0-72d78966ccf1\scratchpad\final\win-src\plugin\build_win
+dows.ps1:72 char:9
++         & $exe
++         ~~~~~~.
+At <scratch>\win-s
+rc\plugin\build_windows.ps1:72 char:9
++         & $exe
++         ~~~~~~
+    + CategoryInfo          : ResourceUnavailable: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : NativeCommandFailed
+ 
+# exit status: 1

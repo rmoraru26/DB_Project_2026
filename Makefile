@@ -3,8 +3,10 @@
 #   make up       build the plugin against MariaDB 13.0.2, start database + web app
 #   make demo     install the plugin, cause events, show what it recorded
 #   make test          unit tests + end-to-end plugin tests + web app tests
+#   make test-integration  host-level tests of the running stack (credentials, rotation, thread pool)
 #   make test-browser  browser tests (bootstraps a local Playwright venv on first use)
 #   make doctor        explain what is wrong (passwords vs. volume, plugin, web app)
+#   make reset-demo    issue a new password for the local demo student
 #   make help          all targets
 #
 # Needs Docker with the Compose plugin and GNU make.  Without make, the same
@@ -36,8 +38,19 @@ unexport MARIADB_ROOT_PASSWORD CAMPUS_APP_PASSWORD SECRET_KEY
 ADMIN_ENV = set -a; . ./.env; set +a; export MYSQL_PWD="$$MARIADB_ROOT_PASSWORD"; \
             export MARIADB_CLIENT="$(COMPOSE) exec -T -e MYSQL_PWD mariadb mariadb"
 
-.PHONY: help up down reset logs sql demo examples doctor migrate repair-credentials reset-admin \
-        test test-unit test-e2e test-db test-app browser-setup test-browser mutation check bench evidence
+# The generated local accounts (.admin-credentials, .demo-credentials: two
+# lines, e-mail address and password).  The test targets read them from the
+# files, never from the terminal, and forward them to the test containers by
+# variable name only, so no password appears on a command line or in the log.
+TEST_CREDENTIALS = \
+	if [ -s .admin-credentials ]; then { IFS= read -r TEST_ADMIN_EMAIL; IFS= read -r TEST_ADMIN_PASSWORD; } < .admin-credentials; \
+	  TEST_ADMIN_EMAIL=$${TEST_ADMIN_EMAIL%$$'\r'}; TEST_ADMIN_PASSWORD=$${TEST_ADMIN_PASSWORD%$$'\r'}; export TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; fi; \
+	if [ -s .demo-credentials ]; then { IFS= read -r TEST_DEMO_EMAIL; IFS= read -r TEST_DEMO_PASSWORD; } < .demo-credentials; \
+	  TEST_DEMO_EMAIL=$${TEST_DEMO_EMAIL%$$'\r'}; TEST_DEMO_PASSWORD=$${TEST_DEMO_PASSWORD%$$'\r'}; export TEST_DEMO_EMAIL TEST_DEMO_PASSWORD; fi
+
+.PHONY: help up down reset logs sql demo examples doctor migrate repair-credentials reset-admin reset-demo rotate-log import-log \
+        test test-unit test-e2e test-db test-app test-integration test-threadpool browser-setup test-browser \
+        mutation check bench evidence
 
 help:  ## list the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z0-9-]+:.*## / {printf "  make %-19s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -50,10 +63,12 @@ up: .env  ## build, start MariaDB 13.0.2, update the database, install the plugi
 	@$(ADMIN_ENV); bash scripts/post_start.sh
 	@$(COMPOSE) up -d --build --wait web || { echo; bash scripts/doctor.sh; exit 1; }
 	@$(ADMIN_ENV); bash scripts/bootstrap_admin.sh
+	@$(ADMIN_ENV); COMPOSE="$(COMPOSE)" bash scripts/bootstrap_demo.sh
 	@echo
 	@web_port=$${WEB_PORT:-}; if [ -z "$$web_port" ]; then web_port=$$(sed -n 's/^WEB_PORT=//p' .env | tail -n 1); fi; web_port=$${web_port:-5080}; \
 	  echo "Web app:      http://127.0.0.1:$$web_port"; \
-	  echo "Guided tour:  http://127.0.0.1:$$web_port/lab   (student demo login alice.student@example.edu / campus-demo-2026)"
+	  echo "Guided tour:  http://127.0.0.1:$$web_port/lab"
+	@if [ -f .demo-credentials ]; then echo "Student login: .demo-credentials (line 1 e-mail address, line 2 password; private local file; not printed)"; else echo "Student login: no local demo credential (see the notice above); /register creates an account."; fi
 	@if [ -f .admin-credentials ]; then echo "Administrator credential: .admin-credentials (private local file; not printed)"; else echo "An administrator already exists; no credential was changed."; fi
 	@echo "Next:         make demo"
 
@@ -76,6 +91,16 @@ repair-credentials: .env  ## set the passwords stored in the database volume to 
 reset-admin: .env  ## rotate the local administrator password and replace .admin-credentials
 	@$(ADMIN_ENV); bash scripts/bootstrap_admin.sh --reset
 
+reset-demo: .env  ## issue a new password for the local demo student and replace .demo-credentials
+	@$(ADMIN_ENV); COMPOSE="$(COMPOSE)" bash scripts/bootstrap_demo.sh --reset
+
+rotate-log: .env  ## archive the plugin's log, make the plugin start a new file and import both (nothing is lost)
+	$(COMPOSE) exec -T mariadb bash /usr/local/share/campus/scripts/rotate_log.sh
+
+import-log: .env  ## import one log file of any size, e.g. an archive whose import failed: make import-log FILE=/var/log/campus_audit/<file>
+	@[ -n "$(FILE)" ] || { echo "Usage: make import-log FILE=/var/log/campus_audit/<file>.jsonl" >&2; exit 2; }
+	$(COMPOSE) exec -T mariadb bash /usr/local/share/campus/scripts/rotate_log.sh --import "$(FILE)"
+
 logs: .env  ## last records of the plugin's JSON Lines file
 	$(COMPOSE) exec mariadb tail -n 15 /var/log/campus_audit/campus_audit.jsonl
 
@@ -85,16 +110,17 @@ sql: .env  ## open an interactive SQL shell as root
 demo: .env  ## install the plugin, cause audited events, show the records (scripts/demo.sh)
 	@$(ADMIN_ENV); bash scripts/demo.sh
 
-examples: .env  ## run examples/01..06 in order and show every result (examples 02, 04 and 05 contain deliberate errors)
+examples: .env  ## run examples/01..07 in order and show every result (examples 02, 04, 05 and 07 contain deliberate errors)
 	@$(ADMIN_ENV); for f in examples/0*.sql; do \
 	    printf '\n######## %s\n' "$$f"; \
 	    $(COMPOSE) exec -T -e MYSQL_PWD mariadb mariadb -uroot --force --table < "$$f" 2>&1 \
-	        || echo "(non-zero exit is expected for examples 02, 04 and 05: deliberate errors)"; \
+	        || echo "(non-zero exit is expected for examples 02, 04, 05 and 07: deliberate errors)"; \
 	done
 
 test-unit:  ## plugin unit tests + repository checks + credential/diagnostic script tests (g++, no server needed)
 	$(MAKE) -C plugin test
 	bash tests/shell/test_admin_auth.sh
+	bash tests/shell/test_demo_bootstrap.sh
 	bash tests/shell/test_database_setup.sh
 	python3 scripts/check_repo.py
 	python3 tests/test_source_distribution.py
@@ -104,24 +130,31 @@ test-e2e: .env  ## end-to-end tests of the loaded plugin, incl. CHANGE_USER (tes
 	  export CHANGE_USER_CLIENT="$(COMPOSE) exec -T --interactive=false -e CU_PW1 -e CU_PW2 mariadb campus_change_user"; \
 	  bash tests/plugin/run_plugin_tests.sh
 
-test-db: .env  ## database-side checks: migrations 004/006, triggers, app grants, password-hash helper; database_tests.sql with its expected errors
+test-db: .env  ## database-side checks: migrations 004/006/007, catalogue, triggers, app grants, log import, password-hash helper; database_tests.sql with its expected errors
 	@$(ADMIN_ENV); bash tests/database/test_legacy_admin_migration.sh && \
 	  bash tests/database/test_cancelled_loan_migration.sh && bash tests/database/test_audit_triggers.sh && \
 	  bash tests/database/test_app_account_grants.sh && \
+	  bash tests/database/test_demo_student.sh && bash tests/database/test_catalogue.sh && \
+	  bash tests/database/test_log_import.sh && \
 	  bash tests/database/test_native_password_hash.sh && bash tests/database/run_database_tests.sh
 
+test-threadpool: .env  ## statement correlation under thread_handling=pool-of-threads, in a throw-away server container
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_thread_pool.sh
+
+test-integration: .env  ## host-level tests of the running stack: demo credential life cycle, log rotation, thread pool (rotates the demo password and the audit log)
+	@COMPOSE="$(COMPOSE)" MAKE="$(MAKE)" bash tests/integration/test_demo_lifecycle.sh
+	@COMPOSE="$(COMPOSE)" bash tests/integration/test_log_rotation.sh
+	@COMPOSE="$(COMPOSE)" bash tests/integration/test_log_import_limits.sh
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_thread_pool.sh
+
 test-app: .env  ## web app and Audit Lab tests incl. the database tests, run inside the web container
-	@if [ -s .admin-credentials ]; then \
-	  { IFS= read -r TEST_ADMIN_EMAIL; IFS= read -r TEST_ADMIN_PASSWORD; }; TEST_ADMIN_EMAIL=$${TEST_ADMIN_EMAIL%$$'\r'}; TEST_ADMIN_PASSWORD=$${TEST_ADMIN_PASSWORD%$$'\r'}; \
-	  export TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; \
-	  $(COMPOSE) exec -T -e RUN_DB_TESTS=1 -e TEST_ADMIN_EMAIL -e TEST_ADMIN_PASSWORD web python -m pytest -q; \
-	else \
-	  $(COMPOSE) exec -T -e RUN_DB_TESTS=1 web python -m pytest -q; \
-	fi
+	@$(TEST_CREDENTIALS); forward=""; \
+	if [ -n "$${TEST_ADMIN_PASSWORD:-}" ]; then forward="$$forward -e TEST_ADMIN_EMAIL -e TEST_ADMIN_PASSWORD"; fi; \
+	if [ -n "$${TEST_DEMO_PASSWORD:-}" ]; then forward="$$forward -e TEST_DEMO_EMAIL -e TEST_DEMO_PASSWORD"; fi; \
+	$(COMPOSE) exec -T -e RUN_DB_TESTS=1 $$forward web python -m pytest -q
 
 test: .env  ## run every Linux/Windows test suite in the shared runtime container (needs `make up` first)
-	@set -a; . ./.env; set +a; \
-	if [ -s .admin-credentials ]; then { IFS= read -r TEST_ADMIN_EMAIL; IFS= read -r TEST_ADMIN_PASSWORD; }; TEST_ADMIN_EMAIL=$${TEST_ADMIN_EMAIL%$$'\r'}; TEST_ADMIN_PASSWORD=$${TEST_ADMIN_PASSWORD%$$'\r'}; export TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD; fi; \
+	@set -a; . ./.env; set +a; $(TEST_CREDENTIALS); \
 	$(COMPOSE) --profile test run --rm --build test-runner
 
 browser-setup:  ## create an isolated browser-test environment and install Playwright + Chromium

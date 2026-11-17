@@ -17,7 +17,7 @@ SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_MATURITY,
   FROM information_schema.PLUGINS
  WHERE PLUGIN_NAME = 'campus_audit';
 
--- Eight system variables (see README "Configuration reference"); all are dynamic
+-- Nine system variables (see the README, "What the plugin records"); all are dynamic
 -- except campus_audit_readable_by_all, a startup option.
 SHOW GLOBAL VARIABLES LIKE 'campus\_audit\_%';
 
