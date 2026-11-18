@@ -81,14 +81,100 @@
                         </p>
 
                         <!-- Step Panels -->
-                        <div class="lab-step-panel" data-panel="1">
+                                                <div class="lab-step-panel" data-panel="1">
                             <h2 class="h4 fw-bold text-dark mb-3">Welcome</h2>
-                            <p class="text-secondary mb-0">Step 1 content goes here.</p>
+                            <p class="text-secondary">
+                                Smart Campus lets students book rooms and borrow items. This lab shows how the
+                                system keeps a record of what happens behind the scenes.
+                            </p>
+
+                            <h3 class="h6 fw-bold text-dark mt-4">What you can do on the site</h3>
+                            <ul class="list-group list-group-flush mb-3">
+                                <li class="list-group-item">
+                                    <strong>Register / Login</strong> to create an account and sign in.
+                                    Items and Rooms stay greyed out in the menu until you are logged in.
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Items</strong> lets you borrow things like games, sports gear and electronics.
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Rooms</strong> lets you book study, meeting, studio, practice and cinema rooms.
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Profile</strong> (top right) opens your account pages: see your current bookings and cancel them,
+                                    or change your name and password in Settings.
+                                </li>
+                            </ul>
+
+                            <h3 class="h6 fw-bold text-dark mt-4">Reading the booking calendar</h3>
+                            <ul class="list-group list-group-flush mb-3">
+                                <li class="list-group-item"><span class="badge text-bg-success me-1">Green</span> Your own bookings</li>
+                                <li class="list-group-item"><span class="badge text-bg-danger me-1">Red</span> Slots booked by other users</li>
+                                <li class="list-group-item"><span class="badge text-bg-secondary me-1">Grey</span> Past bookings that are already finished</li>
+                            </ul>
+
+                            <h3 class="h6 fw-bold text-dark mt-4">How to move around</h3>
+                            <ul class="list-group list-group-flush mb-3">
+                                <li class="list-group-item">
+                                    The <strong>top menu bar</strong> takes you to the homepage, Items, Rooms or your Profile at any time.
+                                </li>
+                                <li class="list-group-item">
+                                    In this lab, use <strong>Next / Back</strong>, the <strong>step menu</strong> on the left,
+                                    or <strong>Restart</strong>. The progress bar shows how far along you are.
+                                </li>
+                            </ul>
                         </div>
 
                         <div class="lab-step-panel d-none" data-panel="2">
                             <h2 class="h4 fw-bold text-dark mb-3">How it fits together</h2>
-                            <p class="text-secondary mb-0">Step 2 content goes here.</p>
+                            <p class="text-secondary">
+                                The project has three layers. Each one hands work to the next:
+                            </p>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h3 class="h6 fw-bold">
+                                                <span class="badge text-bg-primary me-1">1</span> Pages
+                                            </h3>
+                                            <p class="small text-secondary mb-0">
+                                                The HTML pages you see in the browser, styled with Bootstrap.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h3 class="h6 fw-bold">
+                                                <span class="badge text-bg-primary me-1">2</span> Flask app
+                                            </h3>
+                                            <p class="small text-secondary mb-0">
+                                                Python code that receives your clicks, checks the booking rules and your login, and talks to the database.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h3 class="h6 fw-bold">
+                                                <span class="badge text-bg-primary me-1">3</span> Database
+                                            </h3>
+                                            <p class="small text-secondary mb-0">
+                                                MariaDB stores users, along with their room bookings and item loans.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 class="h6 fw-bold text-dark mt-4">Keeping things tidy</h3>
+                            <p class="text-secondary">
+                                On every page request, the app updates old records: finished room bookings are marked
+                                completed, and item loans past their due time are marked returned.
+                            </p>
                         </div>
 
                         <div class="lab-step-panel d-none" data-panel="3">
