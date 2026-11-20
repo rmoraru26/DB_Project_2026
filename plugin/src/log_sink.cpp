@@ -131,7 +131,8 @@ std::string describe_win32(DWORD err) {
 
 // Opens `path` for appending and checks the opened handle.  *created: this
 // call created the file.
-AuditResult open_checked(const char* path, int* out, bool* created) {
+AuditResult open_checked(const char* path, long expected_owner, int* out, bool* created) {
+    (void)expected_owner;    // the owner is not checked on Windows
     const bool jsonl = has_jsonl_suffix(path);
     // FILE_FLAG_OPEN_REPARSE_POINT: a symbolic link or junction is opened
     // itself instead of its target, so it can be recognised and refused.
@@ -198,7 +199,7 @@ AuditResult open_checked(const char* path, int* out, bool* created) {
 
 // Opens `path` for appending and checks the opened descriptor.  *created:
 // this call created the file.
-AuditResult open_checked(const char* path, int* out, bool* created) {
+AuditResult open_checked(const char* path, long expected_owner, int* out, bool* created) {
     const bool jsonl = has_jsonl_suffix(path);
     int fd = -1;
     *created = false;
@@ -245,7 +246,8 @@ AuditResult open_checked(const char* path, int* out, bool* created) {
         if (st.st_nlink != 1) {
             bad = refused(path, "it has " + std::to_string(static_cast<unsigned long>(st.st_nlink)) +
                                     " hard links; an audit log has exactly one");
-        } else if (st.st_uid != ::geteuid()) {
+        } else if (static_cast<long>(st.st_uid) !=
+                   (expected_owner >= 0 ? expected_owner : static_cast<long>(::geteuid()))) {
             bad = refused(path, "it belongs to another OS user (uid " +
                                     std::to_string(static_cast<unsigned long>(st.st_uid)) + ")");
         } else if (st.st_size > 0) {
@@ -315,7 +317,7 @@ AuditResult LogSink::open(const char* path) {
 
     int fd = -1;
     bool created = false;
-    AuditResult opened = open_checked(path, &fd, &created);
+    AuditResult opened = open_checked(path, expected_owner_, &fd, &created);
     if (!opened.ok()) return opened;
     if (readable_by_all_ && created) {
         int err = make_readable_by_all(fd);

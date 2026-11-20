@@ -207,9 +207,23 @@ int main() {
             expect_refused(foreign_owner, "another OS user", "a file of another OS user is refused");
             check(read_file(foreign_owner) == R1, "it is unchanged");
         } else {
-            skip("file of another OS user (needs root)");
+            skip("file really given to another OS user (needs root)");
         }
         std::remove(foreign_owner);
+
+        // The same rule without root: the sink is told to expect another owner.
+        const char* mine = "sink_test_owner_hook.jsonl";
+        make_file(mine, R1);
+        LogSink sink;
+        sink.expect_owner_for_test(static_cast<long>(::geteuid()) + 1);
+        AuditResult r = sink.open(mine);
+        check(!r.ok() && r.message.find("another OS user") != std::string::npos,
+              "an existing log whose owner is not the expected one is refused");
+        check(read_file(mine) == R1, "it is unchanged");
+        sink.expect_owner_for_test(-1);
+        check(sink.open(mine).ok(), "the same file is accepted for its real owner");
+        sink.close();
+        std::remove(mine);
     }
     {
         // A FIFO: refused at once without a reader (no hang), accepted with one,

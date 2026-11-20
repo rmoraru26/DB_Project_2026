@@ -49,9 +49,15 @@ public:
     // For tests only: the raw descriptor, so a test can provoke EBADF.
     int descriptor_for_test() const { return fd_; }
 
+    // For tests only (Linux): the owner an existing log must have, instead of
+    // the process's effective user, so the owner check can be tested without
+    // root (giving a file away needs root).  -1: the effective user.
+    void expect_owner_for_test(long uid) { expected_owner_ = uid; }
+
 private:
     int fd_ = -1;
     bool readable_by_all_ = false;
+    long expected_owner_ = -1;
 
     LogSink(const LogSink&) = delete;
     LogSink& operator=(const LogSink&) = delete;

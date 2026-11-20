@@ -139,7 +139,7 @@ MUTANTS = [
      "a regular file of any name (a table file) is accepted"),
     ("S07", "src/log_sink.cpp", "while (i < n && (head[i] == '\\n' || head[i] == '\\r')) ++i;", "",
      "a log that begins with the newline of an audit_gap record is refused"),
-    ("S08", "src/log_sink.cpp", "} else if (st.st_uid != ::geteuid()) {", "} else if (false) {",
+    ("S08", "src/log_sink.cpp", "        } else if (static_cast<long>(st.st_uid) !=\n", "        } else if (false &&\n",
      "a file of another OS user is appended to"),
     ("S09", "src/log_sink.cpp", "O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK",
      "O_WRONLY | O_APPEND | O_CLOEXEC | O_NONBLOCK",
