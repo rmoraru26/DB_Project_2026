@@ -180,7 +180,9 @@ check "rejected paths leave the active file unchanged" \
 # directory, so no real data file is put at risk.  Links and files of other
 # OS users: tests/plugin/test_log_path_safety.sh (needs a shell on the server).
 make_outfile() {   # make_outfile <SQL path expression> <content>
-    sql "SET @p = $1; SET @s = CONCAT('SELECT ''$2'' INTO OUTFILE ''', @p, ''''); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1
+    # QUOTE(): the path goes into a string literal, where a Windows path's
+    # backslashes would otherwise be read as escapes (C:\mdbdata\f... -> form feed).
+    sql "SET @p = $1; SET @s = CONCAT('SELECT ''$2'' INTO OUTFILE ', QUOTE(@p)); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1
 }
 expect_refusal() {   # expect_refusal <description> <SQL path expression> <reason text>
     expect_error "$1" 1231 "SET GLOBAL campus_audit_file_path = $2;"
