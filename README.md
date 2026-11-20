@@ -438,7 +438,7 @@ make test               # after make up: 8 suites in the test-runner container (
 make test-integration   # host-level: demo-credential life cycle, log rotation, thread pool, stalled log
 make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...   # the plugin tests on another server version
 make test-browser       # Playwright against the running stack
-make mutation           # injects 75 bugs into the plugin code; the unit tests must notice each
+make mutation           # injects 77 bugs into the plugin code; the unit tests must notice each
 ```
 
 Results of the local verification runs of 15–17 November 2026. Each row names the tree it ran on:
@@ -449,11 +449,11 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 
 | Suite | Result | Where it ran |
 |---|---|---|
-| Plugin unit tests, 7 programs | 213 checks pass, none skipped (cycle 8, security review) | Linux (g++ in the image build and the test runner) |
+| Plugin unit tests, 7 programs | 219 checks pass as root, none skipped; 217 as a normal user (cycle 8, security review) | Linux (g++ in the image build and the test runner) |
 | | each of the 7 passed natively in at least one build; Smart App Control blocked other builds of the same programs (not counted as passed) | native Windows (Zig and MSYS2 g++) |
-| Mutation check | 75 of 75 injected bugs detected (cycle 8, security review) | Linux |
-| End-to-end plugin harness | 141 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol and refused foreign log files; thread pool 30 passed; stalled log 19 passed; log path safety 33 + 2 passed (cycle 8, plugin 1.2.4, `make test-server-version`) | Linux container, MariaDB 13.0.2 |
-| | the same four: 141 / 30 / 19 / 35 passed, 0 failed (cycle 8) | Linux container, MariaDB **11.8.9** |
+| Mutation check | 77 of 77 injected bugs detected, also as a normal user (cycle 8, security review) | Linux |
+| End-to-end plugin harness | 141 passed, 0 failed, 0 skipped, incl. prepared statements over the binary protocol and refused foreign log files; thread pool 30 passed; stalled log 19 passed; log path safety 39 + 2 passed (cycle 8, plugin 1.2.4, `make test-server-version`) | Linux container, MariaDB 13.0.2 |
+| | the same four: 141 / 30 / 19 / 41 passed, 0 failed (cycle 8) | Linux container, MariaDB **11.8.9** |
 | | 125 passed, 0 failed, 1 skipped (`/dev/full`, Linux only; cycle 1) | native Windows MariaDB 13.0.2 with the Zig-built DLL |
 | Stalled log (a FIFO that stops being read) | 19 passed (cycle 8, plugin 1.2.4); its cycle-5 version gave 17 passed on 1.2.1 and 7 passed, 10 failed on 1.2.0 | throw-away container, MariaDB 13.0.2 |
 | Database tests (8 scripts) | all pass | Linux container; also native Windows |
@@ -461,7 +461,7 @@ runs, GitHub Actions, manual runs, skipped tests and historical evidence, and
 | Demo-credential life cycle; log rotation; log import limits; thread pool | 19 / 8 / 13 / 30 checks pass | Linux host driving the running stack |
 | Browser tests; every page at three widths | 11 passed; 48 page views, 0 px overflow, 0 console errors | Playwright container |
 | Windows launcher (PowerShell 5.1) | 10 + 98 + 14 + 37 checks pass, ACL test 8 pass; `frantastic.cmd test` 8 of 8 suites | Windows 11 |
-| GitHub Actions | every job successful for each commit of the improvement branch so far, latest recorded `dce0a16` (plugin 1.2.3; run 44097222910, 4 of 4 jobs incl. MariaDB 11.8.9 and native Windows); for the Phase 1 commit `5d48de0` 3 of 3 jobs twice (runs 44028367232 and 44028373377) | GitHub-hosted runners |
+| GitHub Actions | latest recorded `38aa30c` (plugin 1.2.4; run 44842611321, 4 of 4 jobs incl. MariaDB 11.8.9 and native Windows); for the Phase 1 commit `5d48de0` 3 of 3 jobs twice (runs 44028367232 and 44028373377); six earlier cycle-8 commits failed one job each, every cause fixed and listed in [the final verification](docs/evidence/cycle8/security-review/final/README.md) | GitHub-hosted runners |
 
 All local runs of the final Phase 1 tree: [docs/evidence/phase1/final-verification/](docs/evidence/phase1/final-verification/README.md); of the improvement cycles after the merge: [cycle 1](docs/evidence/cycle1/README.md), [cycle 3](docs/evidence/cycle3/README.md), [cycle 5](docs/evidence/cycle5/README.md), [cycle 6](docs/evidence/cycle6/README.md), [cycle 7](docs/evidence/cycle7/README.md), [cycle 8](docs/evidence/cycle8/README.md) and its [security review](docs/evidence/cycle8/security-review/README.md).
 This whole path (headers, `make -C plugin test`, the build, install, restart, `setup_database.sh`,

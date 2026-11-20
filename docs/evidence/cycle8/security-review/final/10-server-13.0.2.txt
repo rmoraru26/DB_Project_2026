@@ -1,0 +1,498 @@
+# 2026-11-20T23:13:01Z: make test-server-version MARIADB_IMAGE=mariadb:13.0.2-resolute@sha256:0e4bb0f3...
+== building the server and test-runner images FROM mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 5.70kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 ...
+
+#3 [auth] library/mariadb:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 1.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 372B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#6 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#6 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 73.80kB 0.0s done
+#5 DONE 0.1s
+
+#7 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#7 CACHED
+
+#8 [stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#8 CACHED
+
+#9 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#9 CACHED
+
+#10 [stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#10 CACHED
+
+#11 [build 3/9] WORKDIR /src/plugin
+#11 CACHED
+
+#12 [stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#12 CACHED
+
+#13 [build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#13 CACHED
+
+#14 [build 4/9] COPY plugin/ ./
+#14 CACHED
+
+#15 [stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#15 CACHED
+
+#16 [stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#16 CACHED
+
+#17 [stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#17 CACHED
+
+#18 [stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#18 CACHED
+
+#19 [stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#19 CACHED
+
+#20 [stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#20 CACHED
+
+#21 [stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#21 CACHED
+
+#22 [stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#22 CACHED
+
+#23 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#23 CACHED
+
+#24 [stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#24 CACHED
+
+#25 [stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#25 CACHED
+
+#26 [stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#26 CACHED
+
+#27 [stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#27 CACHED
+
+#28 [stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#28 CACHED
+
+#29 [stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#29 CACHED
+
+#30 [stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#30 CACHED
+
+#31 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#31 CACHED
+
+#32 [build 5/9] RUN make clean && make test && make plugin
+#32 CACHED
+
+#33 [stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#33 CACHED
+
+#34 [stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#34 CACHED
+
+#35 [stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#35 CACHED
+
+#36 [stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#36 CACHED
+
+#37 [stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#37 DONE 0.1s
+
+#38 [stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#38 DONE 0.2s
+
+#39 [stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#39 0.389 + init_script=/docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.389 + chmod 0644 /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.411 + test -f /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.411 + test -r /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.411 + test ! -x /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.411 + stat -c %a /docker-entrypoint-initdb.d/60-app-account.sh
+#39 0.415 + test 644 = 644
+#39 DONE 0.5s
+
+#40 exporting to image
+#40 exporting layers
+#40 exporting layers 0.8s done
+#40 exporting manifest sha256:a8f35e09653a5ddb717b5ef3c30eafdb71fda2262d8bcb67055728e5601bcd7f 0.1s done
+#40 exporting config sha256:4fc9f39151a383213190af48fb916132b9b2e258d3bde13bd3c6657f28c8f253 0.1s done
+#40 exporting attestation manifest sha256:8b5874e94abc4acdafd3cca1b2d9b7ab92170a9e947d7fb1df89c43ee9dfeb87 0.1s done
+#40 exporting manifest list sha256:69ad14b89f095bb330c9ed670801fa65380156d1fbf21a04bcf2834cc3657ebe
+#40 exporting manifest list sha256:69ad14b89f095bb330c9ed670801fa65380156d1fbf21a04bcf2834cc3657ebe 0.1s done
+#40 naming to docker.io/library/campus-audit-mariadb:server-13.0.2-resolute done
+#40 unpacking to docker.io/library/campus-audit-mariadb:server-13.0.2-resolute
+#40 unpacking to docker.io/library/campus-audit-mariadb:server-13.0.2-resolute 0.2s done
+#40 DONE 1.4s
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 5.70kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 372B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 8.20MB 0.5s done
+#4 DONE 0.5s
+
+#6 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [test-runner 3/6] COPY frontend/requirements.txt frontend/requirements-dev.txt /tmp/frantastic-requirements/
+#7 CACHED
+
+#8 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#8 CACHED
+
+#9 [test-runner 1/6] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends python3 python3-venv python3-pip;     rm -rf /var/lib/apt/lists/*;     python3 -m venv /opt/frantastic-test-venv
+#9 CACHED
+
+#10 [build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#10 CACHED
+
+#11 [build 3/9] WORKDIR /src/plugin
+#11 CACHED
+
+#12 [build 4/9] COPY plugin/ ./
+#12 CACHED
+
+#13 [build 5/9] RUN make clean && make test && make plugin
+#13 CACHED
+
+#14 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#14 CACHED
+
+#15 [test-runner 2/6] WORKDIR /workspace
+#15 CACHED
+
+#16 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#16 CACHED
+
+#17 [test-runner 4/6] RUN cd /tmp/frantastic-requirements && /opt/frantastic-test-venv/bin/pip install --no-cache-dir       -r requirements.txt -r requirements-dev.txt
+#17 CACHED
+
+#18 [test-runner 5/6] COPY . .
+#18 DONE 0.4s
+
+#19 [test-runner 6/6] RUN gcc -O2 -Wall -o /usr/local/bin/campus_change_user tests/plugin/change_user.c $(mariadb_config --cflags --libs)
+#19 DONE 0.6s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 0.7s done
+#20 exporting manifest sha256:66c402d7a03769a1c63abe4947bb13c261e48b93bab5eda64fa8b2f21ac4fcee 0.1s done
+#20 exporting config sha256:5bc9a82a0d0cfa2dad6dec5bb6f51dff39f2fd183c85cbd2bb2b856fe9ed37b2
+#20 exporting config sha256:5bc9a82a0d0cfa2dad6dec5bb6f51dff39f2fd183c85cbd2bb2b856fe9ed37b2 0.1s done
+#20 exporting attestation manifest sha256:90d394cc335f16af714f1c09e832fa739cfc01f94de72f9056a64d9f0d8cdfd1
+#20 exporting attestation manifest sha256:90d394cc335f16af714f1c09e832fa739cfc01f94de72f9056a64d9f0d8cdfd1 0.1s done
+#20 exporting manifest list sha256:df64190788405fbec2bd29ebef143d2ad68f8f16e357f6d1a3a9a9b4e9fe4b72
+#20 exporting manifest list sha256:df64190788405fbec2bd29ebef143d2ad68f8f16e357f6d1a3a9a9b4e9fe4b72 1.1s done
+#20 naming to docker.io/library/campus-audit-test-runner:server-13.0.2-resolute
+#20 naming to docker.io/library/campus-audit-test-runner:server-13.0.2-resolute 0.0s done
+#20 unpacking to docker.io/library/campus-audit-test-runner:server-13.0.2-resolute
+#20 unpacking to docker.io/library/campus-audit-test-runner:server-13.0.2-resolute 0.3s done
+#20 DONE 2.4s
+== starting a throw-away server
+== tests/plugin/run_plugin_tests.sh
+== campus_audit integration tests (run 1795216411_7)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: a .jsonl file that is not a campus_audit log is refused
+PASS: a .jsonl file that is not a campus_audit log is refused: the refusal says why
+PASS: that file is unchanged
+PASS: a log-like file whose name does not end in .jsonl is refused
+PASS: a log-like file whose name does not end in .jsonl is refused: the refusal says why
+PASS: that file is unchanged
+PASS: refused files leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- statements without table events (LOCK TABLES; trigger, view and routine DDL)
+PASS: statement_scope defaults to TABLES
+PASS: LOCK TABLES on a watched table raises one table event and is recorded
+PASS: the statements under the lock did change the table
+PASS: scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)
+PASS: scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record
+PASS: scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)
+PASS: unknown statement scope rejected
+PASS: the scope change is recorded as config_change
+PASS: scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session
+PASS: scope SESSION: they still have no table record (the server raised no table event for them)
+PASS: scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible
+PASS: scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded
+PASS: API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope
+PASS: log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement
+PASS: log_reads=ON: each of those statement records shares its query_id with the table_read record
+PASS: scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)
+PASS: scope SESSION: a statement with a table event keeps its ordinary, unmarked record
+PASS: scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)
+PASS: scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)
+PASS: scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id
+PASS: scope SESSION: the trigger's body statement is not recorded as a statement of the client
+PASS: scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session
+PASS: scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)
+PASS: scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)
+PASS: scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded
+PASS: known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded
+PASS: scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered
+PASS: back to scope TABLES: table-less statements are no longer recorded
+-- prepared statements over the binary protocol (C API)
+PASS: binary protocol: two executions succeed, the duplicate fails with 1062
+PASS: binary protocol: one statement record per execution, command Execute, the duplicate with error_code 1062
+PASS: binary protocol: each execution's statement record shares its query_id with a table_write of lock_t
+PASS: binary protocol: the digest of an execution has no bound value (9001, 9002 never appear in this connection's records)
+PASS: binary protocol: COM_STMT_PREPARE itself leaves no statement record; scope TABLES leaves the table-less SET unrecorded
+PASS: binary protocol, scope SESSION: the executions keep their ordinary records and the following table-less SET is recorded (nothing left pending)
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: failed recovery-marker write keeps the plugin DEGRADED
+PASS: failed recovery-marker write is counted
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 141 passed, 0 failed, 0 skipped
+== tests/plugin/test_thread_pool.sh
+Server: 13.0.2-MariaDB-ubu2604, thread_handling=pool-of-threads, thread_pool_size=2, campus_audit 1.2.4
+PASS: thread_handling (pool-of-threads)
+PASS: thread_pool_size (2)
+PASS: campus_audit plugin (ACTIVE)
+PASS: statement scope at the start (TABLES)
+Phase 1: 12 connections x 30 rounds in 1 s; pool worker threads now: 14
+PASS: phase 1: client errors (0)
+PASS: phase 1: rows inserted into the watched table (360)
+PASS: phase 1: records written (1800)
+PASS: phase 1: config_change records (360)
+PASS: phase 1: statement records for the SET GLOBAL statements (360)
+PASS: phase 1: connections with exactly 30 SET GLOBAL statement records (12)
+PASS: phase 1: stray records for SELECT (another statement's flag or id leaked to it) (0)
+PASS: phase 1: statement records for the INSERT (360)
+PASS: phase 1: INSERT statements whose (conn, query_id) has exactly two table_write records (360)
+PASS: phase 1: records marked scope=session (the default scope records none) (0)
+Phase 2: 12 connections x 30 rounds in 4 s; pool worker threads now: 14
+PASS: phase 2: client errors (0)
+PASS: phase 2: rows inserted under LOCK TABLES (360)
+PASS: phase 2: rows inserted into the other schema (360)
+PASS: phase 2: LOCK TABLES statements, each with its one table event (360,360)
+PASS: phase 2: INSERTs under LOCK TABLES recorded as scope=session (360)
+PASS: phase 2: UNLOCK TABLES recorded as scope=session (360)
+PASS: phase 2: the table-less statement after UNLOCK TABLES (latch still set) recorded as scope=session (360)
+PASS: phase 2: connections with exactly 30 scope=session INSERT records (12)
+PASS: phase 2: statements on the other schema recorded (0)
+PASS: phase 2: SELECT after the latch was cleared recorded (the latch leaked to or from another connection) (0)
+PASS: phase 2: records written (1800)
+PASS: events dropped (0)
+PASS: write failures (0)
+PASS: unexpected events (0)
+PASS: duplicate seq values in the log (0)
+PASS: lines that are not one JSON object (0)
+== 30 passed, 0 failed
+== tests/plugin/test_stalled_log.sh
+Server: 13.0.2-MariaDB-ubu2604, campus_audit 1.2.4
+PASS: log switched to the FIFO
+PASS: recorded statements wait for the stalled log (stopped at 119 of 1000 rows)
+-- with the log stalled, the rest of the server must keep answering
+PASS: INSERT into an unwatched schema
+PASS: SHOW STATUS of the plugin answers BUSY
+PASS: SET GLOBAL campus_audit_reopen_now gives up
+PASS: SET GLOBAL campus_audit_log_reads returns
+PASS: the new value is in effect
+PASS: SET GLOBAL campus_audit_file_path gives up
+PASS: file_path unchanged after giving up
+PASS: SELECT @@GLOBAL.max_connections
+PASS: SET GLOBAL max_connections
+PASS: SHOW GLOBAL VARIABLES
+PASS: a new connection
+-- draining the FIFO
+PASS: the writer finished after draining
+PASS: all 1000 INSERTs committed
+PASS: 1000 table_write records delivered through the FIFO
+PASS: state ACTIVE after draining
+PASS: its config_change record was written, not dropped
+PASS: no record dropped
+== 19 passed, 0 failed
+== tests/plugin/test_log_path_safety.sh
+Server: 13.0.2-MariaDB-ubu2604, campus_audit 1.2.4, readable_by_all 1
+-- attacks with disposable decoys (all in /var/log/campus_audit, all created by this test)
+PASS: a symbolic link to a log-like file is refused
+PASS: a symbolic link to a log-like file is refused: the reason is given
+PASS: a symbolic link to a log-like file is refused: the active log is kept
+PASS: its target is unchanged (content, mode, owner, links)
+PASS: a hard link to a log-like file is refused
+PASS: a hard link to a log-like file is refused: the reason is given
+PASS: a hard link to a log-like file is refused: the active log is kept
+PASS: the same file under its first name is refused too
+PASS: the same file under its first name is refused too: the reason is given
+PASS: the same file under its first name is refused too: the active log is kept
+PASS: the hard-linked file is unchanged
+PASS: a log-like file of another OS user, writable for the server, is refused
+PASS: a log-like file of another OS user, writable for the server, is refused: the reason is given
+PASS: a log-like file of another OS user, writable for the server, is refused: the active log is kept
+PASS: that file is unchanged
+PASS: an empty file named like a table file is refused
+PASS: an empty file named like a table file is refused: the reason is given
+PASS: an empty file named like a table file is refused: the active log is kept
+PASS: it stays empty, mode unchanged
+PASS: a new file whose name does not end in .jsonl is refused
+PASS: a new file whose name does not end in .jsonl is refused: the reason is given
+PASS: a new file whose name does not end in .jsonl is refused: the active log is kept
+PASS: and is not created
+PASS: a FIFO without a reader is refused at once
+PASS: a FIFO without a reader is refused at once: the reason is given
+PASS: a FIFO without a reader is refused at once: the active log is kept
+PASS: a FIFO of another OS user is refused, even with a reader
+PASS: a FIFO of another OS user is refused, even with a reader: the reason is given
+PASS: a FIFO of another OS user is refused, even with a reader: the active log is kept
+PASS: a character device other than /dev/null and /dev/full is refused
+PASS: a character device other than /dev/null and /dev/full is refused: the reason is given
+PASS: a character device other than /dev/null and /dev/full is refused: the active log is kept
+PASS: an existing campus_audit log of the server's own is accepted
+PASS: its permissions are not widened (readable_by_all applies to new files only)
+PASS: a new log is created readable by others (readable_by_all)
+-- rotation, recovery and restart still work
+PASS: rotation: reopen_now creates the new file and records go there
+PASS: rotation: the renamed file keeps the earlier records
+PASS: recovery: a write failure (/dev/full, a character device) makes the plugin DEGRADED
+PASS: recovery: back to the existing log, ACTIVE, with an audit_gap record
+== phase1: 39 passed, 0 failed
+-- restarting the server (the plugin is loaded from mysql.plugin and reopens its existing log)
+PASS: restart: the plugin is ACTIVE on its existing log (/var/log/campus_audit/campus_audit.jsonl)
+PASS: restart: the existing log was appended to (two plugin_start records)
+== phase2: 2 passed, 0 failed
+== result for mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39: run_plugin_tests.sh exit 0, test_thread_pool.sh exit 0, test_stalled_log.sh exit 0, test_log_path_safety.sh exit 0
+# exit status: 0

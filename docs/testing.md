@@ -297,6 +297,12 @@ also in `make test-integration` and `make test-server-version`). 213 unit checks
 13.0.2 and 11.8.9 the harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 33/0 + 2/0.
 Native Windows: built; loading blocked locally by Smart App Control; CI job `windows-native`.
 
+After the second independent review (`docs/evidence/cycle8/security-review/final/`): 219 unit checks
+as root (217 and one skip as a normal user); 77 of 77 mutants as a normal user; on 13.0.2 and 11.8.9 the
+harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 39/0 + 2/0. CI run 44842611321 for
+`38aa30c`: 4 of 4 jobs successful, including native Windows (unit tests with the Windows attack cases,
+setup, demo, harness).
+
 ## Windows validation source ZIP
 
 From the maintainer checkout, run `python3 scripts/package_windows_source.py` to create
