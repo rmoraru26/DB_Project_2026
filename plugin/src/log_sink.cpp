@@ -226,6 +226,11 @@ AuditResult open_checked(const char* path, long expected_owner, int* out, bool* 
 
 #else  // POSIX
 
+// Every open below refuses a symbolic link.  One constant for all of them:
+// the look-up through O_PATH and the open for writing each refuse a link on
+// their own, so dropping the flag from only one of them changes nothing.
+const int kNoFollow = O_NOFOLLOW;
+
 long effective_owner(long expected_owner) {
     return expected_owner >= 0 ? expected_owner : static_cast<long>(::geteuid());
 }
@@ -262,7 +267,7 @@ AuditResult open_checked(const char* path, long expected_owner, int* out, bool* 
     if (jsonl) {
         // O_EXCL: created only if it did not exist; a symbolic link counts
         // as existing and is not followed.
-        fd = ::open(path, O_WRONLY | O_APPEND | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0660);
+        fd = ::open(path, O_WRONLY | O_APPEND | O_CREAT | O_EXCL | kNoFollow | O_CLOEXEC, 0660);
         if (fd >= 0) {
             *created = true;
         } else if (errno != EEXIST) {
@@ -278,7 +283,7 @@ AuditResult open_checked(const char* path, long expected_owner, int* out, bool* 
         // Look at an existing file before opening it for writing: opening a
         // device or a FIFO has effects of its own, so only allowed ones are
         // ever opened for writing.  O_PATH opens nothing but the name.
-        const int pfd = ::open(path, O_PATH | O_NOFOLLOW | O_CLOEXEC);
+        const int pfd = ::open(path, O_PATH | kNoFollow | O_CLOEXEC);
         if (pfd < 0) {
             const int err = errno;
             if (err == ENOENT && !jsonl) return refused(path, kSuffix);
@@ -305,7 +310,7 @@ AuditResult open_checked(const char* path, long expected_owner, int* out, bool* 
     if (fd < 0) {
         // O_NONBLOCK: a FIFO without a reader fails at once (ENXIO) instead
         // of blocking the caller; cleared again below.
-        fd = ::open(path, O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+        fd = ::open(path, O_WRONLY | O_APPEND | kNoFollow | O_CLOEXEC | O_NONBLOCK);
         if (fd < 0) {
             const int err = errno;
             if (err == ELOOP) return refused(path, "it is a symbolic link");
@@ -343,7 +348,7 @@ AuditResult open_checked(const char* path, long expected_owner, int* out, bool* 
         } else if (st.st_size > 0) {
             // Read through a second descriptor and make sure it is the same
             // file as the one opened for writing (device and inode).
-            const int rfd = ::open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+            const int rfd = ::open(path, O_RDONLY | kNoFollow | O_CLOEXEC | O_NONBLOCK);
             struct stat rst;
             char head[32];
             ssize_t n = -1;
