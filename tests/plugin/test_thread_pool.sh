@@ -89,9 +89,14 @@ q() { mariadb -uroot --batch --skip-column-names -e "$1" 2>&1; }
 status_of() { q "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = '$1'"; }
 
 # The image initialises its database on first start; wait for the final server.
+# The image initialises its database with a temporary server that listens on
+# the socket only (no networking) and is then shut down; a TCP login succeeds
+# only on the final server.  Waiting on the socket alone once passed during
+# initialisation, and every later check failed with ERROR 2002.
 ready=0
 for _ in $(seq 1 180); do
-    if [ "$(q "SELECT COUNT(*) FROM mysql.user WHERE user = 'campus_app'")" = 1 ] \
+    if mariadb -uroot -h127.0.0.1 --protocol=tcp --skip-ssl -e "SELECT 1" >/dev/null 2>&1 \
+       && [ "$(q "SELECT COUNT(*) FROM mysql.user WHERE user = 'campus_app'")" = 1 ] \
        && [ "$(q "SELECT COUNT(*) FROM university_resources.users WHERE email = 'alice.student@example.edu'")" = 1 ]; then
         ready=1; break
     fi
