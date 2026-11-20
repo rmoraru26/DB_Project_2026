@@ -36,3 +36,29 @@ CI for `d147cdc` (run 44121153458): static, Docker and 11.8.9 jobs successful. T
 job failed** in its end-to-end step. Its log needs a signed-in GitHub account, and the failure could
 not be reproduced locally (Smart App Control). The workflow now reports failing checks as public
 annotations, so the cause can be read without signing in.
+
+## Second independent review (20 November 2026)
+
+A second reviewer, with no part in the fix, reviewed commit `9a25115` read-only. Verdict: on Linux,
+regular files are decided on the opened descriptor without a bypass found; Windows was not sound.
+Its findings and what was done:
+
+| Finding | Severity | Change |
+|---|---|---|
+| Windows accepted UNC paths (`\host\share\x.jsonl`): the service account authenticates to that host (NTLM capture or relay), even for names that are then refused | high | a name starting with `\` or `//` is refused before anything is opened |
+| Windows accepted any named pipe or device by name (`\.\pipe\x`), without impersonation protection | high | pipes and devices are refused (`GetFileType` must be a disk file); `SECURITY_SQOS_PRESENT \| SECURITY_IDENTIFICATION` on the open |
+| Windows alternate data streams (`table.ibd:x.jsonl`) passed the suffix check and were created without further checks | medium | a `:` other than after a drive letter is refused by name |
+| Linux accepted a FIFO or character device of any owner and name (a local user's FIFO receives every record, or stalls the server) | medium | a FIFO must belong to the server's OS user; of the devices only `/dev/null` and `/dev/full`, by device number; inspected through `O_PATH` before any open for writing |
+| The Windows symbolic-link test required a message Windows does not produce, so it failed on the elevated CI runner | medium | the Windows message now starts "it is a symbolic link or another reparse point" |
+| A file staged by a `SET` whose update never ran could be taken over later | low | each check function first discards this connection's staged file |
+| Mutant patterns with `\n`; the owner check needed root | low | single-line patterns; owner hook (`9a25115`); new mutants S12 (FIFO owner) and S13 (device allow-list) |
+| Inaccurate documentation (header comment, "the directory is the administrator's choice", "a refusal comes before any write") and undocumented limitations | low | `docs/security.md`, "Which files the audit log may be", rewritten with the remaining limitations |
+
+CI for `9a25115` (run 44837044498): static (unit tests and mutation check as a normal user), Docker
+end to end and MariaDB 11.8.9 successful. Native Windows failed in its unit-test step, as the reviewer
+predicted for the symbolic-link test. The step's output is now also reported as public annotations.
+
+Docker Desktop was not running on the development PC for this round, so the Linux suites for the
+final change ran in CI only. Locally, the sink and its tests were compiled for both platforms with
+Zig 0.16.0 (`x86_64-linux-gnu` and `x86_64-windows-gnu`, `-Wall -Wextra`): no errors, no warnings.
+Nothing ran natively on Windows (Smart App Control).

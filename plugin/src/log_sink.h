@@ -19,13 +19,13 @@ public:
     ~LogSink() { close(); }
 
     // Validates the path (see validate_log_path) and opens it for appending,
-    // creating it with owner/group read-write permissions if necessary.  An
-    // existing regular file is accepted only if it is empty or begins with a
-    // campus_audit record, so the plugin never appends to a foreign file.
-    // After set_readable_by_all(true) the file, also an existing one, is made
-    // readable by others: the server's LOAD_FILE() reads no other file.  No
-    // effect on Windows, where the C runtime's stat() already reports the
-    // owner's read permission for others.
+    // creating a new regular file with owner/group read-write permissions.
+    // Which files may be opened (no links, no foreign files, no devices but
+    // /dev/null and /dev/full, no network paths on Windows) is decided on the
+    // opened descriptor or handle: see "what may be opened" in log_sink.cpp.
+    // After set_readable_by_all(true) a file this call creates is made
+    // readable by others (LOAD_FILE() reads no other file); an existing file's
+    // permissions are never changed.  No effect on Windows.
     // On failure the previously open file (if any) stays open.
     AuditResult open(const char* path);
     void set_readable_by_all(bool on) { readable_by_all_ = on; }

@@ -144,12 +144,15 @@ a table file such as `mysql/global_priv.MAD` in the data directory.
 Since 1.2.4 `LogSink::open` (`plugin/src/log_sink.cpp`) decides on the file **it has actually opened**
 (its descriptor or handle), not on the path name, so a file swapped in between a check and the open
 cannot slip through. The content of a file is never the deciding proof: anybody who can write a file
-can write `{"ts":"`.
+can write `{"ts":"`. Two independent reviews shaped the rules; the second one found the Windows gaps
+closed in the last version (`docs/evidence/cycle8/security-review/`).
 
 | Rule | Linux | Windows |
 |---|---|---|
-| no symbolic link | `open(..., O_NOFOLLOW)`; also on the descriptor the first bytes are read through | `CreateFile(..., FILE_FLAG_OPEN_REPARSE_POINT)`, refused if the handle is a reparse point (symbolic link, junction) |
-| FIFO or character device accepted as it is, permissions never changed | `fstat`; a FIFO is opened with `O_NONBLOCK`, so one without a reader is refused at once instead of blocking, then blocking is restored | `GetFileType`: character device or pipe |
+| no network or device path | (not applicable) | a name starting with `\\` or `//` (`\\server\share`, `\\.\pipe\...`, `\\?\...`) is refused **before anything is opened**: opening a UNC path would already authenticate the service account to that host, opening a pipe would connect to its server |
+| no alternate data stream | (not applicable) | a `:` anywhere but after a drive letter is refused by name (`table.ibd:x.jsonl`) |
+| no symbolic link | `open(..., O_NOFOLLOW)`; `O_PATH` look-up first | `CreateFile(..., FILE_FLAG_OPEN_REPARSE_POINT)`; a reparse point (symbolic link, junction, mount point) is refused |
+| pipes and devices | a FIFO of the server's own OS user, `/dev/null` and `/dev/full` (recognised by device number) only. They are inspected through an `O_PATH` descriptor **before** being opened for writing, so no other device is ever opened. A FIFO without a reader is refused at once (`O_NONBLOCK`, cleared afterwards) | refused (`GetFileType` must be a disk file); the open requests identification-level impersonation only |
 | a regular file's name must end in `.jsonl` (no MariaDB data, table or log file does) | yes | yes |
 | new or existing: an `O_EXCL` / `OPEN_ALWAYS` open tells them apart | yes | yes |
 | an existing regular file has exactly one link | `st_nlink` | `nNumberOfLinks` |
@@ -157,34 +160,53 @@ can write `{"ts":"`.
 | an existing regular file is empty or begins with a campus_audit record | read through a second descriptor whose device and inode must equal the written one | read through the same handle |
 | permissions are widened (`readable_by_all`) only on a file this call has just created | `fchmod` on that descriptor | no effect on Windows |
 
-A refusal comes before any write or permission change. `SET GLOBAL` fails with ER 1231, a warning
-gives the reason, and the previous log stays active; at startup the plugin does not start.
+An **existing** file is refused before anything is written to it or its permissions are changed.
+`SET GLOBAL` then fails with ER 1231, a warning gives the reason, and the previous log stays active;
+at startup the plugin does not start. A new `.jsonl` file is created by the check function of the
+variable, so it remains (empty) if a later part of the same `SET` fails.
 
 Tests:
-- `plugin/tests/test_log_sink.cpp` (unit, Linux and Windows): foreign content, wrong suffix (new
-  and existing, empty), hard link under both names, symbolic link (Windows: skipped without the
-  privilege), another owner (Linux, as root), FIFO with and without a reader, no widening of
-  existing or refused files.
+- `plugin/tests/test_log_sink.cpp` (unit, Linux and Windows): foreign content; wrong suffix (new
+  and existing, empty); hard link under both names; symbolic link (Windows: skipped without the
+  privilege); another owner (with root a real `chown`, without root an expected-owner hook, so CI
+  tests it too); FIFO with and without a reader and of another owner; `/dev/null` accepted, `/dev/zero`
+  refused; no widening of existing or refused files. Windows only: UNC, `//`, `\\.\pipe\`, `\\?\`
+  paths, an alternate data stream (the base file stays unchanged), the `NUL` device.
 - `tests/plugin/test_log_path_safety.sh` (a throw-away server container, disposable decoy files
-  only): the same attacks through `SET GLOBAL`, each decoy checked unchanged by content, mode, owner
+  only): the Linux attacks through `SET GLOBAL`, each decoy checked unchanged by content, mode, owner
   and link count. It also checks that rotation (`campus_audit_reopen_now`), recovery after a write
   failure and a server restart still work.
 - The harness (`tests/plugin/run_plugin_tests.sh`) refuses two foreign files made with `INTO OUTFILE`.
-- `scripts/mutation_check.py`: S02-S11 break these rules one at a time; the unit tests notice each.
+- `scripts/mutation_check.py`: S02 and S04-S13 break these rules one at a time; the unit tests notice
+  each. The Windows-only code is not mutated (the mutation check builds on Linux).
 
 Remaining limitations:
-- A symbolic link or junction in a **directory** component of the path is followed. The directory is
-  the administrator's choice, as for the server's own log files. A complete fix would open every
-  component with `openat(..., O_NOFOLLOW | O_DIRECTORY)`.
-- The owner is not checked on Windows.
-- A `.jsonl` file of the server's own OS user, with one link, that begins with `{"ts":"` is accepted
-  even if another program wrote it. Writing such a file needs file-system access or the `FILE`
-  privilege (`INTO OUTFILE`), which already allows writing files.
-- An existing log that was created without `campus_audit_readable_by_all` is no longer made readable
-  by all when the option is switched on later. `LOAD_FILE()` then cannot import it; rotate the log
-  (`make rotate-log`), and the new file is created readable.
-- The comparison of device and inode is not exercised by a test: the race it guards against (the
-  file replaced between two `open()` calls) cannot be provoked reliably.
+- **The directory is not restricted.** The user who sets the variable chooses it: any directory the
+  server's OS user may write (`/tmp`, the data directory, a schema directory, where a foreign file
+  makes `DROP DATABASE` fail), including filling its disk. A symbolic link or junction in a
+  **directory** component is followed. A complete fix would be an allow-listed log directory set at
+  startup, opened with `openat(..., O_NOFOLLOW | O_DIRECTORY)` per component.
+- **An existing campus_audit log of the same OS user is accepted**, e.g. an older log under a `.jsonl`
+  name or the log of another instance on the same host, so records can be redirected into a file
+  nobody reviews or interleaved with another instance's trail. So is any `.jsonl` file of that user
+  that begins with `{"ts":"`, whoever wrote it: the plugin itself, another program running as that
+  user, or a user with `FILE` (`INTO OUTFILE`).
+- **Windows does not check the owner.** Rotation by renaming the open log does not work on Windows:
+  the file is opened without `FILE_SHARE_DELETE`, as before.
+- **The refusal messages reveal facts about files** the server's OS user can reach: existence, owner
+  uid, link count, whether a `.jsonl` file begins like a log. They are seen only by a user allowed to
+  set the variable.
+- **Owner and content are strict**: a log recreated by an external tool with another owner (e.g.
+  `logrotate` with `create 0640 root adm`), or one whose first write was cut short, is refused at
+  startup, and the plugin then does not start. When the server runs as root, the owner check
+  accepts root's files.
+- **An existing log is never made readable by all later**: one created without
+  `campus_audit_readable_by_all` cannot be imported by `LOAD_FILE()` until it is rotated
+  (`make rotate-log`); the new file is created readable.
+- **A FIFO's reader controls the plugin**: one that stops reading stalls the recorded statements
+  (experiment 32). Only a FIFO of the server's own OS user is accepted.
+- The comparison of device and inode (and of the `O_PATH` look-up with the opened file) is not
+  exercised by a test: the race it guards against cannot be provoked reliably.
 
 ## Secrets in the repository
 

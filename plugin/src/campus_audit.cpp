@@ -765,6 +765,10 @@ const char* read_string_value(MYSQL_THD thd, struct st_mysql_value* value, int* 
 
 int check_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* save,
                     struct st_mysql_value* value) {
+    // A file this connection staged for an earlier statement whose update
+    // function never ran (another variable of the same SET failed) must not
+    // be taken over by this one.
+    discard_staged_sink(thd);
     int length = 0;
     const char* s = read_string_value(thd, value, &length);
     if (s == nullptr) {
@@ -911,6 +915,7 @@ void update_max_sql_length(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_pt
 // function opens again and reports it, as before.
 int check_reopen_now(MYSQL_THD thd, struct st_mysql_sys_var*, void* save,
                      struct st_mysql_value* value) {
+    discard_staged_sink(thd);    // see check_file_path()
     long long on = 0;
     if (value->value_type(value) == MYSQL_VALUE_TYPE_STRING) {
         char local[16];

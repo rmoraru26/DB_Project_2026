@@ -60,13 +60,19 @@ static void make_file(const char* path, const std::string& content) {
 }
 
 // A refused open: the right code, nothing opened, the reason in the message.
-static void expect_refused(const char* path, const std::string& reason, const std::string& name) {
-    LogSink sink;
-    sink.set_readable_by_all(true);
+static void expect_refused_with(LogSink& sink, const char* path, const std::string& reason,
+                                const std::string& name) {
     AuditResult r = sink.open(path);
     check(r.code == AuditError::open_Failed && !sink.is_open() &&
               r.message.find(reason) != std::string::npos,
           name + " (" + (r.ok() ? std::string("accepted") : r.message) + ")");
+    sink.close();
+}
+
+static void expect_refused(const char* path, const std::string& reason, const std::string& name) {
+    LogSink sink;
+    sink.set_readable_by_all(true);
+    expect_refused_with(sink, path, reason, name);
 }
 
 int main() {
@@ -196,6 +202,30 @@ int main() {
         std::remove(target);
     }
 
+#ifdef _WIN32
+    {
+        // Network and device paths are refused by name, before anything is
+        // opened: opening a UNC path would already authenticate the service
+        // account to that host, opening a pipe would connect to its server.
+        expect_refused("\\\\127.0.0.1\\campus_audit_no_share\\x.jsonl", "network and device paths",
+                       "a UNC path is refused before it is opened");
+        expect_refused("//127.0.0.1/campus_audit_no_share/x.jsonl", "network and device paths",
+                       "a UNC path with forward slashes is refused");
+        expect_refused("\\\\.\\pipe\\campus_audit_test", "network and device paths", "a named pipe is refused");
+        expect_refused("\\\\?\\C:\\campus_audit_test.jsonl", "network and device paths",
+                       "a \\\\?\\ path is refused");
+        // An alternate data stream of an existing file: refused, the file untouched.
+        const char* base = "sink_test_ads.dat";
+        make_file(base, "table data\n");
+        expect_refused("sink_test_ads.dat:x.jsonl", "alternate data streams",
+                       "an alternate data stream (file.dat:x.jsonl) is refused");
+        check(read_file(base) == "table data\n", "the file is unchanged");
+        std::remove(base);
+        // A device by its reserved name.
+        expect_refused("NUL", "not a regular file", "the NUL device is refused");
+    }
+#endif
+
 #ifndef _WIN32
     {
         // A file of another OS user, writable for the server: refused, unchanged.
@@ -238,11 +268,24 @@ int main() {
             check(sink.is_open() && (::fcntl(sink.descriptor_for_test(), F_GETFL) & O_NONBLOCK) == 0,
                   "its descriptor is blocking again");
             sink.close();
+            LogSink other;
+            other.expect_owner_for_test(static_cast<long>(::geteuid()) + 1);
+            expect_refused_with(other, fifo, "FIFO of another OS user",
+                                "a FIFO of another OS user is refused, even with a reader");
             if (reader >= 0) ::close(reader);
         } else {
             skip("mkfifo not possible here");
         }
         std::remove(fifo);
+    }
+    {
+        // Character devices: only /dev/null and /dev/full (by device number).
+        // /dev/zero is writable by everybody and stands for any other device.
+        LogSink sink;
+        check(sink.open("/dev/null").ok(), "/dev/null is accepted");
+        sink.close();
+        expect_refused("/dev/zero", "character device other than /dev/null and /dev/full",
+                       "another character device (/dev/zero) is refused");
     }
     {
         // The log holds account names, hosts and table names: a newly created

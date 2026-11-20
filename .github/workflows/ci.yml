@@ -207,7 +207,7 @@ jobs:
         run: |
           $zig = (Get-ChildItem C:\zig -Recurse -Filter zig.exe | Select-Object -First 1).FullName
           $mdb = "C:\mdb\mariadb-13.0.2-winx64"
-          .\plugin\build_windows.ps1 -MariaDBDir $mdb -Zig $zig
+          .\plugin\build_windows.ps1 -MariaDBDir $mdb -Zig $zig *>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\unit.txt"
           Copy-Item plugin\build\campus_audit.dll "$mdb\lib\plugin\"
           & $zig cc -target x86_64-windows-gnu -O2 "-I$mdb\include\mysql" tests\plugin\change_user.c "$mdb\lib\libmariadb.lib" -o C:\mdb\campus_change_user.exe
           if ($LASTEXITCODE -ne 0) { throw "change_user helper build failed" }
@@ -259,6 +259,12 @@ jobs:
         shell: bash
         run: |
           # Job logs need a signed-in GitHub account; annotations are public.
+          unit="$(cygpath -u "$RUNNER_TEMP")/unit.txt"
+          if [ -f "$unit" ]; then
+            grep -E '^(FAIL|SKIP)|rror' "$unit" | head -n 20 | while IFS= read -r line; do
+              echo "::error title=windows-native unit tests::${line//%/%25}"
+            done
+          fi
           for f in setup demo harness; do
             [ -f /c/mdbdata/$f.txt ] || continue
             grep -E '^(FAIL|ERROR)|^      ' /c/mdbdata/$f.txt | head -n 20 | while IFS= read -r line; do

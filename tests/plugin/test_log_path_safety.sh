@@ -130,6 +130,14 @@ refused "a new file whose name does not end in .jsonl is refused" "\$D/new_log.t
 mkfifo \$D/noreader.fifo; chown mysql:mysql \$D/noreader.fifo
 refused "a FIFO without a reader is refused at once" "\$D/noreader.fifo" "FIFO without a reader"
 
+mkfifo \$D/foreign.fifo; chown 65534:65534 \$D/foreign.fifo; chmod 0622 \$D/foreign.fifo
+sleep 1000000 < \$D/foreign.fifo &
+FOREIGN_READER=\$!
+refused "a FIFO of another OS user is refused, even with a reader" "\$D/foreign.fifo" "FIFO of another OS user"
+kill \$FOREIGN_READER 2>/dev/null
+
+refused "a character device other than /dev/null and /dev/full is refused" "/dev/zero" "character device other than"
+
 printf '{"ts":"x"}\n' > \$D/old_log.jsonl; chown mysql:mysql \$D/old_log.jsonl; chmod 0640 \$D/old_log.jsonl
 q "SET GLOBAL campus_audit_file_path = '\$D/old_log.jsonl'" >/dev/null
 [ "\$(q "SELECT @@GLOBAL.campus_audit_file_path")" = "\$D/old_log.jsonl" ] && pass "an existing campus_audit log of the server's own is accepted" \

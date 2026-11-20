@@ -524,8 +524,10 @@ Details, including what the log *does* contain and the threat model: [docs/secur
   generated accounts are created by the Docker launchers only.
 - **Where the log may be.** A regular log file must end in `.jsonl`; an existing one must be the
   server's own (Linux), have a single link, not be a symbolic link and be empty or a campus_audit
-  log. Permissions are widened only on a file the plugin creates. A symbolic link in a directory
-  component is still followed, and Windows does not check the owner
+  log. Pipes and devices: on Linux only a FIFO of the server's user, `/dev/null` and `/dev/full`; on
+  Windows none, and no network, device or stream paths. Permissions are widened only on a file the
+  plugin creates. Not restricted: the directory (any the server may write, a symbolic link in it is
+  followed) and the owner on Windows; an older campus_audit log of the same user is accepted
   ([docs/security.md](docs/security.md#which-files-the-audit-log-may-be)).
 - **The demo is for one machine.** Login throttling is per process, and the web application is
   meant to be reached on `127.0.0.1`.
