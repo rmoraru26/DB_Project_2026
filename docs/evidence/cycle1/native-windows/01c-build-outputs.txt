@@ -1,0 +1,2 @@
+873472 <scratch-root>/cycle1/native-work/build/campus_audit.dll
+866304 <scratch-root>/cycle1/native-work/build/test_automatic_errors.exe

@@ -1,0 +1,37 @@
+# cycle 5 2026-11-17T12:01:34Z: bash docs/evidence/cycle5/scripts/stall_and_contention.sh <server image built from this tree on mariadb:13.0.2-resolute>
+Server: 13.0.2-MariaDB-ubu2604, campus_audit 1.2.0, 8 CPUs visible, max_connections 151
+
+== part 1: a log destination that stalls (a FIFO whose reader stops reading)
+file_path now /var/log/campus_audit/stall.fifo, state ACTIVE
+the writer of 1000 INSERTs: 119 rows committed after 5 s, 119 rows 3 s later
+probes, each in a new connection:
+  INSERT into the watched table:             no answer within 5 s (client gave up)
+  INSERT into an unwatched schema:           completed in 286 ms
+  SELECT from an unwatched schema:           completed in 24 ms
+  SHOW GLOBAL STATUS LIKE 'Uptime':          completed in 14 ms
+  SHOW GLOBAL STATUS LIKE 'Campus_audit%':   no answer within 5 s (client gave up)
+  SET GLOBAL campus_audit_reopen_now = ON:   no answer within 5 s (client gave up)
+server-side view (PROCESSLIST, statements still running):
+-- a reader that reads again (draining the FIFO)
+the writer finished 5 s after draining began
+rows: watched.t 1001 (1000 from the writer + 1 probe), other.t 1 (1 probe)
+state ACTIVE, events dropped 0, write failures 0
+table_write records for watched.t delivered through the FIFO: 1001
+
+== part 2: cost under concurrent writes (mariadb-slap, autocommit single-row INSERTs)
+modes: off = plugin not installed; filtered = installed, table not watched (campus_audit_databases='other');
+       recorded = installed, every INSERT recorded (two records per statement).
+Five rounds, the three modes interleaved within each round; 20000 INSERTs per run;
+seconds per run (lower is better), then the median.
+clients  mode      rounds 1..5                          median
+1        off        102.214 103.793 102.862 101.474 103.704 102.862
+1        filtered   104.512 103.941 101.275 103.096 102.725 103.096
+1        recorded   104.992 104.751 103.584 103.235 103.920 103.920
+8        off        28.461 24.622 24.232 23.642 23.530  24.232
+8        filtered   26.069 24.142 24.360 23.515 24.046  24.142
+8        recorded   23.918 24.658 24.099 23.384 23.953  23.953
+32       off        6.777 6.812 6.591 6.626 6.492       6.626
+32       filtered   6.544 6.626 6.715 6.782 6.779       6.715
+32       recorded   6.505 6.465 6.332 6.496 6.812       6.496
+log size after part 2: 162223959 bytes; events dropped 0
+# exit status: 0

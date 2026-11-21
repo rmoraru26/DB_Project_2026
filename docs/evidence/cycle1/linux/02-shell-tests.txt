@@ -1,0 +1,96 @@
+# Shell tests of the installation scripts (real Linux file system)
+# command: bash -c bash tests/shell/test_admin_auth.sh && bash tests/shell/test_demo_bootstrap.sh && bash tests/shell/test_database_setup.sh
+# started: 2026-11-17T07:08:36Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+PASS: post_start: MYSQL_PWD and MARIADB_ROOT_PASSWORD equal
+PASS: post_start: MYSQL_PWD absent, falls back to MARIADB_ROOT_PASSWORD
+PASS: post_start: MYSQL_PWD empty, falls back to MARIADB_ROOT_PASSWORD
+PASS: post_start: MYSQL_PWD only (Linux host / native server caller)
+PASS: post_start: MARIADB_ROOT_PASSWORD empty, refused before the client runs
+PASS: post_start: no password at all, refused before the client runs
+PASS: post_start: conflicting MYSQL_PWD and MARIADB_ROOT_PASSWORD are refused
+PASS: post_start: the root password is not used for another admin user
+PASS: post_start: another admin user uses MYSQL_PWD regardless of MARIADB_ROOT_PASSWORD
+PASS: post_start: rejected password (YES) explains the volume/.env mismatch
+PASS: post_start: missing password (NO) is not blamed on the volume
+PASS: post_start: unreachable server is not an authentication failure
+PASS: post_start: other client errors keep their own message
+PASS: post_start: missing client program is reported
+PASS: helper (set -u): resolved password is exported to child processes
+PASS: helper (set -u): unset variables give a clean refusal
+PASS: demo: no password, refused before the client runs
+PASS: demo: runs with the service password only (Windows launcher path)
+PASS: demo: conflicting passwords are refused
+PASS: provision_local_admin_db: state with the service password only
+PASS: provision_local_admin_db: bootstrap with equal MYSQL_PWD (Linux make path)
+PASS: provision_local_admin_db: no password, refused before the client runs
+PASS: provision_local_admin_db: conflicting passwords are refused
+PASS: provision_local_admin_db: an unknown action is reported as usage error, even without a password
+PASS: provision_local_admin_db: an invalid hash is reported before the password check
+PASS: provision_local_admin_db: an invalid hash never reaches the client
+PASS: doctor: working root login is reported OK
+PASS: doctor: rejected password (YES) is explained
+PASS: doctor: missing password (NO) is not blamed on the volume
+PASS: doctor: unreachable server is distinguished
+PASS: no password appears in any output
+Shell credential tests: 31 passed, 0 failed.
+PASS: first start: account created as student, credential file written with mode 0600, no pending file left
+PASS: first start: the output names the file and does not contain the password
+PASS: restart: nothing generated, nothing written, file and stored hash unchanged
+PASS: repeated restarts never rotate the credential
+PASS: restart: a too-permissive credential file is set back to mode 0600
+PASS: existing database without the local file: password not changed, no file written, recovery explained
+PASS: mismatching file: neither the file nor the stored password is changed
+PASS: re-created database: the account is created with the SAVED password; the file is not replaced
+PASS: reset: a new password is stored and saved; the previous one no longer matches
+PASS: reset on a database without the account creates it
+PASS: interrupted before the database was changed: the pending password is used, not a new one
+PASS: interrupted after the database was changed: the pending password replaces the stale file
+PASS: interrupted rotation that never reached the database: pending file discarded, working file kept
+PASS: irreconcilable state: fails, both files preserved, database untouched, recovery named
+PASS: the explicit reset recovers from the irreconcilable state
+PASS: database failure during the first start: exit 1, protected pending file kept, no half-created account
+PASS: retry after that failure completes with the same password
+PASS: failure reported after the row was committed: pending file kept
+PASS: retry after that failure promotes the pending password without touching the database
+PASS: an invalid hash never reaches the database
+PASS: unreachable database: fails before any file is written
+PASS: password generation failure: nothing written, nothing created
+PASS: failed rotation: the working credential file and the stored password are both unchanged
+PASS: start after a failed rotation: pending file discarded, the working credential stays valid
+PASS: a symbolic link in place of the credential file is refused and its target is not modified
+PASS: reset refuses to write through a symbolic link
+PASS: a malformed credential file is preserved and stops the run
+PASS: a file for another account is not used
+PASS: a file with an implausibly short password is not used
+PASS: an account that is not a student is never managed (start)
+PASS: an account that is not a student never receives a new password (reset)
+PASS: a deactivated demo account is reported and not reactivated
+PASS: an unknown argument is a usage error before any container call
+PASS: no password appears in any output
+PASS: no password hash appears in any output
+Demo credential bootstrap tests: 35 passed, 0 failed.
+PASS: fresh install order: schema, 001-003, triggers, seed, catalogue, 004-008, account
+PASS: upgrade order (SKIP_SEED=1): seed skipped; catalogue, 004-008 still run; account refreshed
+PASS: without CAMPUS_APP_PASSWORD the account step is skipped
+PASS: SKIP_CATALOGUE=1 leaves out only catalogue.sql
+PASS: catalogue.sql only inserts absent rows (two INSERT ... WHERE NOT EXISTS, nothing else writes)
+PASS: an unlisted migration stops setup_database.sh before any step runs
+PASS: Dockerfile initdb SQL order equals setup_database.sh
+PASS: Dockerfile runs the application-account script after every SQL step
+PASS: seed.sql: users ON DUPLICATE KEY UPDATE never changes role (Dana is admin only on first insert)
+PASS: the plain password does not appear in the account SQL
+PASS: grant: GRANT SELECT ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT INSERT (full_name, email, password_hash) ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT UPDATE (full_name, password_hash) ON university_resources.users TO 'campus_app'@'%';
+PASS: grant: GRANT SELECT, INSERT, UPDATE ON university_resources.loans TO 'campus_app'@'%';
+PASS: grant: GRANT SELECT, INSERT, UPDATE, DELETE ON university_resources.audit_lab_notes TO 'campus_app'@'%';
+PASS: grant: GRANT EXECUTE ON PROCEDURE campus_audit.import_current_log TO 'campus_app'@'%';
+PASS: users: no role/is_active write and no table-wide INSERT/UPDATE/DELETE
+PASS: DELETE is granted only on audit_lab_notes
+PASS: audit tables are read-only for the application
+PASS: no FILE, SUPER or global privilege
+PASS: table-wide users grants are revoked before, and without touching, the column grants
+== 21 passed, 0 failed
+
+# exit status: 0

@@ -16,9 +16,9 @@ runs MariaDB **13.0.2** (official image, pinned by digest in `docker/mariadb/Doc
 > **Status (2026-11-16):** the workflow described on this page (with the generated demo student, the
 > booking catalogue, migrations 007 and 008, `make reset-demo`, `make rotate-log` and
 > `make test-integration`) was run locally from a clean volume on a Linux host driving Docker
-> Desktop, and through `frantastic.cmd` on Windows 11; outputs in `docs/evidence/phase1/`. It has
-> not run in GitHub Actions yet: the last CI runs are for the commit before these changes
-> (`docs/testing.md`).
+> Desktop, and through `frantastic.cmd` on Windows 11; outputs in `docs/evidence/phase1/`. Since then
+> the job "make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)" of GitHub Actions runs
+> it on every push (`.github/workflows/ci.yml`; runs and results in `docs/testing.md`).
 
 ## Start
 
@@ -375,3 +375,7 @@ run. This manual validation is distinct from Windows CI and native Windows plugi
 | A booking page answers "This item does not exist." | the volume was set up before the catalogue was part of the installation: `make migrate` |
 | `NOTICE: this database already has the demo student ...` | nothing is wrong with the database; `make reset-demo` issues a new demo password, see [security.md](security.md#secrets-in-the-repository) |
 | Windows reports a `SeSecurityPrivilege` error while protecting a sensitive file | use the current `scripts/windows_security.ps1` and run `tests/windows/test_local_file_acl.ps1` in Windows PowerShell 5.1 from a non-elevated session. The helper requests DACL information only. Preserve existing credential files, check that the file is regular and owned by the current user, and record the full error for diagnosis. Do not enable `SeSecurityPrivilege` or start the launcher elevated. |
+| `ERROR 1231 Variable 'campus_audit_...' can't be set` | `SHOW WARNINGS` gives the plugin's reason; the previous value stays in force |
+| `import_plugin_log: LOAD_FILE returned NULL` | needs FILE, a file inside `secure_file_priv` that is readable by all (Linux: `campus_audit_readable_by_all = ON`) |
+| `Campus_audit_state = DEGRADED` | see `Campus_audit_last_error`; the plugin retries with the next audited event 5 s or more after the failure (on an idle server it stays `DEGRADED` until then), or at once with `SET GLOBAL campus_audit_reopen_now = ON` |
+| `ERROR 1126 ... prohibited by --plugin-maturity=gamma` on a native server | add `plugin_maturity=beta` under `[mysqld]` and restart (startup-only option) |

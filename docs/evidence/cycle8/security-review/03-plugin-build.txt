@@ -1,0 +1,10 @@
+# cycle 8 (security review) 2026-11-17T16:20:53Z: make -C plugin clean plugin
+make: Entering directory '/r1794932294/plugin'
+rm -rf build
+mkdir -p build
+g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+  -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+  src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+built build/campus_audit.so (services: /usr/lib/x86_64-linux-gnu/libmysqlservices.a)
+make: Leaving directory '/r1794932294/plugin'
+# exit status: 0

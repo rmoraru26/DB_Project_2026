@@ -1,0 +1,381 @@
+docker compose up -d --build --wait mariadb
+Compose now can delegate build to bake for better performances
+Just set COMPOSE_BAKE=true
+#0 building with "default" instance using docker driver
+
+#1 [mariadb internal] load build definition from Dockerfile
+#1 transferring dockerfile: 5.70kB done
+#1 DONE 0.0s
+
+#2 [mariadb internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [mariadb internal] load .dockerignore
+#3 transferring context: 351B 0.0s done
+#3 DONE 0.1s
+
+#4 [mariadb internal] load build context
+#4 DONE 0.0s
+
+#5 [mariadb build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+
+#4 [mariadb internal] load build context
+#4 transferring context: 5.66kB 0.0s done
+#4 DONE 0.0s
+
+#6 [mariadb build 5/9] RUN make clean && make test && make plugin
+#6 CACHED
+
+#7 [mariadb stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#7 CACHED
+
+#8 [mariadb stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#8 CACHED
+
+#9 [mariadb build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#9 CACHED
+
+#10 [mariadb stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#10 CACHED
+
+#11 [mariadb stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#11 CACHED
+
+#12 [mariadb stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#12 CACHED
+
+#13 [mariadb build 4/9] COPY plugin/ ./
+#13 CACHED
+
+#14 [mariadb stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#14 CACHED
+
+#15 [mariadb stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#15 CACHED
+
+#16 [mariadb stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#16 CACHED
+
+#17 [mariadb stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#17 CACHED
+
+#18 [mariadb stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#18 CACHED
+
+#19 [mariadb stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#19 CACHED
+
+#20 [mariadb stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#20 CACHED
+
+#21 [mariadb build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#21 CACHED
+
+#22 [mariadb build 3/9] WORKDIR /src/plugin
+#22 CACHED
+
+#23 [mariadb stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#23 CACHED
+
+#24 [mariadb stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#24 CACHED
+
+#25 [mariadb build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#25 CACHED
+
+#26 [mariadb build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#26 CACHED
+
+#27 [mariadb stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#27 CACHED
+
+#28 [mariadb build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#28 CACHED
+
+#29 [mariadb stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#29 CACHED
+
+#30 [mariadb stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#30 CACHED
+
+#31 [mariadb stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#31 CACHED
+
+#32 [mariadb stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#32 CACHED
+
+#33 [mariadb stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#33 CACHED
+
+#34 [mariadb stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#34 CACHED
+
+#35 [mariadb stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#35 CACHED
+
+#36 [mariadb stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#36 CACHED
+
+#37 [mariadb stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#37 CACHED
+
+#38 [mariadb stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#38 CACHED
+
+#39 [mariadb] exporting to image
+#39 exporting layers 0.0s done
+#39 exporting manifest sha256:24a5f99e50e4f8d98015617ef5b7c17410e5bda4dc8b66aae5300047b8bbe091 0.0s done
+#39 exporting config sha256:3aa1447670bd0c9fa1dc78db1b3d59fd962b1942803975a5b61dd055bf5df298 done
+#39 exporting attestation manifest sha256:fad33958d5b33dfc491f5e7b8673a5b0f3e72083cfaa21427857d1a9f433b9c5 0.1s done
+#39 exporting manifest list sha256:c0b396b00bbbd97128e6a1672e0aac701cb8a9d342d37bc63a0c83e80804d3aa
+#39 exporting manifest list sha256:c0b396b00bbbd97128e6a1672e0aac701cb8a9d342d37bc63a0c83e80804d3aa 0.1s done
+#39 naming to docker.io/library/frt-c3-b0504f76-mariadb:13.0.2 0.0s done
+#39 unpacking to docker.io/library/frt-c3-b0504f76-mariadb:13.0.2 0.0s done
+#39 DONE 0.4s
+
+#40 [mariadb] resolving provenance for metadata file
+#40 DONE 0.0s
+ mariadb  Built
+ Container frt-c3-b0504f76-mariadb-1  Recreate
+ Container frt-c3-b0504f76-mariadb-1  Recreated
+ Container frt-c3-b0504f76-mariadb-1  Starting
+ Container frt-c3-b0504f76-mariadb-1  Started
+ Container frt-c3-b0504f76-mariadb-1  Waiting
+ Container frt-c3-b0504f76-mariadb-1  Healthy
+-> applying idempotent migrations and refreshing campus_app (existing data is kept)
+-> database/schema.sql
+-> database/migrations/001_audit_events_trigger_ownership.sql
+-> database/migrations/002_campus_audit_schema.sql
+-> database/migrations/003_audit_lab.sql
+-> database/triggers.sql
+(SKIP_SEED=1: seed.sql not loaded)
+-> database/catalogue.sql
+-> database/migrations/004_remove_shared_admin.sql
+-> database/migrations/005_local_admin_bootstrap_state.sql
+-> database/migrations/006_cancelled_loan_status.sql
+-> database/migrations/007_local_demo_student.sql
+-> database/migrations/008_import_plugin_log_errors.sql
+-> application account campus_app
+Database setup complete.
+-> application account campus_app (password from .env)
+-> campus_audit plugin: ACTIVE
+Compose now can delegate build to bake for better performances
+Just set COMPOSE_BAKE=true
+#0 building with "default" instance using docker driver
+
+#1 [mariadb internal] load build definition from Dockerfile
+#1 transferring dockerfile: 5.70kB done
+#1 DONE 0.0s
+
+#2 [mariadb internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [mariadb internal] load .dockerignore
+#3 transferring context: 351B done
+#3 DONE 0.0s
+
+#4 [mariadb internal] load build context
+#4 DONE 0.0s
+
+#5 [mariadb build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+
+#4 [mariadb internal] load build context
+#4 transferring context: 5.66kB 0.0s done
+#4 DONE 0.1s
+
+#6 [mariadb build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [mariadb stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#7 CACHED
+
+#8 [mariadb stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#8 CACHED
+
+#9 [mariadb stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#9 CACHED
+
+#10 [mariadb stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#10 CACHED
+
+#11 [mariadb stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#11 CACHED
+
+#12 [mariadb stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#12 CACHED
+
+#13 [mariadb build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#13 CACHED
+
+#14 [mariadb stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#14 CACHED
+
+#15 [mariadb stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#15 CACHED
+
+#16 [mariadb stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#16 CACHED
+
+#17 [mariadb stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#17 CACHED
+
+#18 [mariadb stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#18 CACHED
+
+#19 [mariadb build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#19 CACHED
+
+#20 [mariadb stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#20 CACHED
+
+#21 [mariadb build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#21 CACHED
+
+#22 [mariadb stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#22 CACHED
+
+#23 [mariadb build 4/9] COPY plugin/ ./
+#23 CACHED
+
+#24 [mariadb stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#24 CACHED
+
+#25 [mariadb stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#25 CACHED
+
+#26 [mariadb build 5/9] RUN make clean && make test && make plugin
+#26 CACHED
+
+#27 [mariadb build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#27 CACHED
+
+#28 [mariadb build 3/9] WORKDIR /src/plugin
+#28 CACHED
+
+#29 [mariadb stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#29 CACHED
+
+#30 [mariadb stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#30 CACHED
+
+#31 [mariadb stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#31 CACHED
+
+#32 [mariadb stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#32 CACHED
+
+#33 [mariadb stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#33 CACHED
+
+#34 [mariadb stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#34 CACHED
+
+#35 [mariadb stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#35 CACHED
+
+#36 [mariadb stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#36 CACHED
+
+#37 [mariadb stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#37 CACHED
+
+#38 [mariadb stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#38 CACHED
+
+#39 [mariadb] exporting to image
+#39 exporting layers 0.0s done
+#39 exporting manifest sha256:24a5f99e50e4f8d98015617ef5b7c17410e5bda4dc8b66aae5300047b8bbe091 done
+#39 exporting config sha256:3aa1447670bd0c9fa1dc78db1b3d59fd962b1942803975a5b61dd055bf5df298 done
+#39 exporting attestation manifest sha256:a853a52a86b6171b121abcddf017762e086c37888d8adea2c46b6a9870249e8d 0.1s done
+#39 exporting manifest list sha256:23dda15c4b37bc47b10f441df32cf04f7d64c255d6980f1b0a3110b1f617b394
+#39 exporting manifest list sha256:23dda15c4b37bc47b10f441df32cf04f7d64c255d6980f1b0a3110b1f617b394 0.1s done
+#39 naming to docker.io/library/frt-c3-b0504f76-mariadb:13.0.2 done
+#39 unpacking to docker.io/library/frt-c3-b0504f76-mariadb:13.0.2 0.0s done
+#39 DONE 0.4s
+
+#40 [mariadb] resolving provenance for metadata file
+#40 DONE 0.0s
+
+#41 [web internal] load build definition from Dockerfile
+#41 transferring dockerfile: 318B 0.0s done
+#41 DONE 0.1s
+
+#42 [web internal] load metadata for docker.io/library/python:3.13.17-slim
+#42 DONE 0.8s
+
+#43 [web internal] load .dockerignore
+#43 transferring context: 86B done
+#43 DONE 0.0s
+
+#44 [web internal] load build context
+#44 DONE 0.0s
+
+#45 [web 1/6] FROM docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962
+#45 resolve docker.io/library/python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 0.1s done
+#45 DONE 0.1s
+
+#44 [web internal] load build context
+#44 transferring context: 2.58kB 0.0s done
+#44 DONE 0.0s
+
+#46 [web 4/6] RUN pip install --no-cache-dir -r requirements-dev.txt
+#46 CACHED
+
+#47 [web 5/6] COPY . .
+#47 CACHED
+
+#48 [web 2/6] WORKDIR /app
+#48 CACHED
+
+#49 [web 3/6] COPY requirements.txt requirements-dev.txt ./
+#49 CACHED
+
+#50 [web 6/6] RUN useradd --create-home --uid 10001 web
+#50 CACHED
+
+#51 [web] exporting to image
+#51 exporting layers done
+#51 exporting manifest sha256:a245e1136fd8298c6401b817cc2d76760fde850d64c266379c1ced3ac0dfccc9 0.0s done
+#51 exporting config sha256:32a5b2154ea9326172e19843fd1d12416ebc2a96fa27527d397cbbcf3885b8ae done
+#51 exporting attestation manifest sha256:41c48697d4ee5bc91af10b57b8965b687b9cc944d767fad82092523f8c4b9f4a
+#51 exporting attestation manifest sha256:41c48697d4ee5bc91af10b57b8965b687b9cc944d767fad82092523f8c4b9f4a 0.1s done
+#51 exporting manifest list sha256:62ce8551c3d316365ebbc6436c91bfd265f94969d5aa32fa8a67035c0f8f0c3d 0.1s done
+#51 naming to docker.io/library/frt-c3-b0504f76-web:latest
+#51 naming to docker.io/library/frt-c3-b0504f76-web:latest 0.0s done
+#51 unpacking to docker.io/library/frt-c3-b0504f76-web:latest 0.0s done
+#51 DONE 0.3s
+
+#52 [web] resolving provenance for metadata file
+#52 DONE 0.0s
+ mariadb  Built
+ web  Built
+ Container frt-c3-b0504f76-web-1  Stopping
+ Container frt-c3-b0504f76-web-1  Stopped
+ Container frt-c3-b0504f76-mariadb-1  Recreate
+ Container frt-c3-b0504f76-mariadb-1  Recreated
+ Container frt-c3-b0504f76-web-1  Recreate
+ Container frt-c3-b0504f76-web-1  Recreated
+ Container frt-c3-b0504f76-mariadb-1  Starting
+ Container frt-c3-b0504f76-mariadb-1  Started
+ Container frt-c3-b0504f76-mariadb-1  Waiting
+ Container frt-c3-b0504f76-mariadb-1  Healthy
+ Container frt-c3-b0504f76-web-1  Starting
+ Container frt-c3-b0504f76-web-1  Started
+ Container frt-c3-b0504f76-mariadb-1  Waiting
+ Container frt-c3-b0504f76-web-1  Waiting
+ Container frt-c3-b0504f76-mariadb-1  Healthy
+ Container frt-c3-b0504f76-web-1  Healthy
+Local administrator credential is valid; no rotation performed.
+Completed an interrupted demo-credential update (the database already held the new password).
+Demo student credential is valid; no rotation performed.
+Demo student login: demo.student@frantastic.local; password on line 2 of .demo-credentials (private local file; not printed).
+
+Web app:      http://127.0.0.1:27100
+Guided tour:  http://127.0.0.1:27100/lab
+Student login: .demo-credentials (line 1 e-mail address, line 2 password; private local file; not printed)
+Administrator credential: .admin-credentials (private local file; not printed)
+Next:         make demo

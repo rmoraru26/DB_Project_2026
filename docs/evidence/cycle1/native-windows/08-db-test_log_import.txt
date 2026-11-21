@@ -1,0 +1,18 @@
+# 2026-11-17T07:14:16Z bash tests/database/test_log_import.sh
+PASS: import of the current log returns log_file, total_lines, invalid_lines_skipped, newly_imported (204 lines)
+PASS: an immediate second import reads the whole file again and adds nothing
+PASS: after a successful import the session time_zone and max_recursive_iterations are as before; no temporary table remains
+PASS: plugin_events holds each (instance, seq) once, with its complete JSON record
+PASS: an empty or NULL path is refused (ER 1644); the session is untouched
+PASS: a missing file is refused (ER 1644, LOAD_FILE returned NULL); the session is untouched
+PASS: a lock wait timeout during the import is reported as that error (ER 1205), not replaced by another
+PASS: after the failed import the session time_zone (+05:30) and max_recursive_iterations (4321) are restored
+PASS: after the failed import no temporary table is left in the session
+PASS: the next import succeeds; nothing was left half-done
+PASS: a log of 73137 bytes with max_allowed_packet = 35840 is refused with the limit and the remedy (import in parts with rotate_log.sh) in the message
+PASS: that refusal leaves the session untouched
+PASS: the global max_allowed_packet is back at 16777216
+PASS: with the original limit the same file imports again
+SKIP: invalid and unterminated lines (the log path is relative; this part needs an absolute log directory)
+== 14 passed, 0 failed, 1 skipped
+# exit status: 0

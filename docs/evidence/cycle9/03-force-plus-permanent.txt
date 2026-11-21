@@ -1,0 +1,27 @@
+# Experiment 34, 21 November 2026: campus_audit loaded as FORCE_PLUS_PERMANENT
+# Image campus-audit-plugin-lab:13.0.2 (target plugin-server, plugin 1.2.4), throw-away container started with
+#   --plugin-load-add=campus_audit.so --campus-audit=FORCE_PLUS_PERMANENT
+# Script: the statements below as root; raw output follows.
+SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS, LOAD_OPTION FROM information_schema.PLUGINS WHERE PLUGIN_NAME='campus_audit';
++--------------+---------------+----------------------+
+| PLUGIN_NAME  | PLUGIN_STATUS | LOAD_OPTION          |
++--------------+---------------+----------------------+
+| campus_audit | ACTIVE        | FORCE_PLUS_PERMANENT |
++--------------+---------------+----------------------+
+SQL> UNINSTALL SONAME 'campus_audit';
+UNINSTALL SONAME 'campus_audit'
+ERROR 1702 (HY000) at line 1: Plugin 'campus_audit' is force_plus_permanent and can not be unloaded
+SQL> UNINSTALL PLUGIN campus_audit;
+UNINSTALL PLUGIN campus_audit
+ERROR 1702 (HY000) at line 1: Plugin 'campus_audit' is force_plus_permanent and can not be unloaded
+SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME='campus_audit';
++--------------+---------------+
+| PLUGIN_NAME  | PLUGIN_STATUS |
++--------------+---------------+
+| campus_audit | ACTIVE        |
++--------------+---------------+
+SQL> SET GLOBAL campus_audit_databases = 'nothing_here';
+log tail:
+{"ts":"2026-11-21T04:30:48.749949Z","seq":1,"instance":"660c1d335ff7b-1","event":"plugin_start","version":"1.2.4","file_path":"/var/log/campus_audit/campus_audit.jsonl","databases":"university_resources","exclude_users":"","log_reads":false,"connections":"FAILED","statement_scope":"TABLES","max_sql_length":1024,"readable_by_all":true}
+{"ts":"2026-11-21T04:30:49.495072Z","seq":2,"instance":"660c1d335ff7b-1","event":"config_change","variable":"campus_audit_databases","value":"nothing_here"}
+{"ts":"2026-11-21T04:30:49.495128Z","seq":3,"instance":"660c1d335ff7b-1","event":"statement","conn":8,"query_id":11,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_databases = ?","sql_digest_truncated":false}

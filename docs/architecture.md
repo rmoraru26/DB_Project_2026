@@ -188,6 +188,11 @@ the `campus_audit` schema, import and views; 003 Audit Lab objects and `import_c
 
 ## Deployment options
 
+**Current state (21 November 2026, plugin 1.2.5):** GitHub Actions exercises options A and B on
+every push. A runs in the job "Build the DLL and load it into native Windows MariaDB 13.0.2". B runs
+in the Docker job, in the MariaDB 11.8.9 job, and in `make plugin-lab` (option B with nothing but the
+plugins). The table records the earlier dated verifications.
+
 | Option | What runs | Verified by us |
 |---|---|---|
 | A. Native Windows MariaDB 13.0.2 + `campus_audit.dll` (Zig build) | official zip/MSI server, DLL from `plugin/build_windows.ps1` | **yes**: build, load, all integration tests, failure experiments, restart (2026-10-25); plugin 1.1.0, web app, Audit Lab and browser tests again on 2026-11-03 (`docs/evidence/windows-2026-11-03/`); plugin 1.2.0 build, load, database setup, demo and the end-to-end harness on 2026-11-16 (`docs/evidence/phase1/`) |

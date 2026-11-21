@@ -1,0 +1,4 @@
+ Container frt-c1-e4886d99-web-1  Restarting
+ Container frt-c1-e4886d99-mariadb-1  Restarting
+ Container frt-c1-e4886d99-mariadb-1  Started
+ Container frt-c1-e4886d99-web-1  Started

@@ -1,0 +1,6 @@
+# cycle 1 2026-11-17T07:04:37Z: re-run of docs/evidence/phase1/post-audit/scripts/catalogue_race.sh after replacing its literal passwords by random ones (pre-fix catalogue.sql from the backup, as in post-audit/14)
+  A: 0
+== REPEATABLE READ: rooms=5 distinct names=5
+  A: 0
+== READ COMMITTED: rooms=10 distinct names=5
+# exit status: 0

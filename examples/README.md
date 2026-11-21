@@ -12,8 +12,8 @@ against MariaDB 13.0.2.
 | [`03_read_the_log.sql`](03_read_the_log.sql) | The log is JSON Lines; `import_plugin_log()` and the views join it with the trigger-based row history | [`demo-windows.txt`](../docs/evidence/demo-windows.txt) steps 3-8 |
 | [`04_configure_and_break_it.sql`](04_configure_and_break_it.sql) | Dynamic variables, filtering, and what the plugin does with invalid values (ER 1231, old value kept) | [`plugin-tests-windows.txt`](../docs/evidence/plugin-tests-windows.txt) |
 | [`05_unload.sql`](05_unload.sql) | The shutdown path: `plugin_stop` record, clean `UNINSTALL`, reinstall as a new instance | [`plugin-tests-windows.txt`](../docs/evidence/plugin-tests-windows.txt) |
+| [`06_skeleton_plugin.sql`](06_skeleton_plugin.sql) | **Write your own:** the short tutorial plugin (about 50 lines of code) [`skeleton_plugin/`](skeleton_plugin/README.md) loaded next to campus_audit, counting every event the server hands it | [`12-skeleton-plugin.txt`](../docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt) |
 | [`07_what_table_events_miss.sql`](07_what_table_events_miss.sql) | What the server's table events do not report (DML under `LOCK TABLES`; trigger DDL arrives as a *read*), and the opt-in `campus_audit_statement_scope = 'SESSION'` that records those statements | [`docs/evidence/phase1/`](../docs/evidence/phase1/README.md), `make examples` output |
-| [`06_skeleton_plugin.sql`](06_skeleton_plugin.sql) | **Write your own:** the 60-line tutorial plugin [`skeleton_plugin/`](skeleton_plugin/README.md) loaded next to campus_audit, counting every event the server hands it | [`12-skeleton-plugin.txt`](../docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt) |
 
 ## Run them
 

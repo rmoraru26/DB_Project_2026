@@ -1,0 +1,3 @@
+13.0.2-MariaDB on Win64
+campus_audit | ACTIVE | AUDIT | campus_audit.dll | 1.2.0 | Beta | BSD
+statement_scope: TABLES

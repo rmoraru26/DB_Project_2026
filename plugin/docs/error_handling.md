@@ -1,141 +1,125 @@
-# Error Management for Audit Plugin
-## Common Outcome Format
-Operations yield an AuditResult that includes:
-- code: the category of the error, or None if successful.
-- message: a description of the breakdown.
-The caller verifies ok() before proceeding.
-## Developed independent assessments
-| Condition | Outcome |
-Please provide the text that you would like to have paraphrased, and I'll be happy to assist!
-| Correct file path | None |
-| No file path | IncorrectConfiguration |
-| Unable to open file | OpenFailed |
-The independent test tries to access the file in append mode.It automatically closes the file once the function returns.
-## Proposed plugin functionality
-- If the log fails to open, logging should remain inactive.
-- If writing is unsuccessful during operation, notify about the failure withoutintentionally dismissing database connections.
-- Absence of username details is noted as null.
-- Unforeseen exceptions should not surpass the MariaDB callback limit.
-- The server error log should not be overwhelmed by recurring errors.
-## Existing constraints
-Handling of write failures and error reporting for MariaDB are not yet in place.
-The existing checks operate separately from MariaDB.
-Successfully opening a file does not guarantee that subsequent writes will be successful.
-## Running the automated checks
+# Error handling in campus_audit
 
-From the project root, compile:
+This note began as the team's design notes for the first prototype of the plugin's error handling
+(the `AuditResult` type and the first file-open check). The questions it left open were answered
+while the plugin was built; this version describes the error handling of `campus_audit` 1.2.5 as
+it is in the source. The earlier text is in the Git history of this file.
 
-g++ -std=c++11 puglin1/audit_file_check.cpp puglin1/tests/test_automatic_errors.cpp -o puglin1/tests/test_automatic_errors.exe
+## The result type
 
-In PowerShell, run:
+Every internal operation that can fail returns an `AuditResult` (`plugin/audit_error.h`): a `code`
+and a human-readable `message`; `ok()` is true only for `AuditError::None`. The event callback
+itself returns `void` (the audit API is notification-only), so `AuditResult` never reaches the
+server as a return value; it decides what is counted and what is reported.
 
-.\puglin1\tests\test_automatic_errors.exe
+| Code | Raised by | What happens |
+|---|---|---|
+| `invalid_Configuration` | `validate_log_path()` (a lexical check: NULL or empty path, longer than 512 bytes, ending in `/` or `\`, control characters; `plugin/audit_file_check.cpp`), `parse_name_list()` for the database and user lists, the system-variable check functions | `SET GLOBAL` is refused with ER 1231 and a warning that names the reason; at `INSTALL SONAME` / server start the plugin does not start (`init` returns 1), because option-file values do not pass through the check functions and are validated again in `init` |
+| `open_Failed` | `LogSink::open()` (`plugin/src/log_sink.cpp`), with the operating system's error | `SET GLOBAL campus_audit_file_path` is refused with the reason (the check function opens, and so creates, the new file once to find out); at `init` the plugin does not start; at run time the plugin becomes `DEGRADED` |
+| `write_Failed` | a failed or short `write()` of a record | the record is counted as dropped, the plugin becomes `DEGRADED`, closes the file and reopens it on the next event after 5 seconds; when writing works again it first writes an `audit_gap` record with the number of lost events |
+| `format_Failed` | a record that does not fit its buffer | the record is dropped and counted; each such record is reported |
+| `unexpected_Failure` | the note that announces a recovery ("audit log reopened; N event(s) were lost") | reported once per recovery |
 
-Expected output:
+Anything thrown inside an event callback is caught at the callback boundary
+(`campus_audit_notify`, `plugin/src/campus_audit.cpp`) and counted as a dropped event: an exception
+that crossed the C callback boundary would terminate `mariadbd`. The other functions the server
+calls directly are guarded the same way since 1.2.1: every system-variable check and update
+function is registered through `guarded_check<>` / `guarded_update<>`, and `init` / `deinit`
+through a wrapper. An exception there is counted in `Campus_audit_events_unexpected` and reported;
+a check function then refuses the value, and `init` reports that the plugin was not started.
 
-PASS: Empty path
-PASS: Missing directory
-PASS: Valid path
-Failures: 0
+## Fail-open, and how it is announced
 
-The test requires audit_test_missing_directory to be absent.
-It creates and removes audit_open_test.tmp in the current directory.
+The audit API cannot veto a statement, so the plugin is fail-open by design: a statement is never
+affected by a logging problem. What is lost is made visible instead. Since 1.2.2 that includes
+records lost without an I/O error (a record that did not fit, a failed allocation, an exception):
+they are counted without the log mutex and announced by the next `audit_gap` record.
 
-The implementation is in audit_file_check.cpp.
-The test calls that implementation through audit_file_check.h.
+- status variables: `Campus_audit_state` (`ACTIVE`, `DEGRADED`, `CLOSED`, `BUSY` while a write holds the log longer than a status query may wait), `_events_dropped`,
+  `_write_failures`, `_open_failures`, `_reopens`, `_last_error`;
+- an `audit_gap` record in the log itself when writing resumes;
+- a line in the server's error log (below).
 
-These checks cover empty paths and file-opening results.
-They do not yet cover write failures or integration with MariaDB.
-Verified local server version: 13.0.2-MariaDB.
-Local operating system: Windows.
-Verification command: SELECT VERSION();
-## Verified audit API declarations
+## Where reports go
 
-Inspected installed header:
-C:\Program Files\MariaDB 13.0\include\mysql\server\mysql\plugin_audit.h
+`report_audit_error(result, sink)` (`plugin/audit_error_reporter.cpp`) reports only failures and
+ignores a missing sink. There are two sinks, chosen by where the code runs:
 
-The audit descriptor is st_mysql_audit.
+| Sink | Used | Mechanism |
+|---|---|---|
+| `report_to_server` | outside event callbacks: system-variable check and update functions, `init` | the `my_print_error` service: `my_printf_error(ER_UNKNOWN_ERROR, ..., ME_ERROR_LOG \| ME_WARNING)`, so the client gets a warning and the error log gets the line |
+| `report_from_callback` | inside `campus_audit_notify` | one line on `stderr`, which is the server's error log. `my_printf_error()` is deliberately not used there: the server dispatches a GENERAL ERROR audit event for it to every audit plugin, i.e. it would re-enter audit plugins from inside a callback (`docs/plugin-api-notes.md`, "Re-entrancy trap") |
 
-Its event callback signature is:
-void event_notify(MYSQL_THD, unsigned int, const void *);
+An I/O outage is reported once when it starts and once when it ends, however many records it
+loses; a record that does not fit its buffer is reported each time.
 
-The callback receives the event class and event-specific data.
-The class_mask selects the event classes the plugin subscribes to.
+## Answers to the questions the first notes left open
 
-Connection event subclasses:
-- MYSQL_AUDIT_CONNECTION_CONNECT
-- MYSQL_AUDIT_CONNECTION_DISCONNECT
-- MYSQL_AUDIT_CONNECTION_CHANGE_USER
+| Open question then | Answer now |
+|---|---|
+| Status of successful and failed connections | `status` is 0 for success and the error number otherwise; a failed login is recorded with 1045 (`tests/plugin/run_plugin_tests.sh`, "connections=FAILED records a failed login") |
+| Which error-reporting mechanism to use | the `my_print_error` service outside callbacks, `stderr` inside them (above) |
+| The `logger` service | not used; the plugin writes through its own `LogSink` (`plugin/src/log_sink.cpp`): one `write()` per record, `O_APPEND`, no `fsync` |
+| Whether a successful open guarantees later writes | it does not; write failures are handled separately (`write_Failed` above) |
 
-Connection event data uses mysql_event_connection.
+## The first file-open check
 
-Relevant fields:
-- event_subclass: connection event type.
-- status: operation status.
-- thread_id: identifier to map to connection_id.
-- user and user_length: username data with an explicit length.
+The team's first file-open check, `try_open_log()` (`std::ofstream` in append mode), was never
+called by the plugin, which opens its log through `LogSink::open()` with `validate_log_path()` and
+the operating system's `open()`. It was removed from `plugin/audit_file_check.cpp` after the first
+merge, together with its three unit-test cases; the original program is
+`plugin/exploratory/interactive_open_log.cpp`.
 
-The callback returns void, so AuditResult is an internal
-component result, not the callback return type.
+## A log that stalls instead of failing
 
-Username data must be copied using its explicit length.
-Pointers from an event must not be retained for later use
-without copying their data.
+Fail-open covers errors. A destination that stops accepting data without failing, such as a hung
+network file system or a full pipe, makes the `write()` of a record block. The statement that wrote it
+and every later recorded statement then wait: the audit API cannot hand a record over without
+waiting. Unrecorded statements are not affected.
 
-A timestamp is not shown in the inspected connection structure;
-our implementation will generate the record timestamp.
+Up to 1.2.0 the blockage spread further (experiment 32). A `SET GLOBAL campus_audit_*` waited for the
+log mutex while the server held `LOCK_global_system_variables`. Logins and every `SELECT @@GLOBAL...`
+or `SET GLOBAL` then waited as well. `SHOW STATUS` of the plugin waited while holding
+`LOCK_all_status_vars` (`docs/plugin-api-notes.md`, section 9). Since 1.2.1:
 
-Pending verification:
-- Exact status semantics for successful and failed connections.
-- Supported server error-reporting mechanism.
+| Where | Waits for the log | Then |
+|---|---|---|
+| event callback | as long as the write takes | (the statement waits) |
+| system-variable check function (`file_path`, `reopen_now`) | runs before the server's lock | opens the new file; the update function swaps it in (1.2.2) |
+| system-variable update function | for the log mutex at most 2 s; normally no log I/O of its own (1.2.2; the exceptions are in `docs/plugin-api-notes.md`, section 9) | gives up with a warning naming the busy log: `campus_audit_file_path` keeps the old file, `campus_audit_reopen_now` does not reopen. Other variables take effect at once; their `config_change` record is written by the statement's STATUS event, when the log accepts data again |
+| status function | at most 0.2 s | `Campus_audit_state` shows `BUSY`; `_file` and `_last_error` show `(busy)` |
 
-## Connection event timing
+`tests/plugin/test_stalled_log.sh` checks all of this against a FIFO whose reader stops reading.
 
-CONNECT occurs after the authentication phase completes.
-DISCONNECT occurs after the connection terminates.
-CHANGE_USER occurs after the change-user operation completes.
+## Files the log may not be
 
-The inspected header does not explain the values of status.
-Successful-connection filtering requires further verification.
-## Logger service
+`LogSink::open` refuses a symbolic link, a hard-linked file, a file of another OS user (Linux), a
+regular file whose name does not end in `.jsonl`, and an existing file that is neither empty nor a
+campus_audit log, all decided on the opened descriptor or handle. It widens permissions only on a
+file it has just created. The refusal is an `open_Failed` result with the reason, so it travels
+the same way as any other open failure (ER 1231 for `SET GLOBAL`, no start at `init`). Rules,
+platform differences and limitations: `docs/security.md`, "Which files the audit log may be".
 
-The installed service_logger.h describes file logging with rotation.
-Its documentation states that access is protected by a mutex.
+## A side effect of the file-path check
 
-Relevant functions:
-- logger_open()
-- logger_write()
-- logger_sync()
-- logger_close()
+To refuse an unwritable path with the reason, the check function of `campus_audit_file_path`
+opens the new file once, which creates it if it did not exist. If the update that follows then
+fails, that empty file stays. It is deliberately not deleted: removing a file from inside the
+server after an existence check could remove a file another process created in between, which is
+worse than an empty file.
 
-This service is a possible option for the audit output.
-The inspected header does not document the exact return-value
-semantics of writing, syncing, and closing.
+## Tests
 
-It does not establish a dedicated server error-log reporting interface.
-That mechanism remains to be verified.
-## Error-reporting service
+| What | Where |
+|---|---|
+| `validate_log_path()` | `plugin/tests/test_automatic_errors.cpp` |
+| `report_audit_error()` | `plugin/tests/test_error_reporter.cpp` |
+| open and write failures of `LogSink`, file modes | `plugin/tests/test_log_sink.cpp` |
+| outage accounting (`audit_gap` counts) | `plugin/tests/test_gap_accounting.cpp` |
+| the loaded plugin: refused configuration (ER 1231 with reasons), a path the server may not write, a write failure through `/dev/full`, `DEGRADED`, recovery, the `audit_gap` record | `tests/plugin/run_plugin_tests.sh`, sections "configuration validation" and "I/O failure behaviour" |
+| a locked log file on Windows | `docs/experiments.md`, experiment 4 |
+| which files may be opened: links, other owners, wrong names, foreign content; rotation, recovery and restart afterwards | `plugin/tests/test_log_sink.cpp`; `tests/plugin/test_log_path_safety.sh` (`make test-log-path-safety`) |
+| a log that stalls without failing (FIFO), what keeps answering | `tests/plugin/test_stalled_log.sh` (`make test-stalled-log`); experiment 32 |
 
-Verified installed header:
-mysql/service_my_print_error.h
-
-The service provides:
-- my_error()
-- my_printf_error()
-- my_printv_error()
-
-By default, these functions can report errors to the client.
-
-Relevant flags:
-- ME_ERROR_LOG: also write to the server error log.
-- ME_ERROR_LOG_ONLY: write only to the server error log.
-- ME_WARNING: classify the message as a warning.
-
-Proposed runtime audit-failure reporting:
-Use my_printf_error() with ME_ERROR_LOG_ONLY.
-
-The error-number argument and service linkage must be verified
-during plugin integration.
-
-An integration test must confirm that a logging failure is reported
-without changing the client's operation result.
+Run the unit tests with `make -C plugin test` (Linux) or `plugin\build_windows.ps1` (Windows), the
+harness with `make test-e2e`.

@@ -1,0 +1,150 @@
+== campus_audit integration tests (run 1794898999_34)
+Server: 13.0.2-MariaDB-ubu2604 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- statements without table events (LOCK TABLES; trigger, view and routine DDL)
+PASS: statement_scope defaults to TABLES
+PASS: LOCK TABLES on a watched table raises one table event and is recorded
+PASS: the statements under the lock did change the table
+PASS: scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)
+PASS: scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record
+PASS: scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)
+PASS: unknown statement scope rejected
+PASS: the scope change is recorded as config_change
+PASS: scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session
+PASS: scope SESSION: they still have no table record (the server raised no table event for them)
+PASS: scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible
+PASS: scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded
+PASS: API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope
+PASS: log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement
+PASS: log_reads=ON: each of those statement records shares its query_id with the table_read record
+PASS: scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)
+PASS: scope SESSION: a statement with a table event keeps its ordinary, unmarked record
+PASS: scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)
+PASS: scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)
+PASS: scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id
+PASS: scope SESSION: the trigger's body statement is not recorded as a statement of the client
+PASS: scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session
+PASS: scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)
+PASS: scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)
+PASS: scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded
+PASS: known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded
+PASS: scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered
+PASS: back to scope TABLES: table-less statements are no longer recorded
+-- prepared statements over the binary protocol (C API)
+PASS: binary protocol: two executions succeed, the duplicate fails with 1062
+PASS: binary protocol: one statement record per execution, command Execute, the duplicate with error_code 1062
+PASS: binary protocol: each execution's statement record shares its query_id with a table_write of lock_t
+PASS: binary protocol: the digest of an execution has no bound value (9001, 9002 never appear in this connection's records)
+PASS: binary protocol: COM_STMT_PREPARE itself leaves no statement record; scope TABLES leaves the table-less SET unrecorded
+PASS: binary protocol, scope SESSION: the executions keep their ordinary records and the following table-less SET is recorded (nothing left pending)
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: failed recovery-marker write keeps the plugin DEGRADED
+PASS: failed recovery-marker write is counted
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 134 passed, 0 failed, 0 skipped
+# exit status: 0

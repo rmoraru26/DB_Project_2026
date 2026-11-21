@@ -1,0 +1,54 @@
+# cycle 1 2026-11-17T07:06:05Z: re-run of docs/evidence/phase1/post-audit/scripts/server_probes.sh after replacing its literal passwords by random ones (plugin from the final image)
+server 13.0.2-MariaDB-ubu2604, plugin 1.2.0
+== A. LOAD_FILE() and max_allowed_packet
+-- default (GLOBAL, SESSION):
+16777216	16777216
+-- SET SESSION:
+--------------
+SET SESSION max_allowed_packet = 2048
+--------------
+
+ERROR 1621 (HY000) at line 1: SESSION variable 'max_allowed_packet' is read-only. Use SET GLOBAL to assign the value
+-- SET GLOBAL = 2048, then in the SAME connection (session value, LENGTH of the 3000-byte file):
+16777216	3000
+-- a NEW connection (session value; LENGTH of files of 3000, 2048 and 2047 bytes):
+2048	NULL	NULL	2047
+Warning	1301	Result of load_file() was larger than max_allowed_packet (2048) - truncated
+Warning	1301	Result of load_file() was larger than max_allowed_packet (2048) - truncated
+-- range of the GLOBAL value (set 100, 2000000000, 3000; read back):
+1024
+1073741824
+2048
+
+== B. check_constraint_checks
+-- root, ordinary UPDATE to admin:
+--------------
+UPDATE university_resources.users SET role = 'admin' WHERE email = 'demo.student@frantastic.local'
+--------------
+
+ERROR 4025 (23000) at line 1: CONSTRAINT `chk_users_demo_is_student` failed for `university_resources`.`users`
+-- root, with check_constraint_checks = 0 (resulting role):
+admin
+-- a non-SUPER account sets it for its session (value read back):
+0
+
+== C. P2-1 probes (scope SESSION, default schema watched)
+(1 = the probe after the sequence was recorded, i.e. nothing was left pending)
+1  p01: INSERT with sql_log_off=1 at top level
+1  p02: INSERT inside a procedure that sets sql_log_off=1
+1  p03: LOAD DATA INFILE
+1  p04: HANDLER OPEN/READ/CLOSE
+1  p05: CREATE TABLE ... SELECT
+1  p06: stored function writing a watched table, called from SELECT in another schema
+1  p07: duplicate-key error after the table event (ER 1062)
+1  p08: trigger SIGNAL aborting the statement (ER 1644)
+1  p09: XA transaction
+1  p10: INSERT DELAYED
+1  p11: EXECUTE IMMEDIATE
+1  p12: SQL-level PREPARE / EXECUTE
+1  p13: KILL QUERY of the own connection after a recorded statement
+1  p14: rolled-back transaction
+1  p15: LOCK TABLES section
+1  p16: init_connect writing a watched table (non-SUPER account)
+Not covered: binary-protocol COM_STMT_PREPARE/EXECUTE from a client library (no such client in the image).
+# exit status: 0

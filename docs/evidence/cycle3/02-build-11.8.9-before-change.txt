@@ -1,0 +1,280 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load remote build context
+#1 DONE 0.9s
+
+#1 [internal] load remote build context
+#1 CACHED
+
+#2 copy /context /
+#2 CACHED
+
+#3 [internal] load metadata for docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#3 DONE 0.7s
+
+#4 [build 1/9] FROM docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#4 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#4 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 0.1s done
+#4 DONE 0.2s
+
+#5 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:11.8.9+maria~ubu2404" "libmariadb-dev=1:11.8.9+maria~ubu2404";     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [build 3/9] WORKDIR /src/plugin
+#6 CACHED
+
+#7 [build 4/9] COPY plugin/ ./
+#7 CACHED
+
+#8 [build 5/9] RUN make clean && make test && make plugin
+#8 0.869 rm -rf build
+#8 0.872 mkdir -p build
+#8 0.913 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+#8 3.598 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+#8 5.330 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+#8 6.361 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+#8 7.306 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+#8 7.962 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+#8 8.090 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+#8 8.590 == test_record_format
+#8 8.597 PASS: JSON plain string
+#8 8.597 PASS: JSON quotes and backslashes escaped
+#8 8.597 PASS: JSON newline/tab/CR escaped
+#8 8.597 PASS: JSON control characters escaped
+#8 8.597 PASS: JSON embedded NUL escaped, length respected
+#8 8.597 PASS: JSON valid UTF-8 kept as is
+#8 8.597 PASS: JSON invalid UTF-8 replaced by U+FFFD
+#8 8.597 PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+#8 8.597 PASS: JSON overlong encoding rejected
+#8 8.597 PASS: JSON NULL pointer becomes null
+#8 8.597 PASS: JSON empty string stays empty string
+#8 8.597 PASS: JSON overflow detected instead of writing past the buffer
+#8 8.597 PASS: JSON overflow keeps buffer NUL-terminated
+#8 8.597 PASS: bounded field cut before a multi-byte character
+#8 8.597 PASS: JSON numbers, booleans and null
+#8 8.597 PASS: digest masks string and number literals
+#8 8.597 PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+#8 8.597 PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+#8 8.597 PASS: the same rule hides the rest of a default-mode escaped quote
+#8 8.597 PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+#8 8.597 PASS: digest hides passwords given as literals
+#8 8.597 PASS: digest hides password hashes
+#8 8.597 PASS: digest masks hex, bit, national and introducer literals
+#8 8.597 PASS: digest masks decimals and exponents
+#8 8.597 PASS: digest keeps identifiers containing digits and backtick identifiers
+#8 8.597 PASS: digest keeps doubled backticks inside identifiers
+#8 8.597 PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+#8 8.597 PASS: digest removes all comment styles including executable comments
+#8 8.597 PASS: digest collapses whitespace
+#8 8.597 PASS: '--' without trailing space is not a comment
+#8 8.597 PASS: digest of empty statement
+#8 8.597 PASS: digest handles an unterminated string
+#8 8.597 PASS: digest handles an unterminated comment
+#8 8.597 PASS: digest keeps variable names but masks quoted ones
+#8 8.597 PASS: digest truncates at max length and reports it
+#8 8.597 PASS: digest never ends inside a UTF-8 sequence
+#8 8.597 PASS: digest with max length 0 is empty and marked truncated
+#8 8.597 PASS: 100 kB literal collapses to one '?'
+#8 8.597 PASS: digest of a NULL statement
+#8 8.597 PASS: database list parsed and trimmed
+#8 8.597 PASS: database match is case-insensitive
+#8 8.597 PASS: database match needs the whole name
+#8 8.597 PASS: NULL database never matches
+#8 8.597 PASS: empty database list watches nothing
+#8 8.597 PASS: empty list matches nothing
+#8 8.597 PASS: '*' accepted for databases
+#8 8.597 PASS: '*' matches user schemas
+#8 8.597 PASS: '*' never matches system schemas
+#8 8.597 PASS: the four system schemas are recognised
+#8 8.597 PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+#8 8.597 PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+#8 8.597 PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+#8 8.597 PASS: user schemas, prefixes and empty names are not system schemas
+#8 8.597 PASS: empty element rejected
+#8 8.597 PASS: trailing comma rejected
+#8 8.597 PASS: space inside a name rejected
+#8 8.597 PASS: punctuation rejected
+#8 8.597 PASS: '*' cannot be mixed with names
+#8 8.597 PASS: '*' rejected for users
+#8 8.597 PASS: more than 16 names rejected
+#8 8.597 PASS: name longer than 128 characters rejected
+#8 8.597 PASS: user list with '.', '-' and '@' accepted
+#8 8.597 PASS: user match is exact and case-sensitive
+#8 8.597 PASS: user match needs the whole name
+#8 8.597 PASS: user match: a login that is only a prefix of an excluded name is still audited
+#8 8.597 PASS: timestamp of the epoch
+#8 8.597 PASS: timestamp 2026-10-25
+#8 8.597 PASS: timestamp on a leap day
+#8 8.597 PASS: timestamp one second before the epoch
+#8 8.597 PASS: timestamp exactly one day before the epoch
+#8 8.597 PASS: bounded_length stops at the limit and accepts NULL
+#8 8.597 PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+#8 8.597 PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+#8 8.597 PASS: login name is the part of the account before '['
+#8 8.597 PASS: account without '[', NULL account and the length bound
+#8 8.597 Failures: 0
+#8 8.597 == test_log_sink
+#8 8.602 PASS: NULL path rejected
+#8 8.602 PASS: empty path rejected
+#8 8.602 PASS: directory-like path rejected
+#8 8.602 PASS: directory-like path ending in a backslash rejected
+#8 8.602 PASS: control character in path rejected
+#8 8.602 PASS: over-long path rejected
+#8 8.602 PASS: missing directory reported as open_Failed
+#8 8.602 PASS: open failure message carries errno
+#8 8.602 PASS: sink stays closed after failed open
+#8 8.602 PASS: write on closed sink fails
+#8 8.602 PASS: valid path opened
+#8 8.602 PASS: first record written
+#8 8.602 PASS: failed re-open keeps the previous file open
+#8 8.602 PASS: previous file still writable
+#8 8.602 PASS: re-opened file is appended to
+#8 8.602 PASS: file holds all records in order
+#8 8.602 PASS: a newly created log file has no permission bits for others
+#8 8.602 PASS: readable_by_all: an existing log file becomes readable by others
+#8 8.602 PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+#8 8.602 PASS: opened for EBADF test
+#8 8.602 PASS: write on a dead descriptor reported as write_Failed
+#8 8.602 PASS: write failure message carries errno
+#8 8.602 PASS: /dev/full write reported as write_Failed (ENOSPC)
+#8 8.602 Failures: 0
+#8 8.602 == test_automatic_errors
+#8 8.605 PASS: Empty path
+#8 8.605 PASS: Missing directory
+#8 8.605 PASS: Valid path
+#8 8.605 PASS: validate: NULL path
+#8 8.605 PASS: validate: empty path
+#8 8.605 PASS: validate: trailing forward slash
+#8 8.605 PASS: validate: trailing backslash
+#8 8.605 PASS: validate: newline in path
+#8 8.605 PASS: validate: DEL in path
+#8 8.605 PASS: validate: 513-byte path
+#8 8.605 PASS: validate: 512-byte path
+#8 8.605 PASS: validate: lexically valid path
+#8 8.605 PASS: validate: no file is created
+#8 8.605 Failures: 0
+#8 8.606 == test_error_reporter
+#8 8.608 Reported: Cannot open audit log
+#8 8.608 PASS: all reporter checks
+#8 8.608 == test_runtime_config
+#8 8.612 PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+#8 8.612 PASS: six reader threads completed 100000 reads each while one thread wrote
+#8 8.612 PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+#8 8.612 PASS: after the writer finished every setting holds the last value stored
+#8 8.612 Checks: 4, Failures: 0
+#8 8.612 == test_gap_accounting
+#8 8.613 PASS: a new accounting object has lost nothing
+#8 8.613 PASS: every lost event is counted
+#8 8.613 PASS: a marker that could not be written is reported as not written
+#8 8.613 PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+#8 8.613 PASS: events lost after the failed marker are added to the same outage
+#8 8.613 PASS: a written marker is reported as written
+#8 8.613 PASS: only a written marker resets the count
+#8 8.613 PASS: a new outage starts counting from zero
+#8 8.613 Checks: 8, Failures: 0
+#8 8.613 == test_statement_scope
+#8 8.614 PASS: TABLES: a statement without any fact is not recorded
+#8 8.614 PASS: a statement with a recorded table event is recorded without extra marks
+#8 8.614 PASS: an accepted SET GLOBAL campus_audit_* is recorded
+#8 8.614 PASS: SESSION: a statement with a recorded table event is not marked scope=session
+#8 8.614 PASS: TABLES: a refusal outside a watched default schema is not recorded
+#8 8.614 PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+#8 8.614 PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+#8 8.614 PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+#8 8.614 PASS: TABLES: the latch alone records nothing
+#8 8.614 PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+#8 8.614 PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+#8 8.614 PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+#8 8.614 PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+#8 8.614 PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+#8 8.614 PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+#8 8.614 PASS: SESSION: a table-less refusal carries both marks
+#8 8.614 PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+#8 8.614 PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+#8 8.614 PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+#8 8.614 PASS: SESSION: with both conditions met the statement is recorded
+#8 8.614 PASS: Query and Execute are SQL commands
+#8 8.614 PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+#8 8.614 PASS: the command name must match exactly; NULL and empty names are not SQL commands
+#8 8.614 PASS: an unrecorded table event marks the statement as seen, not as recorded
+#8 8.614 PASS: a recorded event of the same statement sets the latch
+#8 8.614 PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+#8 8.614 PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+#8 8.614 PASS: and a recorded event sets it again
+#8 8.614 PASS: LOCK TABLES on a watched table: one table event, recorded
+#8 8.614 PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+#8 8.614 PASS: UPDATE under LOCK TABLES: recorded
+#8 8.614 PASS: a failing statement under LOCK TABLES: recorded
+#8 8.614 PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+#8 8.614 PASS: the next statement on another schema is not recorded
+#8 8.614 PASS: and ends rule (b): a following table-less statement is not recorded
+#8 8.614 PASS: TABLES: LOCK TABLES on a watched table is recorded
+#8 8.614 PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+#8 8.614 PASS: rule (a): DROP VIEW in a watched default schema is recorded
+#8 8.614 PASS: rule (a): COMMIT in a watched default schema is recorded
+#8 8.614 PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+#8 8.614 PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+#8 8.614 PASS: INSERT into a watched table from another default schema is recorded
+#8 8.614 PASS: rule (b): the COMMIT that follows it is recorded
+#8 8.614 PASS: a statement on other tables is not recorded
+#8 8.614 PASS: and the COMMIT after that one is not recorded
+#8 8.614 PASS: a statement that touches another schema and a watched table is recorded
+#8 8.614 PASS: rule (b) holds after it
+#8 8.614 PASS: the order of its table events does not matter
+#8 8.614 PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+#8 8.614 PASS: the firing statement is recorded once, unmarked
+#8 8.614 PASS: the COMMIT after it is recorded: nothing is left open
+#8 8.614 PASS: TABLES: the same sequence gives exactly the firing statement
+#8 8.614 PASS: a routine's INSERT into a watched table is recorded as its own statement
+#8 8.614 PASS: a routine's SELECT from another schema is not recorded
+#8 8.614 PASS: the CALL itself raised no table event and is recorded, scope=session
+#8 8.614 PASS: a statement on a watched table
+#8 8.614 PASS: the Quit command that ends the connection is not recorded as a statement
+#8 8.614 PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+#8 8.614 PASS: a statement that also touched another user schema is classified and not recorded
+#8 8.614 PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+#8 8.614 PASS: rule (b): a system-schema event does not clear the latch
+#8 8.614 PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+#8 8.614 PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+#8 8.614 Checks: 63, Failures: 0
+#8 8.616 All unit test programs passed.
+#8 8.620 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+#8 8.620   -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+#8 8.620   src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+#8 8.715 src/campus_audit.cpp:40:2: error: #error "campus_audit needs audit API 0x0303 or newer (mysql_event_general.database/port, mysql_event_table.query_id)"
+#8 8.715    40 | #error "campus_audit needs audit API 0x0303 or newer (mysql_event_general.database/port, mysql_event_table.query_id)"
+#8 8.715       |  ^~~~~
+#8 8.874 src/campus_audit.cpp: In function ‘void {anonymous}::on_connection(const mysql_event_connection*)’:
+#8 8.874 src/campus_audit.cpp:403:29: error: ‘const struct mysql_event_connection’ has no member named ‘port’
+#8 8.874   403 |     w.field_uint("port", e->port);
+#8 8.874       |                             ^~~~
+#8 8.874 src/campus_audit.cpp:405:38: error: ‘const struct mysql_event_connection’ has no member named ‘tls_version’
+#8 8.874   405 |     field_sized(w, "tls_version", e->tls_version, e->tls_version_length);
+#8 8.874       |                                      ^~~~~~~~~~~
+#8 8.874 src/campus_audit.cpp:405:54: error: ‘const struct mysql_event_connection’ has no member named ‘tls_version_length’
+#8 8.874   405 |     field_sized(w, "tls_version", e->tls_version, e->tls_version_length);
+#8 8.874       |                                                      ^~~~~~~~~~~~~~~~~~
+#8 11.28 make: *** [Makefile:40: build/campus_audit.so] Error 1
+#8 ERROR: process "/bin/sh -c make clean && make test && make plugin" did not complete successfully: exit code: 2
+------
+ > [build 5/9] RUN make clean && make test && make plugin:
+8.874 src/campus_audit.cpp:403:29: error: ‘const struct mysql_event_connection’ has no member named ‘port’
+8.874   403 |     w.field_uint("port", e->port);
+8.874       |                             ^~~~
+8.874 src/campus_audit.cpp:405:38: error: ‘const struct mysql_event_connection’ has no member named ‘tls_version’
+8.874   405 |     field_sized(w, "tls_version", e->tls_version, e->tls_version_length);
+8.874       |                                      ^~~~~~~~~~~
+8.874 src/campus_audit.cpp:405:54: error: ‘const struct mysql_event_connection’ has no member named ‘tls_version_length’
+8.874   405 |     field_sized(w, "tls_version", e->tls_version, e->tls_version_length);
+8.874       |                                                      ^~~~~~~~~~~~~~~~~~
+11.28 make: *** [Makefile:40: build/campus_audit.so] Error 1
+------
+docker/mariadb/Dockerfile:21
+--------------------
+  19 |     WORKDIR /src/plugin
+  20 |     COPY plugin/ ./
+  21 | >>> RUN make clean && make test && make plugin
+  22 |     
+  23 |     # Test helper that sends COM_CHANGE_USER through the C API (the mariadb client
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c make clean && make test && make plugin" did not complete successfully: exit code: 2

@@ -1,0 +1,27 @@
+# cycle 5 2026-11-17T12:42:46Z: bash docs/evidence/cycle5/scripts/stall_and_contention.sh <server image built from this tree on mariadb:13.0.2-resolute> 1
+Server: 13.0.2-MariaDB-ubu2604, campus_audit 1.2.0, 8 CPUs visible, max_connections 151
+
+== part 1: a log destination that stalls (a FIFO whose reader stops reading)
+file_path now /var/log/campus_audit/stall.fifo, state ACTIVE
+the writer of 1000 INSERTs: 119 rows committed after 5 s, 119 rows 3 s later
+probes, each in a new connection:
+  INSERT into the watched table:             no answer within 5 s (client gave up)
+  INSERT into an unwatched schema:           completed in 27 ms
+  SELECT from an unwatched schema:           completed in 15 ms
+  SHOW GLOBAL STATUS LIKE 'Uptime':          completed in 14 ms
+  SHOW GLOBAL STATUS LIKE 'Campus_audit%':   no answer within 5 s (client gave up)
+  SET GLOBAL campus_audit_reopen_now = ON:   no answer within 5 s (client gave up)
+  (that SET keeps waiting inside the server, in the variable's update function)
+  SELECT @@GLOBAL.max_connections:           no answer within 5 s (client gave up)
+  SET GLOBAL max_connections = 152:          no answer within 5 s (client gave up)
+  SHOW GLOBAL VARIABLES LIKE 'version':      no answer within 5 s (client gave up)
+  SELECT 1 in a new connection:              no answer within 5 s (client gave up)
+server-side view (PROCESSLIST, statements still running):
+  no answer within 5 s
+-- a reader that reads again (draining the FIFO)
+a new connection's SELECT 1 answered 39 ms after draining began
+the writer finished 4304 ms after draining began
+rows: watched.t 1001 (1000 from the writer + 1 probe), other.t 1 (1 probe)
+state ACTIVE, events dropped 0, write failures 0
+table_write records for watched.t delivered through the FIFO: 1001
+# exit status: 0

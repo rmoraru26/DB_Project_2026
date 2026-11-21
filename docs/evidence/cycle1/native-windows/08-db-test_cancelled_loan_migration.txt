@@ -1,0 +1,21 @@
+# 2026-11-17T07:12:59Z bash tests/database/test_cancelled_loan_migration.sh
+PASS: scratch copy starts from the official enum('active','returned','lost')
+PASS: migration 006 run 1 succeeds
+PASS: migration 006 run 2 succeeds
+PASS: loans.status is enum('active','returned','lost','cancelled')
+PASS: loans.status stays NOT NULL with default 'active'
+PASS: no loan row was deleted or rewritten (4 rows, identical values and updated_at)
+PASS: the current active loan is still active
+PASS: an insert without status still gets 'active'
+PASS: the chk_loans_status_returned_consistent constraint is still present
+PASS: a future active loan is cancelled by an UPDATE with returned_at = NULL
+PASS: the cancelled loan keeps its row, dates and returned_at = NULL
+PASS: a cancelled loan with returned_at is rejected
+PASS: a returned loan without returned_at is still rejected
+PASS: an active loan with returned_at is still rejected
+PASS: the returned and lost loans are unchanged
+PASS: re-running migration 006 on a migrated table changes nothing (cancelled row kept)
+PASS: an unexpected loans.status definition stops migration 006
+PASS: ... and leaves that definition unchanged
+== 18 passed, 0 failed
+# exit status: 0

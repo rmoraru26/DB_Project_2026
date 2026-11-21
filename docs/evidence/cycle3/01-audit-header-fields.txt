@@ -1,0 +1,9 @@
+# 2026-11-17T08:07:01Z include/mysql/plugin_audit.h at the release tags (github.com/MariaDB/server)
+tag       version   gen.database gen.query_id gen.port     tab.query_id conn.port    conn.tls_version
+10.11.15  0x0302    yes          yes          NO           yes          NO           NO
+11.4.9    0x0302    yes          yes          NO           yes          NO           NO
+11.8.9    0x0302    yes          yes          NO           yes          NO           NO
+12.0.2    0x0303    yes          yes          yes          yes          yes          yes
+13.0.2    0x0303    yes          yes          yes          yes          yes          yes
+campus_audit reads: gen.database, gen.query_id, tab.query_id (required); conn.port and conn.tls_version
+(recorded as null when the headers are older than 0x0303); it does not read gen.port.

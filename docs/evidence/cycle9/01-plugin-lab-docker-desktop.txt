@@ -1,0 +1,230 @@
+== building campus-audit-plugin-lab:13.0.2 (target plugin-server; compiles the plugins, runs the unit tests)
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 6.17kB 0.0s done
+#1 DONE 0.3s
+
+#2 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 372B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 2.09kB 0.0s done
+#4 DONE 0.2s
+
+#6 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp examples/skeleton_plugin/Makefile /src/skeleton/
+#7 CACHED
+
+#8 [build 3/9] WORKDIR /src/plugin
+#8 CACHED
+
+#9 [plugin-server 3/8] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#9 CACHED
+
+#10 [plugin-server 5/8] COPY --from=build /src/skeleton/skeleton_audit.so /src/skeleton/skeleton_audit_exp.so /usr/lib/mysql/plugin/
+#10 CACHED
+
+#11 [plugin-server 6/8] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#11 CACHED
+
+#12 [build 4/9] COPY plugin/ ./
+#12 CACHED
+
+#13 [build 5/9] RUN make clean && make test && make plugin
+#13 CACHED
+
+#14 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#14 CACHED
+
+#15 [plugin-server 4/8] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#15 CACHED
+
+#16 [plugin-server 7/8] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#16 CACHED
+
+#17 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#17 CACHED
+
+#18 [plugin-server 2/8] RUN test -d /usr/lib/mysql/plugin
+#18 CACHED
+
+#19 [build 9/9] RUN make -C /src/skeleton all experimental
+#19 CACHED
+
+#20 [plugin-server 8/8] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#20 CACHED
+
+#21 exporting to image
+#21 exporting layers done
+#21 exporting manifest sha256:4af70576af44bb1a8f697dca7abab81a0ef4ecbb562434785d4aec29d9b93602
+#21 exporting manifest sha256:4af70576af44bb1a8f697dca7abab81a0ef4ecbb562434785d4aec29d9b93602 0.2s done
+#21 exporting config sha256:20221ba3f418716f42f706193f507d281bb4593761c50cc68f212a6518361552
+#21 exporting config sha256:20221ba3f418716f42f706193f507d281bb4593761c50cc68f212a6518361552 0.2s done
+#21 exporting attestation manifest sha256:260b9ff7471b16fff08e6f3c6c6f34a5ba334a36d849d03eeec9cdcc7d980de8 0.1s done
+#21 exporting manifest list sha256:26fb11edaef3909734fd1630db04f1baad8502f8be376536f7e6f15acc1d0de3
+#21 exporting manifest list sha256:26fb11edaef3909734fd1630db04f1baad8502f8be376536f7e6f15acc1d0de3 0.1s done
+#21 naming to docker.io/library/campus-audit-plugin-lab:13.0.2 done
+#21 unpacking to docker.io/library/campus-audit-plugin-lab:13.0.2 0.0s done
+#21 DONE 0.8s
+== starting the throw-away server campus-audit-plugin-lab (no published port)
+
+== 0. Waiting for the throw-away MariaDB server
+   SQL> SELECT VERSION() AS server, @@plugin_dir AS plugin_dir, @@plugin_maturity AS plugin_maturity;
+   +------------------------+------------------------+-----------------+
+   | server                 | plugin_dir             | plugin_maturity |
+   +------------------------+------------------------+-----------------+
+   | 13.0.2-MariaDB-ubu2604 | /usr/lib/mysql/plugin/ | beta            |
+   +------------------------+------------------------+-----------------+
+   plugin libraries in plugin_dir:
+   -rwxr-xr-x 1 root  root 1068952 Nov 20 22:48 campus_audit.so
+   -rwxr-xr-x 1 root  root   16072 Nov 21 02:03 skeleton_audit.so
+   -rwxr-xr-x 1 root  root   16072 Nov 21 02:03 skeleton_audit_exp.so
+
+== 1. INSTALL SONAME: the server opens the library, checks its maturity and calls init
+   SQL> INSTALL SONAME 'campus_audit';
+   SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_AUTH_VERSION, PLUGIN_MATURITY
+     FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   | PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY  | PLUGIN_AUTH_VERSION | PLUGIN_MATURITY |
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   | campus_audit | ACTIVE        | AUDIT       | campus_audit.so | 1.2.4               | Beta            |
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   PASS: campus_audit is an ACTIVE AUDIT plugin
+   PASS: it declares 9 system variables
+   PASS: it declares 11 status variables
+   PASS: Campus_audit_state is ACTIVE
+   PASS: the log starts with a plugin_start record
+
+== 2. Configure it at run time: watch the schema lab (SET GLOBAL, validated by a check function)
+   SQL> CREATE DATABASE lab;
+   CREATE TABLE lab.notes (id INT PRIMARY KEY, label VARCHAR(40), quantity INT CHECK (quantity > 0));
+   SET GLOBAL campus_audit_databases = 'lab';
+   SHOW GLOBAL VARIABLES LIKE 'campus\_audit\_databases';
+   +------------------------+-------+
+   | Variable_name          | Value |
+   +------------------------+-------+
+   | campus_audit_databases | lab   |
+   +------------------------+-------+
+   PASS: the change is recorded as config_change
+
+== 3. Two INSERTs: one succeeds, one violates the CHECK constraint
+   SQL> INSERT INTO lab.notes VALUES (1, 'secret label', 5);
+   SQL> INSERT INTO lab.notes VALUES (2, 'invalid', 0);
+   INSERT INTO lab.notes VALUES (2, 'invalid', 0)
+   ERROR 4025 (23000) at line 1: CONSTRAINT `notes.quantity` failed for `lab`.`notes`
+   records written by the plugin:
+   | {"ts":"2026-11-21T04:36:10.168038Z","seq":4,"instance":"660c1e655c802-1","event":"table_write","conn":13,"query_id":24,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"lab","table":"notes"}
+   | {"ts":"2026-11-21T04:36:10.298600Z","seq":5,"instance":"660c1e655c802-1","event":"statement","conn":13,"query_id":24,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
+   | {"ts":"2026-11-21T04:36:10.344812Z","seq":6,"instance":"660c1e655c802-1","event":"table_write","conn":14,"query_id":26,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"lab","table":"notes"}
+   | {"ts":"2026-11-21T04:36:10.345017Z","seq":7,"instance":"660c1e655c802-1","event":"statement","conn":14,"query_id":26,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
+   PASS: the successful INSERT: a table_write record
+   PASS: ... and a statement record with error_code 0
+   PASS: the rejected INSERT is recorded with its outcome (4025)
+   PASS: the digest replaces every literal by ?
+   PASS: no literal reaches the log
+
+== 4. A statement the privilege system refuses, and a failed login
+   The refusal raises no TABLE event; the plugin attributes it by the session's default schema (lab).
+   SQL (as lab_reader, default schema lab)> DELETE FROM notes;
+   DELETE FROM notes
+   ERROR 1142 (42000) at line 1: DELETE command denied to user 'lab_reader'@'localhost' for table `lab`.`notes`
+   login as lab_reader with a wrong password:
+   ERROR 1045 (28000): Access denied for user 'lab_reader'@'localhost' (using password: YES)
+   records written by the plugin:
+   | {"ts":"2026-11-21T04:36:10.960969Z","seq":8,"instance":"660c1e655c802-1","event":"statement","conn":16,"query_id":31,"account":"lab_reader[lab_reader] @ localhost []","db":"lab","command":"Query","error_code":1142,"status":"error","access_denied":true,"sql_digest":"DELETE FROM notes","sql_digest_truncated":false}
+   | {"ts":"2026-11-21T04:36:10.985817Z","seq":9,"instance":"660c1e655c802-1","event":"connect_failed","conn":17,"status":1045,"user":"lab_reader","priv_user":"","proxy_user":"","host":"localhost","ip":null,"port":0,"db":null,"tls_version":"TLSv1.3"}
+   PASS: the refused DELETE is recorded (access_denied, 1142)
+   PASS: the failed login is recorded (connect_failed, 1045)
+
+== 5. Invalid values are refused by the plugin's check functions, with the reason in SHOW WARNINGS
+   SQL> SET GLOBAL campus_audit_databases = 'bad name!'; SHOW WARNINGS;
+   SET GLOBAL campus_audit_databases = 'bad name!'
+   ERROR 1231 (42000) at line 1: Variable 'campus_audit_databases' can't be set to the value of 'bad name!'
+   Warning	1105	campus_audit: unsupported character in database name 'bad name!'
+   Error	1231	Variable 'campus_audit_databases' can't be set to the value of 'bad name!'
+   PASS: a schema name with a space is refused
+   SQL> SET GLOBAL campus_audit_file_path = '/etc/passwd'; SHOW WARNINGS;
+   SET GLOBAL campus_audit_file_path = '/etc/passwd'
+   ERROR 1231 (42000) at line 1: Variable 'campus_audit_file_path' can't be set to the value of '/etc/passwd'
+   Warning	1105	campus_audit: Refusing audit log '/etc/passwd': a regular audit log file must end in .jsonl
+   Error	1231	Variable 'campus_audit_file_path' can't be set to the value of '/etc/passwd'
+   PASS: a foreign file is refused as audit log (it would be appended to)
+   PASS: the previous values stay in force
+
+== 6. Fail-open: the log cannot be written (/dev/full), the statement still succeeds, the loss is announced
+   SQL> SET GLOBAL campus_audit_file_path = '/dev/full';
+   SQL> INSERT INTO lab.notes VALUES (3, 'during the outage', 1);
+   PASS: the INSERT succeeded
+   PASS: Campus_audit_state is DEGRADED
+   SQL> SHOW GLOBAL STATUS WHERE Variable_name IN ('Campus_audit_state', 'Campus_audit_write_failures', 'Campus_audit_events_dropped', 'Campus_audit_last_error');
+   +-----------------------------+---------------------------------------------------------------+
+   | Variable_name               | Value                                                         |
+   +-----------------------------+---------------------------------------------------------------+
+   | Campus_audit_events_dropped | 4                                                             |
+   | Campus_audit_last_error     | Write to audit log failed: No space left on device (errno 28) |
+   | Campus_audit_state          | DEGRADED                                                      |
+   | Campus_audit_write_failures | 1                                                             |
+   +-----------------------------+---------------------------------------------------------------+
+   SQL> SET GLOBAL campus_audit_file_path = '/var/log/campus_audit/campus_audit.jsonl';
+   PASS: switching back makes it ACTIVE again
+   records written by the plugin:
+   | {"ts":"2026-11-21T04:36:11.623622Z","seq":14,"instance":"660c1e655c802-1","event":"audit_gap","dropped_events":4,"last_error":"Write to audit log failed: No space left on device (errno 28)"}
+   | {"ts":"2026-11-21T04:36:11.623641Z","seq":15,"instance":"660c1e655c802-1","event":"config_change","variable":"campus_audit_file_path","value":"/var/log/campus_audit/campus_audit.jsonl (previous: /dev/full)"}
+   | {"ts":"2026-11-21T04:36:11.623689Z","seq":16,"instance":"660c1e655c802-1","event":"statement","conn":26,"query_id":51,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_file_path = ?","sql_digest_truncated":false}
+   PASS: an audit_gap record announces the lost records
+
+== 7. The skeleton plugin (examples/skeleton_plugin): the same API in about 50 lines of code
+   The same source built with -DSKELETON_EXPERIMENTAL declares maturity Experimental; this server accepts Beta and above:
+   SQL> INSTALL SONAME 'skeleton_audit_exp';
+   ERROR 1126 (HY000) at line 1: Can't open shared library 'skeleton_audit_exp.so' (errno: 1, Loading of experimental plugin skeleton_audit is prohibited by --plugin-maturity=beta)
+   PASS: the server refuses a plugin below plugin_maturity (ER 1126) before init runs
+   SQL> INSTALL SONAME 'skeleton_audit';
+   SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY FROM information_schema.PLUGINS WHERE PLUGIN_TYPE = 'AUDIT';
+   +----------------+---------------+-------------+-------------------+
+   | PLUGIN_NAME    | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY    |
+   +----------------+---------------+-------------+-------------------+
+   | campus_audit   | ACTIVE        | AUDIT       | campus_audit.so   |
+   | skeleton_audit | ACTIVE        | AUDIT       | skeleton_audit.so |
+   +----------------+---------------+-------------+-------------------+
+   SQL> SELECT COUNT(*) FROM lab.notes;
+   +----------+
+   | COUNT(*) |
+   +----------+
+   |        2 |
+   +----------+
+   SQL> SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
+   +----------------------------------+-------+
+   | Variable_name                    | Value |
+   +----------------------------------+-------+
+   | Skeleton_audit_connection_events | 10    |
+   | Skeleton_audit_general_events    | 23    |
+   | Skeleton_audit_table_events      | 1     |
+   +----------------------------------+-------+
+   PASS: two audit plugins are ACTIVE at the same time
+   PASS: the SELECT raised a TABLE event the skeleton counted (0 -> 1)
+   SQL> UNINSTALL SONAME 'skeleton_audit';
+   PASS: UNINSTALL removed it
+
+== Result: 24 passed, 0 failed
+
+Keep experimenting in this server (it holds nothing but these two plugins):
+   docker exec -it campus-audit-plugin-lab mariadb                     root SQL shell
+   docker exec campus-audit-plugin-lab tail -f /var/log/campus_audit/campus_audit.jsonl
+Change examples/skeleton_plugin/skeleton_audit.cpp and run the lab again: the image rebuilds only what changed.
+Remove the container: make plugin-lab-down   (Windows: .\frantastic.cmd plugin-lab-down)
