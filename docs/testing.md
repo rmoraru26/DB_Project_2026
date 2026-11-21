@@ -332,8 +332,8 @@ setup, demo, harness).
 
 Local results on this tree: unit tests, all 7 programs passed as a normal user and as root
 (`04-unit-tests-and-mutation.txt`); mutation check 77 of 77; on 13.0.2 the harness 141/0/0, thread pool
-30/0, stalled log 19/0, log path safety 39/0 + 2/0 (`10-server-13.0.2.txt`); on 11.8.9 see
-`11-server-11.8.9.txt`; Windows PowerShell tests 10, 99, 18, 37 and the ACL test 8 (non-elevated);
+30/0, stalled log 19/0, log path safety 39/0 + 2/0 (`10-server-13.0.2.txt`); on 11.8.9 the same counts, 0 failed
+(`11-server-11.8.9.txt`; a first attempt stopped before any test, when apt in the image build refused Ubuntu release files as "not valid yet": the Docker VM clock was about 6 minutes behind, `11-server-11.8.9-first-attempt-clock-skew.txt`); Windows PowerShell tests 10, 99, 18, 37 and the ACL test 8 (non-elevated);
 `scripts/check_repo.py` passed.
 
 ## Windows validation source ZIP
