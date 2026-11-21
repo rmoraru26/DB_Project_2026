@@ -104,13 +104,52 @@ administrator:
 
 ## Screenshots to regenerate after integration
 
-The ten images in `docs/screenshots/` are written by the browser tests and were regenerated from
-the current application on 16 November 2026 (the previous set showed an older design, and its home
-page showed a demo password that no longer exists):
+The ten images in `docs/screenshots/` are written by the browser tests
+(`frontend/tests/browser/test_lab_browser.py`, function `shot()`), through real browser
+interactions: a newly registered account logs in, runs the lab's statements and reads the plugin's
+records back. They were regenerated on 16 November 2026 (the previous set showed an older design,
+and its home page showed a demo password that no longer exists) and again as described below.
 
 ```bash
 SCREENSHOT_DIR=docs/screenshots make test-browser
 ```
+
+### Latest capture: 21 November 2026, plugin 1.2.5
+
+- **Tree:** branch `improvement/area11-post-merge-cycle1` at `a92ef8d`, plugin `campus_audit` 1.2.5.
+  The captured server reported `13.0.2-MariaDB-ubu2604 | campus_audit 1.2.5 ACTIVE`.
+- **Stack:** Windows 11 with Docker Desktop. It was a separate Compose project,
+  `frantastic-claude-visual-qa`, on ports 3309 and 5082, with its own new volumes. An override file
+  gave the images their own names, so the shared `campus-audit-*` images and the other
+  installations on the machine were not touched. It used the existing `.env` unchanged. The same
+  steps as `frantastic.cmd up` were run, except the generation of the two local accounts:
+  `docker compose up -d --build --wait mariadb`, then `scripts/post_start.sh` in the container,
+  then `docker compose up -d --build --wait web`.
+- **Browser:** `mcr.microsoft.com/playwright/python:v1.55.0-noble` (Chromium, headless) on that
+  project's Compose network, `LAB_BASE_URL=http://web:5000`. The development PC has no Python of its
+  own, so the pinned `frontend/requirements-browser.txt` (pytest 9.1.1, playwright 1.55.0) was
+  installed inside that throw-away container. Command:
+  `RUN_BROWSER_TESTS=1 SCREENSHOT_DIR=/shots python3 -m pytest -q -p no:cacheprovider --confcutdir=browser browser`.
+- **Result:** 11 passed. All ten files were written and copied unchanged into `docs/screenshots/`.
+  `01-home.png` came out byte-for-byte identical to the committed one; the other nine changed.
+- **What the images show:**
+  - `03-plugin-state.png`: version 1.2.5, MariaDB 13.0.2, state `ACTIVE`, 0 records dropped.
+  - `04`–`06`: one real INSERT, with 3 plugin records, a literal-free digest and 1 trigger row.
+  - `07`: the CHECK violation (ERROR 4025).
+  - `08`: the refused DELETE (ERROR 1142, access denied).
+  - `09`: the limits.
+  - `10`: the phone width (390 px).
+- **What was read and checked:** each image was opened and read. No image shows a password, an
+  e-mail address, a token or a secret. Visible are the database account `campus_app`, a
+  Docker-internal client IP, and the random label of the test's own lab row.
+- **Not covered by this capture:**
+  - the three-width scan of every page (the browser tests take the ten images at 1280 px and the
+    phone image at 390 px);
+  - signed-in screenshots as the generated demo student or administrator (the tests use an account
+    they register themselves);
+  - the booking pages.
+- **A limit of the page itself, not of the capture:** step 3 of the lab (`frontend/static/lab.js`)
+  lists 6 of the 9 configuration variables under the heading "all changeable with SET GLOBAL".
 
 In addition, capture for the review, at the three widths: home (signed out and signed in), login,
 register, items overview, item booking, the booking confirmation, rooms overview, room booking,

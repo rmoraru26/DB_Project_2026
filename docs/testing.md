@@ -421,6 +421,11 @@ verified findings were acted on:
   - per-thread state on UNINSTALL;
   - the event-scheduler case was not tested.
 
+**Screenshots, 21 November 2026 (after `a92ef8d`).** The ten README screenshots were regenerated
+from the running application with plugin 1.2.5. This was a separate Compose project with the
+Playwright browser tests (11 passed); the details are in `docs/visual-qa.md`, "Latest capture". The
+remarks above that the screenshots still showed plugin 1.2.0 refer to the state before this capture.
+
 ## Windows validation source ZIP
 
 From the maintainer checkout, run `python3 scripts/package_windows_source.py` to create
