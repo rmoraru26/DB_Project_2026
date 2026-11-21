@@ -1,5 +1,6 @@
 # Quick start for the campus_audit project (MariaDB server plugin, Area 11).
 #
+#   make plugin-lab  the plugin on its own: build it, start a throw-away server with nothing else, guided tour
 #   make up       build the plugin against MariaDB 13.0.2, start database + web app
 #   make demo     install the plugin, cause events, show what it recorded
 #   make test          unit tests + end-to-end plugin tests + web app tests
@@ -50,13 +51,19 @@ TEST_CREDENTIALS = \
 
 .PHONY: help up down reset logs sql demo examples doctor migrate repair-credentials reset-admin reset-demo rotate-log import-log \
         test test-unit test-e2e test-db test-app test-integration test-threadpool test-stalled-log test-log-path-safety test-server-version browser-setup test-browser \
-        mutation check bench evidence
+        mutation check bench evidence plugin-lab plugin-lab-down
 
 help:  ## list the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z0-9-]+:.*## / {printf "  make %-19s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .env:
 	@bash scripts/make_env.sh
+
+plugin-lab:  ## the plugin on its own: build campus_audit + skeleton plugin, start a throw-away MariaDB 13.0.2 with nothing else, run the guided tour (no .env, no web app)
+	@bash scripts/plugin_lab.sh
+
+plugin-lab-down:  ## remove the plugin-lab container
+	@bash scripts/plugin_lab.sh --down
 
 up: .env  ## build, start MariaDB 13.0.2, update the database, install the plugin, start the web app
 	$(COMPOSE) up -d --build --wait mariadb

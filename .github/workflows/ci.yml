@@ -67,6 +67,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Newcomer path on the clean checkout - make plugin-lab (the plugin alone, no .env, guided tour with checks)
+        run: |
+          set -o pipefail
+          make plugin-lab 2>&1 | tee plugin-lab.txt
+          test ! -e .env   # the plugin-only path must not need or create the application's .env
+          make plugin-lab-down
+
       - name: Fresh checkout path - make up (creates .env, builds, migrates, installs the plugin)
         run: make up
 
@@ -146,6 +153,7 @@ jobs:
         with:
           name: docker-test-output
           path: |
+            plugin-lab.txt
             demo.txt
             test.txt
             examples.txt
@@ -211,12 +219,17 @@ jobs:
           Copy-Item plugin\build\campus_audit.dll "$mdb\lib\plugin\"
           & $zig cc -target x86_64-windows-gnu -O2 "-I$mdb\include\mysql" tests\plugin\change_user.c "$mdb\lib\libmariadb.lib" -o C:\mdb\campus_change_user.exe
           if ($LASTEXITCODE -ne 0) { throw "change_user helper build failed" }
+          # The tutorial plugin, with the command of examples/skeleton_plugin/README.md.
+          & $zig c++ -target x86_64-windows-gnu -std=c++11 -O2 -shared -DMYSQL_DYNAMIC_PLUGIN "-I$mdb\include\mysql\server" "-I$mdb\include\mysql\server\private" examples\skeleton_plugin\skeleton_audit.cpp examples\skeleton_plugin\skeleton_audit.def -o "$mdb\lib\plugin\skeleton_audit.dll"
+          if ($LASTEXITCODE -ne 0) { throw "skeleton plugin build failed" }
 
       - name: Windows launcher tests that need no Docker (Windows PowerShell 5.1, fake docker and simulated database)
         shell: powershell
         run: |
-          # test_local_file_acl.ps1 is not run here: it requires a non-elevated
-          # session, and the hosted runner is elevated.
+          # test_local_file_acl.ps1 refuses an elevated session and the hosted runner
+          # is elevated, so it runs as a throw-away standard user (run_as_standard_user.ps1).
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\windows\run_as_standard_user.ps1 -Test test_local_file_acl
+          if ($LASTEXITCODE -ne 0) { throw "test_local_file_acl failed as a standard user" }
           foreach ($test in 'test_launcher_url', 'test_launcher_hardening', 'test_launcher_end_to_end', 'test_demo_credentials') {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "tests\windows\$test.ps1"
             if ($LASTEXITCODE -ne 0) { throw "$test failed" }
@@ -253,6 +266,17 @@ jobs:
           bash scripts/setup_database.sh 2>&1 | tee /c/mdbdata/setup.txt
           bash scripts/demo.sh 2>&1 | tee /c/mdbdata/demo.txt
           bash tests/plugin/run_plugin_tests.sh 2>&1 | tee /c/mdbdata/harness.txt
+          # The skeleton plugin built above, loaded next to campus_audit: it must
+          # count the TABLE event of one SELECT.
+          sk() { $MARIADB_CLIENT -uroot --batch --skip-column-names -e "$1" | tr -d '\r'; }
+          sk "INSTALL SONAME 'skeleton_audit';"
+          test "$(sk "SELECT COUNT(*) FROM information_schema.PLUGINS WHERE PLUGIN_TYPE = 'AUDIT' AND PLUGIN_STATUS = 'ACTIVE';")" = 2
+          before=$(sk "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'SKELETON_AUDIT_TABLE_EVENTS';")
+          sk "SELECT COUNT(*) FROM university_resources.rooms;" > /dev/null
+          after=$(sk "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'SKELETON_AUDIT_TABLE_EVENTS';")
+          echo "skeleton_audit.dll: table events $before -> $after" | tee /c/mdbdata/skeleton.txt
+          test "$after" -gt "$before"
+          sk "UNINSTALL SONAME 'skeleton_audit';"
 
       - name: Report failed checks as annotations (readable without signing in)
         if: failure()
