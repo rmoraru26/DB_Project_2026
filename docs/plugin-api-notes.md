@@ -263,6 +263,10 @@ and writes a line to stderr (the server's error log) from inside callbacks: once
 - `INSTALL SONAME` of a library whose plugins are already installed is a **silent no-op**;
   `INSTALL PLUGIN campus_audit SONAME 'campus_audit'` fails with ER 1968 [observed].
 - Missing library: ER 1126 *Can't open shared library* [observed].
+- Loaded at startup with `plugin_load_add` and the option `campus_audit=FORCE_PLUS_PERMANENT`, the
+  plugin cannot be unloaded: `UNINSTALL SONAME` and `UNINSTALL PLUGIN` fail with ER 1702, and
+  `information_schema.PLUGINS.LOAD_OPTION` shows `FORCE_PLUS_PERMANENT` [observed on 13.0.2,
+  experiment 34]. This is the server's own protection against silencing an audit plugin.
 - If `init` returns non-zero the plugin is not activated; at server start the server keeps running
   and the plugin shows as `NOT INSTALLED` in `information_schema.ALL_PLUGINS` while its row stays in
   `mysql.plugin` [observed].

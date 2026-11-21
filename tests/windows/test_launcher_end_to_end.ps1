@@ -31,8 +31,18 @@ $fakeDocker = @(
     'if "%~1"=="info" (echo WARNING: fake engine warning on stderr 1>&2& echo linux& exit /b 0)',
     'if "%~1"=="compose" if "%~2"=="exec" goto exec',
     'if "%~1"=="compose" if "%~2"=="down" (echo fake down progress on stderr 1>&2& exit /b 0)',
+    'if "%~1"=="ps" goto ps',
+    'if "%~1"=="rm" exit /b 0',
+    'if "%~1"=="build" (echo fake build progress on stderr 1>&2& exit /b 0)',
+    'if "%~1"=="run" goto exec',
+    'if "%~1"=="cp" exit /b 0',
+    'if "%~1"=="exec" goto exec',
     'echo fake docker: unexpected arguments 1>&2',
     'exit /b 64',
+    ':ps',
+    'echo campus-audit-plugin-lab-other',
+    'if defined FAKE_LAB_EXISTS echo campus-audit-plugin-lab',
+    'exit /b 0',
     ':exec',
     'if defined MARIADB_ROOT_PASSWORD (>>"%FAKE_DOCKER_LOG%" echo ENV MARIADB_ROOT_PASSWORD present) else (>>"%FAKE_DOCKER_LOG%" echo ENV MARIADB_ROOT_PASSWORD absent)',
     'if defined MYSQL_PWD (>>"%FAKE_DOCKER_LOG%" echo ENV MYSQL_PWD present) else (>>"%FAKE_DOCKER_LOG%" echo ENV MYSQL_PWD absent)',
@@ -106,6 +116,24 @@ try {
 
     $r = Invoke-Launcher 'down'
     Assert-True ($r.ExitCode -eq 0 -and (($r.Calls) -join '|') -ceq 'ARGS compose version|ARGS info --format {{.OSType}}|ARGS compose down') 'down: dispatched to docker compose down'
+
+    # plugin-lab: plain docker commands, no compose project, the root password
+    # forwarded by name only (present in the environment of `run`, absent from
+    # its arguments and from every other call), no published port.
+    $r = Invoke-Launcher 'plugin-lab'
+    $joined = ($r.Calls) -join '|'
+    Assert-True ($r.ExitCode -eq 0 -and $joined -ceq ('ARGS compose version|ARGS info --format {{.OSType}}|ARGS ps -a --filter name=campus-audit-plugin-lab --format {{.Names}}|' +
+        'ARGS build -f docker/mariadb/Dockerfile --target plugin-server -t campus-audit-plugin-lab:13.0.2 .|' +
+        'ARGS run -d --name campus-audit-plugin-lab -e MARIADB_ROOT_PASSWORD campus-audit-plugin-lab:13.0.2|ENV MARIADB_ROOT_PASSWORD present|ENV MYSQL_PWD absent|' +
+        'ARGS cp plugin/lab/tour.sh campus-audit-plugin-lab:/tmp/tour.sh|' +
+        'ARGS exec campus-audit-plugin-lab bash /tmp/tour.sh|ENV MARIADB_ROOT_PASSWORD absent|ENV MYSQL_PWD absent')) "plugin-lab: build target plugin-server, run with the password by name only, copy and run the tour (exit $($r.ExitCode)): $($r.Calls -join ' | ')"
+    Assert-True ($joined -notmatch ' -p | --publish' -and $r.Text -like '*fake-exec-ran*') 'plugin-lab: no published port; the tour output is shown'
+    [Environment]::SetEnvironmentVariable('FAKE_LAB_EXISTS', '1', 'Process')
+    $r = Invoke-Launcher 'plugin-lab-down'
+    [Environment]::SetEnvironmentVariable('FAKE_LAB_EXISTS', $null, 'Process')
+    Assert-True ($r.ExitCode -eq 0 -and ($r.Calls -contains 'ARGS rm -f -v campus-audit-plugin-lab') -and -not (($r.Calls -join '|') -match 'ARGS (build|run)')) 'plugin-lab-down: removes an existing container and builds nothing'
+    $r = Invoke-Launcher 'plugin-lab-down'
+    Assert-True ($r.ExitCode -eq 0 -and -not ($r.Calls -match '^ARGS rm')) 'plugin-lab-down: nothing to remove is not an error'
 
     # In this process, so the launcher's finally block can be observed: the
     # removed session variable must be back afterwards.

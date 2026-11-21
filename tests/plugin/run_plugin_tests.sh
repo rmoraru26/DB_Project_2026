@@ -35,7 +35,10 @@ ADMIN_USER=${DB_ADMIN_USER:-root}
 CLIENTS=${CONCURRENT_CLIENTS:-8}
 PER_CLIENT=${CONCURRENT_STATEMENTS:-50}
 RUN_ID="$(date +%s)_$$"
-TEST_PW="t_${RUN_ID}_Pw"          # throwaway password for throwaway test accounts
+# Throwaway password for the throwaway test accounts: random, so a test account
+# on a reachable server cannot be guessed while the run lasts.  It reaches the
+# server only through stdin (CREATE USER) and the environment (sql_as).
+TEST_PW="t$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')Pw"
 
 PASS=0
 FAIL=0
@@ -45,6 +48,15 @@ SKIP=0
 
 # Statements go through stdin, never the command line: Windows limits a
 # command line to 32 kB and Linux a single argument to 128 kB.
+# A shell value as an SQL string expression, for values the test does not
+# choose itself (paths read from the server or the environment, the saved
+# configuration).  A hex literal is correct for every byte, a quote or a
+# backslash included, and does not depend on NO_BACKSLASH_ESCAPES: the earlier
+# '${x//\\/\\\\}' escaped backslashes only.
+sql_str() {
+    printf "CONVERT(X'%s' USING utf8mb4)" "$(printf '%s' "$1" | od -An -tx1 | tr -d ' \n')"
+}
+
 sql() {      # sql "<statements>" -> stdout (tab separated, no headers)
     printf '%s\n' "$1" | "${CLIENT[@]}" -u"$ADMIN_USER" --batch --skip-column-names --default-character-set=utf8mb4
 }
@@ -82,14 +94,14 @@ count_where() { reload_log; sql "SELECT COUNT(*) FROM campus_audit_test.log_line
 ev() { echo "JSON_VALUE(line,'\$.$1')"; }
 
 cleanup() {
-    sql "SET GLOBAL campus_audit_databases = '${ORIG_DATABASES:-university_resources}';
-         SET GLOBAL campus_audit_exclude_users = '${ORIG_EXCLUDE:-}';
+    sql "SET GLOBAL campus_audit_databases = $(sql_str "${ORIG_DATABASES:-university_resources}");
+         SET GLOBAL campus_audit_exclude_users = $(sql_str "${ORIG_EXCLUDE:-}");
          SET GLOBAL campus_audit_log_reads = ${ORIG_LOG_READS:-OFF};
-         SET GLOBAL campus_audit_connections = '${ORIG_CONNECTIONS:-FAILED}';
-         SET GLOBAL campus_audit_statement_scope = '${ORIG_SCOPE:-TABLES}';
+         SET GLOBAL campus_audit_connections = $(sql_str "${ORIG_CONNECTIONS:-FAILED}");
+         SET GLOBAL campus_audit_statement_scope = $(sql_str "${ORIG_SCOPE:-TABLES}");
          SET GLOBAL campus_audit_max_sql_length = ${ORIG_MAX_SQL:-1024};" >/dev/null 2>&1
     if [ -n "${ORIG_PATH:-}" ]; then
-        sql "SET GLOBAL campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';" >/dev/null 2>&1
+        sql "SET GLOBAL campus_audit_file_path = $(sql_str "$ORIG_PATH");" >/dev/null 2>&1
     fi
     sql "DROP DATABASE IF EXISTS audit_test_watched;
          DROP DATABASE IF EXISTS audit_test_other;
@@ -126,7 +138,7 @@ ORIG_MAX_SQL=$(sql "SELECT @@GLOBAL.campus_audit_max_sql_length;")
 trap cleanup EXIT
 
 if [ -n "${AUDIT_TEST_DIR:-}" ]; then
-    DIR_EXPR="'${AUDIT_TEST_DIR//\\/\\\\}'"
+    DIR_EXPR=$(sql_str "$AUDIT_TEST_DIR")
 else
     DIR_EXPR="@@GLOBAL.datadir"
 fi
@@ -171,7 +183,7 @@ else
     fail "rejected path explains the reason in SHOW WARNINGS" "got: $warn"
 fi
 check "rejected paths leave the active file unchanged" \
-    "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
+    "SELECT @@GLOBAL.campus_audit_file_path = $(sql_str "$ORIG_PATH");"
 
 # Existing files that are not campus_audit logs (1.2.4).  SET GLOBAL needs
 # SYSTEM_VARIABLES_ADMIN, not FILE: before 1.2.4 it could append to any file
@@ -206,7 +218,7 @@ else
     skip "foreign-file refusal (SELECT ... INTO OUTFILE is not allowed in the test directory)"
 fi
 check "refused files leave the active file unchanged" \
-    "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
+    "SELECT @@GLOBAL.campus_audit_file_path = $(sql_str "$ORIG_PATH");"
 expect_error "database list with a space rejected" 1231 "SET GLOBAL campus_audit_databases = 'bad name';"
 expect_error "database list with an empty element rejected" 1231 "SET GLOBAL campus_audit_databases = 'a,,b';"
 expect_error "database list mixing '*' and names rejected" 1231 "SET GLOBAL campus_audit_databases = '*,a';"
@@ -240,7 +252,7 @@ check "out-of-range max_sql_length is clamped to 8192" "SELECT @@GLOBAL.campus_a
 if [ "${AUDIT_TEST_DENIED_PATH:-}" != "" ] || [ "$OS" != "Win64" ]; then
     DENIED=${AUDIT_TEST_DENIED_PATH:-/root/campus_audit_denied.jsonl}
     expect_error "path without write permission rejected ($DENIED)" 1231 \
-        "SET GLOBAL campus_audit_file_path = '${DENIED//\\/\\\\}';"
+        "SET GLOBAL campus_audit_file_path = $(sql_str "$DENIED");"
 else
     skip "permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)"
 fi

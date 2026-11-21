@@ -1,0 +1,9 @@
+PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+Checks: 63, Failures: 0
+All unit test programs passed.
+make: Leaving directory '/tmp/w/plugin'
+G04  killed    the statement scope starts as SESSION before the configured value is published
+
+77 of 77 mutants killed; survived: none; invalid: none
+All unit test programs passed.
+make: Leaving directory '/tmp/w/plugin'

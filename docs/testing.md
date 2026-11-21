@@ -303,6 +303,39 @@ harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 39/0 + 2/0.
 `38aa30c`: 4 of 4 jobs successful, including native Windows (unit tests with the Windows attack cases,
 setup, demo, harness).
 
+## Improvement cycle 9 (21 November 2026)
+
+`docs/evidence/cycle9/`. No plugin code changed (still 1.2.4). What changed:
+
+- **`make plugin-lab` / `.\frantastic.cmd plugin-lab`**: the plugin on its own, in a throw-away server
+  built from the new Dockerfile stage `plugin-server`, with the guided tour `plugin/lab/tour.sh`.
+  Results: 24 passed, 0 failed, through `scripts/plugin_lab.sh` (`01-plugin-lab-linux.txt`) and through
+  the Windows launcher against Docker Desktop (`02-plugin-lab-windows-launcher.txt`). An earlier run
+  through the launcher, before the maturity step existed, gave 23 of 23
+  (`02-plugin-lab-windows-launcher-23-checks.txt`). The development PC has no GNU make; the
+  `make plugin-lab` target itself ran in CI, on the clean checkout, before `make up`.
+- **The skeleton plugin** has its own Makefile, which the image build now uses. The native Windows CI
+  job builds `skeleton_audit.dll` with Zig and loads it next to campus_audit.
+- **`test_local_file_acl.ps1` in CI.** It refuses an elevated session, and GitHub's runners are
+  elevated, so `tests/windows/run_as_standard_user.ps1` runs it as a throw-away standard user. That
+  user is a member of Users only and has a random, masked password; the user and its profile are
+  removed afterwards. The script refuses to run anywhere but a GitHub-hosted runner. The test itself
+  is unchanged and still refuses elevation, so a zero exit code shows a non-elevated run.
+- **Harness literals.** `run_plugin_tests.sh` quoted values it does not choose itself (paths read
+  from the server or the environment, the saved configuration) with `'${x//\\/\\\\}'`. That escaped
+  backslashes only, so a `'` in a path broke the statement, and it depended on `NO_BACKSLASH_ESCAPES`.
+  It now writes them as hex literals (`sql_str`). The throw-away test accounts' password was
+  `t_<time>_<pid>_Pw` and could be guessed while a run lasted; it is now random.
+- **Experiment 34** (`03-force-plus-permanent.txt`): loaded as `FORCE_PLUS_PERMANENT`, the plugin cannot be
+  unloaded (ER 1702).
+- **The launcher** test gained 4 checks for `plugin-lab` and `plugin-lab-down` (18 in all).
+
+Local results on this tree: unit tests, all 7 programs passed as a normal user and as root
+(`04-unit-tests-and-mutation.txt`); mutation check 77 of 77; on 13.0.2 the harness 141/0/0, thread pool
+30/0, stalled log 19/0, log path safety 39/0 + 2/0 (`10-server-13.0.2.txt`); on 11.8.9 see
+`11-server-11.8.9.txt`; Windows PowerShell tests 10, 99, 18, 37 and the ACL test 8 (non-elevated);
+`scripts/check_repo.py` passed.
+
 ## Windows validation source ZIP
 
 From the maintainer checkout, run `python3 scripts/package_windows_source.py` to create

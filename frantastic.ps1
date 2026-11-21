@@ -237,9 +237,10 @@ try {
             # The same docker commands as scripts/plugin_lab.sh (make plugin-lab).
             $labName = "campus-audit-plugin-lab"
             $labImage = "campus-audit-plugin-lab:13.0.2"
-            $existing = @(& docker ps -a -q --filter "name=^$labName$")
+            # The name filter matches substrings, so the names are compared exactly.
+            $existing = @(& docker ps -a --filter "name=$labName" --format "{{.Names}}")
             if ($LASTEXITCODE -ne 0) { throw "docker ps failed with exit code $LASTEXITCODE." }
-            if ($existing.Count -gt 0 -and -not [string]::IsNullOrWhiteSpace($existing[0])) {
+            if ($existing -ccontains $labName) {
                 Invoke-Docker @("rm", "-f", "-v", $labName) | Out-Null
             }
             if ($Command -eq "plugin-lab-down") { Write-Host "removed $labName (if it existed)"; break }

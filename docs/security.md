@@ -115,6 +115,22 @@ is written as a `config_change` record followed by the attributed `SET GLOBAL` s
 uninstall/shutdown writes `plugin_stop` with counters, so changes are visible in the log itself.
 The file is not signed or hash-chained; forwarding it to a separate log host would be the next step.
 
+**Preventing the uninstall.** Installed with `INSTALL SONAME`, the plugin can be removed again by
+anyone with the privilege, and only its last `plugin_stop` record tells. An installation that needs
+the trail should load it at server start instead, so that it cannot be unloaded:
+
+```ini
+[mariadbd]
+plugin_load_add = campus_audit.so
+campus_audit    = FORCE_PLUS_PERMANENT
+```
+
+Measured on 13.0.2 (experiment 34): both `UNINSTALL SONAME` and `UNINSTALL PLUGIN` then fail with
+ER 1702, and the plugin stays `ACTIVE`. An administrator can still narrow what is recorded with
+`SET GLOBAL`, but each such change is itself recorded as `config_change`. Removing the option needs
+access to the option file and a restart. The Docker image keeps `INSTALL SONAME`, so that the
+examples can demonstrate unloading.
+
 What the default configuration does **not** record, measured on 13.0.2 (`docs/experiments.md`,
 experiments 21 to 24):
 
