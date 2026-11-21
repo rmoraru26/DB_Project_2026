@@ -34,10 +34,10 @@ plugin's records, and checks each claim:
 It ends with `== Result: 25 passed, 0 failed` and exits non-zero if any check failed. CI runs it from
 a clean checkout on every push. A full run is in
 [`docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt`](../docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt).
-One record from step 3:
+One record from step 3 of that run:
 
 ```json
-{"ts":"2026-11-21T01:59:50.202234Z","seq":7,"instance":"660bfb7488147-1","event":"statement","conn":15,"query_id":28,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-21T05:04:10.255776Z","seq":7,"instance":"660c24a7e5797-1","event":"statement","conn":14,"query_id":26,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
 ```
 
 ## Experiment
@@ -108,10 +108,10 @@ then `campus_audit_notify` and `on_table` in `src/campus_audit.cpp`, then `src/s
 
 | Command | What it runs | Needs |
 |---|---|---|
-| `make -C plugin test` | 7 unit-test programs | g++ and the server headers |
+| `make -C plugin test` | 7 unit-test programs | g++ only (the unit tests include no server header) |
 | `make mutation` | the unit tests against 80 injected bugs | g++, Python 3 |
 | `make plugin-lab` | the guided tour above (25 checks) | Docker |
-| `make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...` | the end-to-end harness, thread pool, stalled log and log path safety tests against another server version | Docker |
+| `make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707` | the end-to-end harness, thread pool, stalled log and log path safety tests against another server version | Docker |
 
 The end-to-end harness [`tests/plugin/run_plugin_tests.sh`](../tests/plugin/run_plugin_tests.sh) runs against any
 server where the plugin is installed: the Docker stack, a native Linux server, or native Windows

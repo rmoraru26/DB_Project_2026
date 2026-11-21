@@ -757,6 +757,13 @@ if [ "$OS" != "Win64" ]; then
     sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
     check "a redirect to /dev/null is recorded in the log it left" \
         "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '/dev/null (previous: %'") = 1;"
+    # Two assignments in one SET: the second check function replaces the file
+    # the first one staged, so the first update opens its file itself.  The log
+    # being read must still learn both steps.
+    sql "SET GLOBAL campus_audit_file_path = $LOG2_EXPR, GLOBAL campus_audit_file_path = '/dev/null';"
+    sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
+    check "two redirects in one SET are both recorded in the log they left" \
+        "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND ($(ev value) LIKE '/dev/null (previous: %_b.jsonl)' OR ($(ev value) LIKE '%_b.jsonl (previous: %' AND $(ev value) NOT LIKE '%(previous: %_b.jsonl)'))") = 3;"
 else
     skip "redirect to /dev/null (Linux only; the handover itself is checked above)"
 fi

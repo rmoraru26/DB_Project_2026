@@ -3,7 +3,7 @@
 ## What is never written by the plugin
 
 - **No SQL literals.** Statement records contain a digest in which every string, number, hex/bit
-  literal and comment is removed (`plugin/src/record_format.cpp`, `sql_digest`).  Tested in
+  literal is masked and every ordinary comment removed; the content of executable comments is kept, masked, since 1.2.5 (`plugin/src/record_format.cpp`, `sql_digest`).  Tested in
   `plugin/tests/test_record_format.cpp` (passwords in `IDENTIFIED BY`, password hashes, executable
   comments, 100 kB literals) and end-to-end (`tests/plugin/run_plugin_tests.sh`: "digest masks
   literals", "no password text appears anywhere in the log").

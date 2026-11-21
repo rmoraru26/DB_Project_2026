@@ -20,6 +20,21 @@ volumes; **W** = Windows 11, Windows PowerShell 5.1, Docker Desktop, through `fr
 **N** = native Windows MariaDB 13.0.2 (official zip) with the DLL built by Zig 0.16.0; **B** =
 Chromium in the Playwright container.
 
+## Current state (plugin 1.2.5, 21 November 2026)
+
+**Read this section for the current results.** Everything below it is dated history, kept as it was
+recorded: the suite table further down gives the Phase 1 counts (184 unit checks, 65 mutants and
+so on), not the current ones.
+
+| Suite | Current result | Raw output (`docs/evidence/cycle9/`) |
+|---|---|---|
+| Plugin unit tests, 7 programs | 225 passed as root; 223 passed and 1 skipped as a normal user | `07-unit-tests-root.txt`, `06-unit-tests-normal-user.txt` |
+| Mutation check | 80 of 80 killed | `08-mutation-check.txt` |
+| End-to-end harness; thread pool; stalled log; log path safety, on 13.0.2 and on 11.8.9 | 144/0/0, 30/0, 19/0, 39/0 + 2/0 on both | `16-server-13.0.2-plugin-1.2.5-two-assignments.txt`, `17-server-11.8.9-plugin-1.2.5-two-assignments.txt` |
+| Plugin lab; permanent load | 25 / 0; 5 / 0 | `14-…`, `15-…`, `05-…` |
+| Windows PowerShell tests | 10, 98 (the suite's own count; 99 PASS lines), 18, 37; ACL 8 | `09-windows-powershell-tests.txt` |
+| GitHub Actions | four jobs on every push: static checks, Docker end to end (with `make plugin-lab` and `make test-permanent-load` on the clean checkout), MariaDB 11.8.9, native Windows | the runs of each commit are named in the cycle 9 section |
+
 ## GitHub Actions
 
 **Merge commit `abdfa3a` on `main`** (PR #5 merged on 17 November 2026): run
@@ -354,7 +369,7 @@ starting point was 35, from another evaluator). The defensible deductions were a
 - **Full raw outputs** instead of tails: unit tests as a normal user and as root, the mutation check,
   the Windows PowerShell tests.
 
-Local results of the second part (plugin 1.2.5):
+Local results of the second part (plugin 1.2.5, commit `bf19156`; CI runs 44873899006 and 44873903594, 4 of 4 jobs each, native Windows included):
 
 | Suite | Result | Raw output |
 |---|---|---|
@@ -370,6 +385,41 @@ Local results of the second part (plugin 1.2.5):
 Not done in this cycle: the screenshots still show plugin 1.2.0 (`03-plugin-state.png` lists 6 of
 the 9 variables), because retaking them needs the browser tests against the full stack; no
 mysql-test-run suite; `campus_audit.cpp` has no unit tests or mutants of its own.
+
+Third part, after two further independent evaluations of `bf19156` (34 and 31 of 40). Their
+verified findings were acted on:
+
+- **Handover with two assignments in one `SET`** (`SET GLOBAL campus_audit_file_path = 'x.jsonl',
+  GLOBAL campus_audit_file_path = '/dev/null'`). The second check function replaced the file staged
+  by the first, and `LogSink::open` closed the log that was being read before it could be handed
+  over. Now the file is opened beside the active one, and the first retired file, the log being
+  read, keeps the handover. New harness check "two redirects in one SET are both recorded in the
+  log they left"; reading the old code path, it would find 1 record instead of 3 (not run against
+  the old code). Harness 144/0/0 on 13.0.2 and 11.8.9 (`16-…`, `17-…`).
+- **Documentation corrections:**
+  - which variables have check functions (four have none);
+  - sample records now copied from committed evidence;
+  - `database` is already in `0x0302`;
+  - 10.11 and 11.4 were not run;
+  - executable comments in `docs/security.md`;
+  - `BUSY` in `plugin/docs/error_handling.md`;
+  - the browser-test claim (CI checks 390 px; the three-width scan was local);
+  - the hardening suite's own count (98);
+  - the remaining log I/O under a server lock in recovery paths;
+  - the real 11.8.9 digest;
+  - a current-state table at the top of this file.
+- **Limitations documented:**
+  - the handover's gaps: the old log gets no account, and a `SET` without its own STATUS event is not covered;
+  - excluded users' failed logins are not recorded;
+  - schema names are matched case-insensitively.
+- **Not done, and why:**
+  - merging to `main` needs the team's approval;
+  - screenshots;
+  - no mysql-test-run suite or in-tree CMake build;
+  - no unit tests or sanitizer builds for `campus_audit.cpp`;
+  - the polling timed lock;
+  - per-thread state on UNINSTALL;
+  - the event-scheduler case was not tested.
 
 ## Windows validation source ZIP
 

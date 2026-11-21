@@ -825,7 +825,18 @@ void update_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, co
             if (staged) {
                 sink.swap(fresh);
             } else {
-                r = sink.open(requested);    // another SET replaced the staged file
+                // Another assignment replaced the staged file (two file_path
+                // assignments in one SET, or two sessions).  Opened beside the
+                // active file, not in place: LogSink::open would close the
+                // active file first, and the handover below needs it.
+                LogSink opened;
+                opened.set_readable_by_all(sv_readable_by_all != 0);
+                r = opened.open(requested);
+                if (r.ok()) {
+                    fresh.close();       // nothing staged for this path; normally already closed
+                    sink.swap(opened);   // `opened` now holds the previous file
+                    fresh.swap(opened);
+                }
             }
         } else {
             r = {AuditError::open_Failed, kLogBusy};
@@ -851,14 +862,15 @@ void update_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, co
         // After the swap `fresh` is the previous file.  Kept for the handover
         // instead of being closed here (see retired_sink).
         if (thd != nullptr && fresh.is_open()) {
-            LogSink* previous_sink = new (std::nothrow) LogSink();
-            if (previous_sink != nullptr) {
-                previous_sink->swap(fresh);
-                if (retired_sink != nullptr) {   // a second change in the same statement
-                    retired_sink->close();
-                    delete retired_sink;
+            // A second change in the same statement: the file retired first
+            // is the log that was being read, so it keeps the handover and the
+            // intermediate file is simply closed (when `fresh` goes).
+            if (retired_sink == nullptr) {
+                LogSink* previous_sink = new (std::nothrow) LogSink();
+                if (previous_sink != nullptr) {
+                    previous_sink->swap(fresh);
+                    retired_sink = previous_sink;
                 }
-                retired_sink = previous_sink;
             }
         }
     }

@@ -1,7 +1,7 @@
 # MariaDB audit plugin API: what campus_audit relies on
 
 Target: **MariaDB 13.0.2**, audit API `MYSQL_AUDIT_INTERFACE_VERSION 0x0303` (the plugin also builds
-against `0x0302`, MariaDB 10.11 to 11.8; run on 11.8.9, see "Audit API versions" below),
+against `0x0302`, which MariaDB 10.11 to 11.8 ship; built and run only on 11.8.9, see "Audit API versions" below),
 plugin API `MARIA_PLUGIN_INTERFACE_VERSION 0x010f`.
 
 Every statement below is labelled by where it comes from:
@@ -130,7 +130,7 @@ Two more facts about the order of events matter for what follows [observed]:
   inside a routine gets no STATUS event.
 
 The GENERAL STATUS event of every such statement still arrives, but it names no table and carries
-no SQL command type, only the session's default schema (`database`, added in 0x303). What a plugin
+no SQL command type, only the session's default schema (`database`, already in 0x0302). What a plugin
 may do with that, without reading the SQL text:
 
 - **Default, `campus_audit_statement_scope = TABLES`:** nothing. Statements under `LOCK TABLES`

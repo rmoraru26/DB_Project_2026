@@ -74,16 +74,22 @@ The API in one screen (every fact is labelled doc / header / source / observed i
 | `connect_failed`, `change_user_failed` (default); `connect`, `disconnect`, `change_user` (optional) | CONNECTION | user (for CHANGE_USER: the account *before* the switch), host, IP, error code |
 | `config_change`, `plugin_start`, `plugin_stop`, `audit_gap` | the plugin itself | configuration changes (attributed to the `SET GLOBAL`), life cycle, **announcements of lost records** |
 
+The `statement` record of an `INSERT` that violated a CHECK constraint, copied from the plugin-lab
+run [`docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt`](docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt)
+(the literals `2, 'invalid', 0` became `?`):
+
 ```json
-{"ts":"2026-11-03T15:39:11.312802Z","seq":189,"instance":"65f60ad4a55f4-76b4","event":"statement","conn":621,"query_id":2475,"account":"campus_app[campus_app] @ localhost [127.0.0.1]","db":"university_resources","command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO audit_lab_notes (owner_user_id, label, quantity) VALUES (?, ?, ?)","sql_digest_truncated":false}
+{"ts":"2026-11-21T05:04:10.255776Z","seq":7,"instance":"660c24a7e5797-1","event":"statement","conn":14,"query_id":26,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
 ```
 
 More real records: [`docs/evidence/sample-records.jsonl`](docs/evidence/sample-records.jsonl). A
 missing value is `null`, never invented.
 
-**Configuration.** All variables are global, and all but the last are dynamic (`SET GLOBAL`). A
-check function validates each new value. An invalid one is refused with ER 1231 and the reason in
-`SHOW WARNINGS`, and the previous value stays in force.
+**Configuration.** All variables are global, and all but the last are dynamic (`SET GLOBAL`). The
+three list and path variables (`file_path`, `databases`, `exclude_users`) and `reopen_now` have a
+check function: an invalid value is refused with ER 1231, the reason is in `SHOW WARNINGS`, and the
+previous value stays in force. The server itself validates the `ENUM` and `BOOL` variables (ER 1231
+without a plugin reason), and it clamps an out-of-range `max_sql_length` with a warning.
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -352,7 +358,7 @@ make plugin-lab         # the plugin alone in a throw-away server: 25 checks
 make test               # after make up: 8 suites in the test-runner container (unit, repository,
                         #   shell, plugin end-to-end, database, web application)
 make test-integration   # host-level: credential life cycle, log rotation, thread pool, stalled log, log path safety
-make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...   # the plugin tests on another server version
+make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707   # the plugin tests on another server version
 make test-browser       # Playwright against the running stack
 make mutation           # injects 80 bugs into the plugin code; the unit tests must catch each
 ```
@@ -364,13 +370,13 @@ Latest results. Each row names where the suite ran; the raw outputs are in `docs
 | Plugin unit tests, 7 programs | 225 checks as root; 223 + 1 skipped as a normal user (giving a file away needs root) | Linux; CI also on native Windows (Zig build) |
 | Mutation check | 80 of 80 injected bugs caught | Linux, CI |
 | Plugin lab (`make plugin-lab`) | 25 passed, 0 failed (24 before the handover check of 1.2.5) | Docker Desktop on Windows (script and launcher), CI on Linux |
-| End-to-end harness; thread pool; stalled log; log path safety | 143 / 30 / 19 / 39 + 2 passed, 0 failed, on **13.0.2 and 11.8.9** (plugin 1.2.5) | throw-away containers (`make test-server-version`), CI |
+| End-to-end harness; thread pool; stalled log; log path safety | 144 / 30 / 19 / 39 + 2 passed, 0 failed, on **13.0.2 and 11.8.9** (plugin 1.2.5) | throw-away containers (`make test-server-version`), CI |
 | Permanent load (`make test-permanent-load`, experiment 34) | 5 passed, 0 failed | throw-away container, CI |
 | End-to-end harness, native Windows | all checks pass except the two Linux-only ones (`/dev/full`, `/dev/null`), incl. CHANGE_USER; the skeleton DLL loaded next to it | CI job on native Windows MariaDB 13.0.2 |
 | Database tests (8 scripts); web application and Audit Lab | all pass; 332 passed, 1 skipped (the browser module) | test-runner container, CI |
 | Credential life cycle; log rotation; log import limits | 19 / 8 / 13 checks | Linux host driving the stack, CI |
-| Browser tests | 11 passed; every page at three widths, 0 px overflow, 0 console errors | Playwright, CI |
-| Windows launcher (PowerShell 5.1) | 10 + 99 + 18 + 37 checks; ACL test 8, also in CI as a throw-away standard user | Windows 11, CI |
+| Browser tests | 11 passed, incl. no horizontal scroll at 390 px (CI); every page at three widths with 0 px overflow and 0 console errors was a separate local scan (`docs/evidence/phase1/final-verification/`) | Playwright |
+| Windows launcher (PowerShell 5.1) | 10 + 98 + 18 + 37 checks (the hardening suite reports 98; it prints 99 PASS lines); ACL test 8, also in CI as a throw-away standard user | Windows 11, CI |
 
 GitHub Actions runs four jobs on every push and pull request: static checks, the Docker end-to-end
 job, MariaDB 11.8.9, and native Windows. The runs, the commits they tested, what was not run and
@@ -415,6 +421,16 @@ The threat model, and what the log *does* contain, are in [docs/security.md](doc
   that hangs without failing makes audited statements wait; the rest of the server keeps answering.
 - **The log's directory is not restricted**, the owner is not checked on Windows, and an older
   campus_audit log of the same OS user is accepted ([docs/security.md](docs/security.md#which-files-the-audit-log-may-be)).
+- **What the redirect handover does not cover.** The log that is left gets the `config_change`
+  record, not the attributed `statement` record; that one, with the account, goes to the new
+  destination. A `SET GLOBAL` with no STATUS event of its own (one run by the event scheduler, or
+  inside a stored routine) is recorded only when the session's next STATUS or DISCONNECT event
+  arrives. Neither was tested.
+- **Excluded users are excluded everywhere.** `campus_audit_exclude_users` also hides the failed
+  logins of those names, so password guessing against an excluded service account leaves no record.
+- **Schema names are matched case-insensitively**, also on a case-sensitive server
+  (`lower_case_table_names = 0`): watching `lab` also records `Lab`. This errs towards recording
+  more. Only the system schemas `mysql` and `sys` are matched by exact case.
 - **Names and digests.** Filter names are limited to `A-Z a-z 0-9 _ $ -` (plus `. @` for users),
   16 entries of at most 128 characters. The digest lexer assumes an ASCII-compatible character set.
 - **Platforms and scope.** macOS is untested, and the Linux host scripts use GNU `stat` and `mv`. The
@@ -432,7 +448,7 @@ The reasoning, alternatives and evidence for each are in [docs/design-decisions.
 4. **Fail open and say so**: counters, a `DEGRADED` state and `audit_gap` records.
 5. **No SQL parsing in the plugin.** Scope `SESSION` uses only facts the events carry, and it is
    opt-in because of its volume.
-6. **No log I/O while the server holds a lock**: check functions open, and the STATUS event writes.
+6. **Normally no log I/O while the server holds a lock**: check functions open, and the STATUS event writes. Recovery paths (a reopen, an `audit_gap` marker, a file the check could not stage) still write under `LOCK_global_system_variables`, with a 2 s bound.
 7. **Generated credentials instead of a shared demo password.**
 
 ## Lessons learned

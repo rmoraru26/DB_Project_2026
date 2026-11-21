@@ -2,7 +2,7 @@
 
 This note began as the team's design notes for the first prototype of the plugin's error handling
 (the `AuditResult` type and the first file-open check). The questions it left open were answered
-while the plugin was built; this version describes the error handling of `campus_audit` 1.2.4 as
+while the plugin was built; this version describes the error handling of `campus_audit` 1.2.5 as
 it is in the source. The earlier text is in the Git history of this file.
 
 ## The result type
@@ -35,7 +35,7 @@ affected by a logging problem. What is lost is made visible instead. Since 1.2.2
 records lost without an I/O error (a record that did not fit, a failed allocation, an exception):
 they are counted without the log mutex and announced by the next `audit_gap` record.
 
-- status variables: `Campus_audit_state` (`ACTIVE`, `DEGRADED`, `CLOSED`), `_events_dropped`,
+- status variables: `Campus_audit_state` (`ACTIVE`, `DEGRADED`, `CLOSED`, `BUSY` while a write holds the log longer than a status query may wait), `_events_dropped`,
   `_write_failures`, `_open_failures`, `_reopens`, `_last_error`;
 - an `audit_gap` record in the log itself when writing resumes;
 - a line in the server's error log (below).
