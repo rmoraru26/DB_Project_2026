@@ -51,7 +51,7 @@ TEST_CREDENTIALS = \
 
 .PHONY: help up down reset logs sql demo examples doctor migrate repair-credentials reset-admin reset-demo rotate-log import-log \
         test test-unit test-e2e test-db test-app test-integration test-threadpool test-stalled-log test-log-path-safety test-server-version browser-setup test-browser \
-        mutation check bench evidence plugin-lab plugin-lab-down
+        mutation check bench evidence plugin-lab plugin-lab-down test-permanent-load
 
 help:  ## list the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z0-9-]+:.*## / {printf "  make %-19s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -61,6 +61,9 @@ help:  ## list the targets
 
 plugin-lab:  ## the plugin on its own: build campus_audit + skeleton plugin, start a throw-away MariaDB 13.0.2 with nothing else, run the guided tour (no .env, no web app)
 	@bash scripts/plugin_lab.sh
+
+test-permanent-load:  ## experiment 34: loaded as FORCE_PLUS_PERMANENT the plugin cannot be unloaded (throw-away server, no .env)
+	@bash tests/plugin/test_permanent_load.sh
 
 plugin-lab-down:  ## remove the plugin-lab container
 	@bash scripts/plugin_lab.sh --down

@@ -73,7 +73,7 @@ Important consequences:
   the trigger would have written [observed]. Only the statement record says whether it succeeded.
 - **Not transactional.** An UPDATE that is later rolled back still yields `table_write` and a
   statement with `status: ok`; the plugin sees statements, not commits [observed, integration test
-  "rolled-back UPDATE ..."]. COMMIT/ROLLBACK themselves touch no table and are not recorded.
+  "rolled-back UPDATE ..."]. COMMIT and ROLLBACK themselves touch no table: they are recorded only with `campus_audit_statement_scope = SESSION` (section 2a).
 - **Triggers are visible.** The table a trigger writes appears as a second `table_write` with the
   same `query_id` as the user's statement [observed]; this is how plugin records and trigger rows are
   correlated. The built-in server_audit additionally logs each trigger body statement as its own

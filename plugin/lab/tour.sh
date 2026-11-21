@@ -140,7 +140,11 @@ expect "the previous values stay in force" \
 
 # ---------------------------------------------------------------- 6. fail-open
 step "6. Fail-open: the log cannot be written (/dev/full), the statement still succeeds, the loss is announced"
+m=$(mark)
 q "SET GLOBAL campus_audit_file_path = '/dev/full';"
+echo "   the log it left records where logging went (handover, since 1.2.5):"
+since "$m" | grep -F '"campus_audit_file_path"' | sed 's/^/   | /'
+has "$m" "the redirect is recorded in the log it left" '"event":"config_change"' '"value":"/dev/full (previous: '
 q "INSERT INTO lab.notes VALUES (3, 'during the outage', 1);"
 expect "the INSERT succeeded" "$(val 'SELECT COUNT(*) FROM lab.notes WHERE id = 3;')" 1
 expect "Campus_audit_state is DEGRADED" "$(status CAMPUS_AUDIT_STATE)" DEGRADED

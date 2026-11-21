@@ -747,6 +747,19 @@ sql "SET GLOBAL campus_audit_file_path = $LOG2_EXPR;"
 sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
 check "switching files records the previous path" \
     "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '%(previous: %_b.jsonl)'") = 1;"
+# 1.2.5: the log that is switched away from also records where logging went
+# (handover), so a redirect cannot be hidden from the log being read.
+check "the previous log records the switch away from it (handover)" \
+    "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '%_b.jsonl (previous: %' AND $(ev value) NOT LIKE '%(previous: %_b.jsonl)'") = 1;"
+if [ "$OS" != "Win64" ]; then
+    sql "SET GLOBAL campus_audit_file_path = '/dev/null';"
+    sql "INSERT INTO audit_test_watched.rooms_renamed (id, name, capacity) VALUES (22, 'unlogged', 1);" >/dev/null
+    sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
+    check "a redirect to /dev/null is recorded in the log it left" \
+        "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '/dev/null (previous: %'") = 1;"
+else
+    skip "redirect to /dev/null (Linux only; the handover itself is checked above)"
+fi
 
 # ---------------------------------------------------------------- trigger interplay
 

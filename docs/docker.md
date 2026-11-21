@@ -16,9 +16,9 @@ runs MariaDB **13.0.2** (official image, pinned by digest in `docker/mariadb/Doc
 > **Status (2026-11-16):** the workflow described on this page (with the generated demo student, the
 > booking catalogue, migrations 007 and 008, `make reset-demo`, `make rotate-log` and
 > `make test-integration`) was run locally from a clean volume on a Linux host driving Docker
-> Desktop, and through `frantastic.cmd` on Windows 11; outputs in `docs/evidence/phase1/`. It has
-> not run in GitHub Actions yet: the last CI runs are for the commit before these changes
-> (`docs/testing.md`).
+> Desktop, and through `frantastic.cmd` on Windows 11; outputs in `docs/evidence/phase1/`. Since then
+> the job "make up / demo / test / browser tests on MariaDB 13.0.2 (Docker)" of GitHub Actions runs
+> it on every push (`.github/workflows/ci.yml`; runs and results in `docs/testing.md`).
 
 ## Start
 

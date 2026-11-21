@@ -115,6 +115,17 @@ is written as a `config_change` record followed by the attributed `SET GLOBAL` s
 uninstall/shutdown writes `plugin_stop` with counters, so changes are visible in the log itself.
 The file is not signed or hash-chained; forwarding it to a separate log host would be the next step.
 
+**A redirect is recorded in the log it leaves** (since 1.2.5). Up to 1.2.4 the `config_change` of
+`campus_audit_file_path` was written only to the *new* file. A switch to `/dev/null` (an allowed
+destination on Linux) therefore silenced the plugin without a trace in the log being read; an
+independent review found this. Now the previous file is kept open until the statement's STATUS
+event, which writes the same records into it as well, and is then closed. The old log ends with
+`{"event":"config_change","variable":"campus_audit_file_path","value":"/dev/null (previous: ...)"}`.
+This happens outside every server lock, like the rest of the configuration records (experiment 32).
+It is best effort: if the old file cannot be written then, `Campus_audit_write_failures` counts it.
+Checked by `tests/plugin/run_plugin_tests.sh` ("the previous log records the switch away from it",
+"a redirect to /dev/null is recorded in the log it left").
+
 **Preventing the uninstall.** Installed with `INSTALL SONAME`, the plugin can be removed again by
 anyone with the privilege, and only its last `plugin_stop` record tells. An installation that needs
 the trail should load it at server start instead, so that it cannot be unloaded:

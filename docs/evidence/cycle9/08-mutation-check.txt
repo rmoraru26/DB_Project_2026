@@ -1,0 +1,86 @@
+# python3 scripts/mutation_check.py -j 6 as uid 1000
+baseline: unit tests pass; running 80 mutants with 6 workers
+
+D01  killed    single-quoted strings are no longer masked
+D02  killed    double-quoted strings are no longer masked
+D03  killed    numbers are no longer masked
+D04  killed    numbers starting with '.' are no longer masked
+D05  killed    exponent signs end a number early (1.5e-3 leaks '3')
+D06  killed    X'..', B'..', N'..' and _charset'..' literals are no longer masked
+D07  killed    backslash escapes inside strings are ignored (a \' ends the literal early)
+D08  killed    doubled quotes ('it''s') end the literal early
+D09  killed    a backslash is treated as an escape inside `identifiers` too
+D16  killed    a backslash before a quote is read as an escape, so under NO_BACKSLASH_ESCAPES the next literal leaks
+D10  killed    # comments are kept (they can carry secrets)
+D11  killed    -- comments are kept
+D12  killed    /* */ and /*! */ comments are kept
+D13  killed    whitespace is not collapsed to one space
+D14  killed    a cut digest is not flagged as truncated
+D15  killed    a truncated digest may end inside a multi-byte UTF-8 character
+D17  killed    executable comments /*! ... */ are dropped from the digest again
+D18  killed    the end of an executable comment is not recognised
+D19  killed    the version number of an executable comment is kept
+J01  killed    backslash is not escaped in JSON
+J02  killed    control characters below 0x20 are not escaped
+J03  killed    DEL (0x7F) is not escaped
+J04  killed    invalid UTF-8 bytes are copied into the JSON line
+J05  killed    off-by-one: the writer stores its NUL one byte past the buffer
+J06  killed    a missing (NULL) value is written as an empty string instead of null
+J07  killed    records are no longer terminated by a newline
+J08  killed    a bounded string cut short is not flagged
+N01  killed    unsupported characters in schema/user names are accepted
+N02  killed    more than 16 names are accepted (buffer overrun)
+N03  killed    names longer than 128 characters are accepted (buffer overrun)
+N04  killed    a trailing comma in a list is accepted
+N05  killed    '*' may be combined with explicit names
+N06  killed    '*' is accepted in the user list
+N07  killed    '*' also audits mysql / information_schema / performance_schema / sys
+N08  killed    schema names are matched case-sensitively
+N09  killed    a schema name matches when it is only a prefix of a watched name
+N10  killed    an excluded user matches when the login is only a prefix of the listed name
+T01  killed    minutes are not reduced modulo 60
+T02  killed    timestamps before 1970 round the wrong way
+T03  killed    January and February get the previous year
+T04  killed    bounded_length reads one byte past its limit
+P01  killed    over-long paths are accepted
+P02  killed    control characters in the log path are accepted
+P03  killed    a path ending in a backslash (Windows directory) is accepted
+S01  killed    LogSink::open skips path validation
+S02  killed    the log is not opened in append mode (a reopen overwrites it)
+S03  killed    the log file is created world-readable
+S04  killed    a hard-linked file is appended to
+S05  killed    any existing non-empty file counts as a campus_audit log
+S06  killed    a regular file of any name (a table file) is accepted
+S07  killed    a log that begins with the newline of an audit_gap record is refused
+S08  killed    a file of another OS user is appended to
+S09  killed    a symbolic link to a log-like file is followed
+S10  killed    readable_by_all widens the permissions of an existing file
+S11  killed    the log descriptor stays non-blocking (records are lost instead of waiting)
+S12  killed    a FIFO of another OS user is written to
+S13  killed    any character device (e.g. /dev/zero) is written to
+A01  killed    a refused DELETE/UPDATE/INSERT (ER 1142) is no longer recorded
+A02  killed    the whole account string is compared with campus_audit_exclude_users, so exclusions stop working
+R01  killed    campus_audit_readable_by_all leaves the log unreadable for LOAD_FILE()
+C01  killed    the default scope TABLES also records table-less statements (the opt-in is ignored)
+C02  killed    SESSION also records statements whose table events were deliberately not recorded (reads, other schemas)
+C11  killed    SESSION records every trigger body statement as if the client had sent it
+C12  killed    SESSION records protocol commands such as Quit as statements
+C13  killed    prepared statements executed through the binary protocol are never recorded by SESSION
+C14  killed    any protocol command with a name of four letters or more counts as a statement (Quit, Ping)
+C03  killed    DML under LOCK TABLES from another default schema is not recorded (rule (b) lost)
+C04  killed    trigger/view DDL in a watched default schema is not recorded (rule (a) lost)
+C05  killed    the latch is never cleared: every later table-less statement of the connection is recorded
+C06  killed    the latch is never set: nothing under LOCK TABLES is recorded
+C07  killed    campus_audit_exclude_users is ignored for refused and session-scope statements
+C08  killed    refusals in sessions of unwatched schemas are recorded
+C09  killed    session-scope records are not marked, so they cannot be told from table-backed ones
+C10  killed    mysql and sys no longer count as system schemas: CREATE PROCEDURE (event on mysql.proc) is never recorded
+N12  killed    a user schema `MySQL` or `Sys` is taken for the system schema and silently not audited by '*'
+N13  killed    INFORMATION_SCHEMA / Performance_Schema in another case are audited by '*' like a user schema
+G01  killed    a recovery marker that could not be written still erases the count of lost events
+G02  killed    events lost to an I/O failure are not counted
+G03  killed    a failed recovery marker is reported as written, so the plugin leaves the degraded state
+G04  killed    the statement scope starts as SESSION before the configured value is published
+
+80 of 80 mutants killed; survived: none; invalid: none
+exit 0

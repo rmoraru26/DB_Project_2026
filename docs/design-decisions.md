@@ -137,8 +137,10 @@ the import still reads the whole file and what bounds it.
 ## 6. Data minimisation
 
 The plugin never writes raw SQL.  `sql_digest()` replaces every literal (strings, numbers,
-hex/bit literals, `_charset'...'`), removes all comments (including `/*! ... */`) and collapses
-whitespace.  Passwords in `CREATE USER ... IDENTIFIED BY '...'`, password hashes in
+hex/bit literals, `_charset'...'`), removes ordinary comments and collapses whitespace.
+Executable comments (`/*! ... */`, `/*M! ... */`) are run by the server, so since 1.2.5 the digest
+keeps their content, lexed and masked like the rest of the statement. 1.2.4 dropped them, so
+`/*!100000 DELETE FROM t */` left an empty digest (found by an independent review).  Passwords in `CREATE USER ... IDENTIFIED BY '...'`, password hashes in
 `UPDATE users SET password_hash = '...'` and the personal data that PyMySQL interpolates into the
 statements of the web app are all literals and therefore never reach the log.  Statement records
 exist only for watched schemas, so administrative statements elsewhere are not logged at all.

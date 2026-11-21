@@ -20,11 +20,17 @@ build commands below; MSVC, which is not used here, would need `InterlockedIncre
 
 ## 2. Build it
 
-The headers come from the server package (`libmariadbd-dev` on Debian/Ubuntu, `include\mysql\server` in
-every MariaDB Windows installation). They must match the server's version.
+**Quickest, with Docker only:** `make plugin-lab` (Windows: `.\frantastic.cmd plugin-lab`) from the
+repository root. It builds this file with its [`Makefile`](Makefile), loads it into a throw-away
+MariaDB 13.0.2 next to campus_audit, and keeps that server running for step 3. After you change the
+source, run it again; only the changed layers are rebuilt.
+
+**On your own machine,** the headers come from the server package (`libmariadbd-dev` on
+Debian/Ubuntu, `include\mysql\server` in every MariaDB Windows installation). They must match the
+server's version.
 
 ```bash
-# Linux (the Docker image does exactly this in its build stage)
+# Linux: make -C examples/skeleton_plugin (the Docker image uses the same Makefile), or by hand:
 g++ -std=c++11 -O2 -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
     -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private \
     examples/skeleton_plugin/skeleton_audit.cpp -o skeleton_audit.so
@@ -41,19 +47,21 @@ Copy the library into `SELECT @@plugin_dir;` (the Docker image already has
 ## 3. Load it and watch it count
 
 ```bash
-make sql            # Docker; natively: mariadb -uroot -p
+docker exec -it campus-audit-plugin-lab mariadb   # after make plugin-lab; natively: mariadb -uroot -p
 ```
 
 ```sql
 INSTALL SONAME 'skeleton_audit';
 SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE FROM information_schema.PLUGINS WHERE PLUGIN_TYPE = 'AUDIT';
 SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
-SELECT COUNT(*) FROM university_resources.rooms;
+SELECT COUNT(*) FROM lab.notes;        -- any table; the plugin lab created lab.notes
 SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
 ```
 
-Or run all of it at once: `examples/06_skeleton_plugin.sql` (part of `make examples`). Real output on
-MariaDB 13.0.2 (`docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt`):
+The plugin lab's tour does exactly this in its step 7 ([its last run](../../docs/evidence/cycle9/01-plugin-lab-docker-desktop.txt)).
+With the full application (`make up`), `make sql` opens the shell instead and
+`examples/06_skeleton_plugin.sql` runs these statements (part of `make examples`). Real output from a
+native Windows server, MariaDB 13.0.2 (`docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt`):
 
 ```text
 | campus_audit   | ACTIVE | AUDIT | campus_audit.dll   | Beta |

@@ -28,12 +28,12 @@ plugin's records, and checks each claim:
 | 3 | a good and a CHECK-violating `INSERT`: both are recorded with their outcome (`error_code` 0 and 4025), and no literal reaches the log |
 | 4 | a `DELETE` the privilege system refuses (1142) and a failed login (1045), both of which never reach a table |
 | 5 | invalid values refused by the plugin's check functions, with the reason in `SHOW WARNINGS`; a foreign file refused as audit log |
-| 6 | fail-open: with the log on `/dev/full` the `INSERT` still succeeds, the plugin turns `DEGRADED`, and an `audit_gap` record later announces how many records were lost |
+| 6 | the redirect to `/dev/full` recorded in the log it left (handover); fail-open: the `INSERT` still succeeds, the plugin turns `DEGRADED`, and an `audit_gap` record later announces how many records were lost |
 | 7 | the skeleton plugin next to campus_audit; the server refusing an *experimental* build of it (ER 1126, maturity check) |
 
-It ends with `== Result: 24 passed, 0 failed` and exits non-zero if any check failed. CI runs it from
+It ends with `== Result: 25 passed, 0 failed` and exits non-zero if any check failed. CI runs it from
 a clean checkout on every push. A full run is in
-[`docs/evidence/cycle9/01-plugin-lab-linux.txt`](../docs/evidence/cycle9/01-plugin-lab-linux.txt).
+[`docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt`](../docs/evidence/cycle9/14-plugin-lab-plugin-1.2.5-docker-desktop.txt).
 One record from step 3:
 
 ```json
@@ -55,10 +55,13 @@ Things to try in the SQL shell. Each one shows one property of the audit API:
 ```sql
 SET GLOBAL campus_audit_connections = 'ALL';        -- record every login and logout, not only failed ones
 SET GLOBAL campus_audit_log_reads = ON;             -- SELECTs on lab.* now produce table_read records
-LOCK TABLES lab.notes WRITE;                        -- the server raises no TABLE event under LOCK TABLES:
-INSERT INTO lab.notes VALUES (10, 'x', 1);          --   no record ...
+LOCK TABLES lab.notes WRITE;                        -- under LOCK TABLES the server raises no TABLE event:
+INSERT INTO lab.notes VALUES (10, 'x', 1);          --   this INSERT leaves no record
 UNLOCK TABLES;
-SET GLOBAL campus_audit_statement_scope = 'SESSION';-- ... unless the scope is SESSION (records it from GENERAL STATUS)
+SET GLOBAL campus_audit_statement_scope = 'SESSION';-- now statements without a table event are recorded too
+LOCK TABLES lab.notes WRITE;
+INSERT INTO lab.notes VALUES (11, 'y', 1);          --   a statement record with "scope":"session"
+UNLOCK TABLES;
 SET GLOBAL campus_audit_reopen_now = ON;            -- close and reopen the log (rotation)
 SHOW GLOBAL STATUS LIKE 'Campus_audit%';            -- counters: written, dropped, filtered, write failures
 UNINSTALL SONAME 'campus_audit';                    -- deinit runs; a plugin_stop record ends the log
@@ -88,15 +91,15 @@ On Linux, `LOAD_FILE()` needs the log to be readable by all; see [docs/security.
 
 | File | Lines | What it does |
 |---|---:|---|
-| [`src/campus_audit.cpp`](src/campus_audit.cpp) | 1304 | the plugin: `maria_declare_plugin`, the audit descriptor and `campus_audit_notify`; `on_connection`, `on_table`, `on_general`; the 9 system variables with check and update functions; the 11 status variables; `init`/`deinit` |
-| [`src/record_format.cpp`](src/record_format.cpp), `.h` | 628 | server-independent: the JSON writer, the literal-free SQL digest, name filters |
+| [`src/campus_audit.cpp`](src/campus_audit.cpp) | 1342 | the plugin: `maria_declare_plugin`, the audit descriptor and `campus_audit_notify`; `on_connection`, `on_table`, `on_general`; the 9 system variables with check and update functions; the 11 status variables; `init`/`deinit` |
+| [`src/record_format.cpp`](src/record_format.cpp), `.h` | 651 | server-independent: the JSON writer, the literal-free SQL digest, name filters |
 | [`src/log_sink.cpp`](src/log_sink.cpp), `.h` | 527 | the log file: which files may be opened (checked on the opened descriptor or handle), one `write()` per record, reopen |
 | [`src/statement_scope.h`](src/statement_scope.h) | 137 | which statements get a `statement` record, decided from event facts only (no SQL parsing) |
 | [`src/platform.h`](src/platform.h) | 148 | mutex with a bounded wait, reader/writer lock, clock: Linux and Windows |
 | `src/gap_accounting.h`, `src/runtime_config.h` | 49 | counting lost records; atomic copies of settings for concurrent callbacks |
 | `src/service_symbols.cpp`, `src/campus_audit.def` | 30 | Windows/Zig builds: the server service pointers and the exported symbols |
 | `audit_error*.h/.cpp`, `audit_file_check.*` | | error types and their reporting to the client and the error log ([docs/error_handling.md](docs/error_handling.md)) |
-| [`tests/`](tests) | 1234 | 7 unit-test programs, no server needed; `make mutation` (repository root) injects 77 bugs they must detect |
+| [`tests/`](tests) | 1247 | 7 unit-test programs, no server needed; `make mutation` (repository root) injects 80 bugs they must detect |
 
 Read it in this order: the [skeleton plugin](../examples/skeleton_plugin/README.md) (the three parts every audit plugin has),
 then `campus_audit_notify` and `on_table` in `src/campus_audit.cpp`, then `src/statement_scope.h`.
@@ -106,8 +109,8 @@ then `campus_audit_notify` and `on_table` in `src/campus_audit.cpp`, then `src/s
 | Command | What it runs | Needs |
 |---|---|---|
 | `make -C plugin test` | 7 unit-test programs | g++ and the server headers |
-| `make mutation` | the unit tests against 77 injected bugs | g++, Python 3 |
-| `make plugin-lab` | the guided tour above (24 checks) | Docker |
+| `make mutation` | the unit tests against 80 injected bugs | g++, Python 3 |
+| `make plugin-lab` | the guided tour above (25 checks) | Docker |
 | `make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...` | the end-to-end harness, thread pool, stalled log and log path safety tests against another server version | Docker |
 
 The end-to-end harness [`tests/plugin/run_plugin_tests.sh`](../tests/plugin/run_plugin_tests.sh) runs against any

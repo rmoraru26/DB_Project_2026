@@ -13,7 +13,7 @@ real records next to the row history written by SQL triggers.
 |---|---|
 | Assignment | MariaDB student database projects 2026-09, **area 11: write a server plugin** |
 | Server | **MariaDB 13.0.2** (Docker image `mariadb:13.0.2-resolute`, pinned by digest; official Windows zip). Also built and tested against **11.8.9** (audit API `0x0302`), in the CI job `server-11-8` on every push |
-| Plugin | `campus_audit` **1.2.4**, maturity Beta, 9 system variables, 11 status variables |
+| Plugin | `campus_audit` **1.2.5**, maturity Beta, 9 system variables, 11 status variables |
 | Runs on | Linux with Docker; Windows 11 with Docker Desktop; native Windows with a Zig-built DLL; macOS **not tested** |
 | Status | Complete: plugin, tutorial plugin, database, web application, guided tours, tests and documentation |
 
@@ -137,7 +137,7 @@ file: [plugin/README.md](plugin/README.md#the-source-file-by-file).
 ## Experimental findings
 
 Each finding was measured on MariaDB 13.0.2 with a reproducible setup. Expectation and observation
-are recorded in [docs/experiments.md](docs/experiments.md) (34 experiments).
+are recorded in [docs/experiments.md](docs/experiments.md) (36 experiments).
 
 - **The plugin sees the outcome; triggers do not.** A CHECK-violating `INSERT` produces a
   `table_write` record (the table was opened) and a `statement` record with `error_code 4025`; no
@@ -153,9 +153,12 @@ are recorded in [docs/experiments.md](docs/experiments.md) (34 experiments).
   own, with its own query id, before the statement that fired it.
 - **CHANGE_USER names the old account, even when it fails**, so the account somebody tried to become
   never reaches an audit plugin.
-- **Statement correlation holds under the thread pool.** With 12 connections sharing 2 threads, 360
-  `SET GLOBAL`s gave 360 correctly attributed records (`make test-threadpool`). This is an
-  observation, not a promise of the API.
+- **Statement correlation holds under the thread pool.** With `thread_pool_size=2` (two thread
+  groups; the pool grew to 14 worker threads for 12 connections), 360 `SET GLOBAL`s gave 360
+  correctly attributed records and no stray one (`make test-threadpool`). This is an observation,
+  not a promise of the API. The test does not record OS thread ids, so it does not show that a
+  statement's events ever moved between threads; the design assumes only that one statement runs
+  on one thread up to its STATUS event.
 - **A stalled log stopped the whole server in 1.2.0.** With the log on a FIFO whose reader stopped,
   a `SET GLOBAL campus_audit_*` waited for the log while the server held
   `LOCK_global_system_variables`, and every login stopped with it. Since 1.2.1 the plugin waits for
@@ -168,6 +171,11 @@ are recorded in [docs/experiments.md](docs/experiments.md) (34 experiments).
 - **An administrator can silence any audit plugin with one statement** (`UNINSTALL SONAME`). Loaded
   at startup as `FORCE_PLUS_PERMANENT`, the plugin cannot be unloaded (ER 1702), and the only remaining
   way to narrow it, `SET GLOBAL`, is recorded (experiment 34, [docs/security.md](docs/security.md#tamper-evidence-not-tamper-proof)).
+- **Two gaps that independent reviews found in 1.2.4, fixed in 1.2.5.** A redirect of the log (to
+  `/dev/null`, say) was recorded only in the new file; now the old log records it too, without I/O
+  under a server lock (experiment 35). Executable comments (`/*!100000 DELETE ... */`), which the
+  server runs, were dropped from the digest; now their content is kept, with its literals masked
+  (experiment 36).
 - **Two bugs only Linux could show** (found by CI, fixed in 1.1.1): a self-deadlock on
   `LOCK_global_system_variables` from a session-variable access inside a `SET GLOBAL` callback, and
   `LOAD_FILE()` refusing files that are not readable by all.
@@ -183,8 +191,8 @@ on the host: the plugin is compiled inside the image against the headers of the 
 
 | Step | Linux | Windows (PowerShell, in the project folder) |
 |---|---|---|
-| 1. Clone | `git clone https://github.com/rmoraru26/DB_Project_2026.git`, then `cd DB_Project_2026` | the same two commands (Windows PowerShell 5.1 has no `&&`) |
-| 2. The plugin alone (optional) | `make plugin-lab`: a throw-away server with only the plugins, a guided tour with 24 checks | `.\frantastic.cmd plugin-lab` |
+| 1. Clone | `git clone https://github.com/rmoraru26/DB_Project_2026.git`, then `cd DB_Project_2026` | the same two commands, one after the other |
+| 2. The plugin alone (optional) | `make plugin-lab`: a throw-away server with only the plugins, a guided tour with 25 checks | `.\frantastic.cmd plugin-lab` |
 | 3. Build and start everything | `make up` (creates `.env` with random secrets, mode 0600) | `.\frantastic.cmd up` (owner-only ACL) |
 | 4. Verify | `make doctor` | the launcher verifies each step itself; `docker compose ps` |
 | 5. Demonstrate | `make demo`, then open the address printed by step 3 | `.\frantastic.cmd demo` |
@@ -217,7 +225,7 @@ at `/register`.
 ```sql
 SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_AUTH_VERSION, PLUGIN_MATURITY
   FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';
--- campus_audit | ACTIVE | AUDIT | campus_audit.so | 1.2.4 | Beta
+-- campus_audit | ACTIVE | AUDIT | campus_audit.so | 1.2.5 | Beta
 SHOW GLOBAL VARIABLES LIKE 'campus_audit%';    -- 9 rows
 SHOW GLOBAL STATUS LIKE 'Campus_audit%';       -- 11 rows; Campus_audit_state = ACTIVE, events_dropped = 0
 ```
@@ -279,14 +287,17 @@ Seven short files in [`examples/`](examples/README.md), meant to be run in order
 install and verify, cause events, read the log, configure and break it, unload, a second plugin, and
 what table events miss.
 
+A rejected statement still opens its table, so the plugin records the attempt *and* the outcome.
+From `examples/02_cause_events.sql` and `03_read_the_log.sql`; the output is shortened from a real run
+([`docs/evidence/cycle3/linux-13.0.2/21-make-examples.txt`](docs/evidence/cycle3/linux-13.0.2/21-make-examples.txt)):
+
 ```sql
--- A rejected statement still opens its table: the plugin records the attempt AND the outcome.
-INSERT INTO university_resources.audit_lab_notes (owner_user_id, label, quantity)
-VALUES (1, 'invalid', 0);                                   -- ERROR 4025: CHECK constraint failed
+INSERT INTO rooms (name, capacity) VALUES ('Broken room', 0);
+-- ERROR 4025 (23000): CONSTRAINT `chk_rooms_capacity_positive` failed for `university_resources`.`rooms`
 CALL campus_audit.import_plugin_log(@@GLOBAL.campus_audit_file_path);
 SELECT event_type, table_name, statement_error_code AS err, sql_digest
-  FROM campus_audit.v_table_activity ORDER BY event_time DESC LIMIT 2;
--- table_write | audit_lab_notes | 4025 | INSERT INTO university_resources.audit_lab_notes (...) VALUES (?, ?, ?)
+  FROM campus_audit.v_table_activity ORDER BY event_time DESC LIMIT 6;
+-- table_write | rooms | 4025 | INSERT INTO rooms (name, capacity) VALUES (?, ?)
 ```
 
 ## Database design
@@ -337,24 +348,25 @@ order are in [docs/architecture.md](docs/architecture.md#database-schema); the r
 ## Tests
 
 ```bash
-make plugin-lab         # the plugin alone in a throw-away server: 24 checks
+make plugin-lab         # the plugin alone in a throw-away server: 25 checks
 make test               # after make up: 8 suites in the test-runner container (unit, repository,
                         #   shell, plugin end-to-end, database, web application)
 make test-integration   # host-level: credential life cycle, log rotation, thread pool, stalled log, log path safety
 make test-server-version MARIADB_IMAGE=mariadb:11.8@sha256:...   # the plugin tests on another server version
 make test-browser       # Playwright against the running stack
-make mutation           # injects 77 bugs into the plugin code; the unit tests must catch each
+make mutation           # injects 80 bugs into the plugin code; the unit tests must catch each
 ```
 
 Latest results. Each row names where the suite ran; the raw outputs are in `docs/evidence/`.
 
 | Suite | Result | Where |
 |---|---|---|
-| Plugin unit tests, 7 programs | 219 checks as root; 217 + 1 skipped as a normal user (giving a file away needs root) | Linux; CI also on native Windows (Zig build) |
-| Mutation check | 77 of 77 injected bugs caught | Linux, CI |
-| Plugin lab (`make plugin-lab`) | 24 passed, 0 failed | Linux and Windows Docker Desktop, CI |
-| End-to-end harness; thread pool; stalled log; log path safety | 141 / 30 / 19 / 39 + 2 passed, 0 failed, on **13.0.2 and 11.8.9** | throw-away containers (`make test-server-version`), CI |
-| End-to-end harness, native Windows | all checks pass except `/dev/full` (Linux only), incl. CHANGE_USER; the skeleton DLL loaded next to it | CI job on native Windows MariaDB 13.0.2 |
+| Plugin unit tests, 7 programs | 225 checks as root; 223 + 1 skipped as a normal user (giving a file away needs root) | Linux; CI also on native Windows (Zig build) |
+| Mutation check | 80 of 80 injected bugs caught | Linux, CI |
+| Plugin lab (`make plugin-lab`) | 25 passed, 0 failed (24 before the handover check of 1.2.5) | Docker Desktop on Windows (script and launcher), CI on Linux |
+| End-to-end harness; thread pool; stalled log; log path safety | 143 / 30 / 19 / 39 + 2 passed, 0 failed, on **13.0.2 and 11.8.9** (plugin 1.2.5) | throw-away containers (`make test-server-version`), CI |
+| Permanent load (`make test-permanent-load`, experiment 34) | 5 passed, 0 failed | throw-away container, CI |
+| End-to-end harness, native Windows | all checks pass except the two Linux-only ones (`/dev/full`, `/dev/null`), incl. CHANGE_USER; the skeleton DLL loaded next to it | CI job on native Windows MariaDB 13.0.2 |
 | Database tests (8 scripts); web application and Audit Lab | all pass; 332 passed, 1 skipped (the browser module) | test-runner container, CI |
 | Credential life cycle; log rotation; log import limits | 19 / 8 / 13 checks | Linux host driving the stack, CI |
 | Browser tests | 11 passed; every page at three widths, 0 px overflow, 0 console errors | Playwright, CI |

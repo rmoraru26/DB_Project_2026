@@ -123,9 +123,22 @@ int main() {
           "digest keeps doubled backticks inside identifiers");
     check(digest("SELECT `a\\` FROM t WHERE x = 'y'") == "SELECT `a\\` FROM t WHERE x = ?",
           "digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)");
-    check(digest("SELECT 1 -- token=abc\nFROM t # secret\n/* key=42 */ WHERE /*!50000 a='x' */ b=2") ==
+    check(digest("SELECT 1 -- token=abc\nFROM t # secret\n/* key=42 */ WHERE b=2") ==
               "SELECT ? FROM t WHERE b=?",
-          "digest removes all comment styles including executable comments");
+          "digest removes ordinary comments of every style");
+    // Executable comments are executed by the server: their content must
+    // stay visible (masked), not vanish from the audit trail.
+    check(digest("/*!100000 DELETE FROM t WHERE id = 7 */") == "DELETE FROM t WHERE id = ?",
+          "digest keeps the statement inside a versioned executable comment, literals masked");
+    check(digest("SELECT a FROM t WHERE /*!50000 a='x' AND */ b=2") == "SELECT a FROM t WHERE a=? AND b=?",
+          "digest lexes an executable comment in the middle of a statement");
+    check(digest("/*M!100100 DROP TABLE t */") == "DROP TABLE t" && digest("/*m!DROP TABLE t*/") == "DROP TABLE t",
+          "digest keeps MariaDB's /*M! ... */ executable comments");
+    check(digest("/*!DELETE /* note 9 */ FROM t*/") == "DELETE FROM t",
+          "an ordinary comment inside an executable one is dropped");
+    check(digest("/*! SELECT 'secret' ") == "SELECT ?",
+          "an unterminated executable comment still masks its literals");
+    check(digest("SELECT /*!*/ 1") == "SELECT ?", "an empty executable comment leaves nothing");
     check(digest("  SELECT\n\t\t1  ") == "SELECT ?", "digest collapses whitespace");
     check(digest("SELECT a--b FROM t") == "SELECT a--b FROM t", "'--' without trailing space is not a comment");
     check(digest("") == "", "digest of empty statement");

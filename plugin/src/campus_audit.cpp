@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <new>
 #include <string>
 
 #include <mysql/plugin.h>
@@ -67,7 +68,7 @@ using campus_audit::RwLock;
 
 namespace {
 
-const char kPluginVersion[] = "1.2.4";
+const char kPluginVersion[] = "1.2.5";
 const unsigned int kErUnknownError = 1105;      // ER_UNKNOWN_ERROR (mysqld_error.h)
 const size_t kMaxPathLength = 512;
 const long long kReopenIntervalSeconds = 5;
@@ -92,6 +93,14 @@ thread_local bool log_this_statement = false;
 // written by the same thread's next STATUS event; malloc'd, whole lines.
 thread_local char* pending_config = nullptr;
 thread_local size_t pending_config_length = 0;
+
+// The log file a change of campus_audit_file_path replaced.  It stays open
+// until the same STATUS event has written the statement's configuration
+// records into it as well, so the old log ends with a record that names its
+// successor.  Otherwise a switch to /dev/null, say, would leave no trace in
+// the log that is being read (the record would only reach /dev/null).  Closed
+// there, where the server holds none of its locks.  new'd; this thread's own.
+thread_local LogSink* retired_sink = nullptr;
 
 // ------------------------------------------------------------ system variables
 
@@ -708,14 +717,25 @@ void log_config_change(MYSQL_THD thd, const char* variable, const char* value) {
 }
 
 // Writes the configuration records of the statement that just ended.
+// The previous log file of a campus_audit_file_path change gets the same
+// records (handover), then is closed.
 void flush_pending_config() {
-    if (pending_config == nullptr) return;
+    LogSink* retired = retired_sink;
+    retired_sink = nullptr;
     char* data = pending_config;
     const size_t size = pending_config_length;
     pending_config = nullptr;
     pending_config_length = 0;
-    write_bytes(data, size, true);
-    std::free(data);
+    if (data != nullptr) {
+        write_bytes(data, size, true);
+        // Best effort: the new log has the records and the statement record.
+        if (retired != nullptr && !retired->write_all(data, size).ok()) ++st_write_failures;
+        std::free(data);
+    }
+    if (retired != nullptr) {
+        retired->close();
+        delete retired;
+    }
 }
 
 // A log file opened by a check function, taken over by the update function
@@ -828,6 +848,19 @@ void update_file_path(MYSQL_THD thd, struct st_mysql_sys_var*, void* var_ptr, co
     if (failure.ok()) {
         std::string value = std::string(requested) + " (previous: " + previous + ")";
         log_config_change(thd, "campus_audit_file_path", value.c_str());
+        // After the swap `fresh` is the previous file.  Kept for the handover
+        // instead of being closed here (see retired_sink).
+        if (thd != nullptr && fresh.is_open()) {
+            LogSink* previous_sink = new (std::nothrow) LogSink();
+            if (previous_sink != nullptr) {
+                previous_sink->swap(fresh);
+                if (retired_sink != nullptr) {   // a second change in the same statement
+                    retired_sink->close();
+                    delete retired_sink;
+                }
+                retired_sink = previous_sink;
+            }
+        }
     }
 }
 
@@ -1242,6 +1275,11 @@ int campus_audit_deinit_unguarded() {
     std::free(pending_config);
     pending_config = nullptr;
     pending_config_length = 0;
+    if (retired_sink != nullptr) {
+        retired_sink->close();
+        delete retired_sink;
+        retired_sink = nullptr;
+    }
     LockGuard<Mutex> guard(sink_lock);
     sink.close();
     degraded = false;

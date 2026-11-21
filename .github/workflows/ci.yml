@@ -74,6 +74,11 @@ jobs:
           test ! -e .env   # the plugin-only path must not need or create the application's .env
           make plugin-lab-down
 
+      - name: Experiment 34 - loaded as FORCE_PLUS_PERMANENT the plugin cannot be unloaded
+        run: |
+          set -o pipefail
+          make test-permanent-load 2>&1 | tee permanent-load.txt
+
       - name: Fresh checkout path - make up (creates .env, builds, migrates, installs the plugin)
         run: make up
 
@@ -154,6 +159,7 @@ jobs:
           name: docker-test-output
           path: |
             plugin-lab.txt
+            permanent-load.txt
             demo.txt
             test.txt
             examples.txt

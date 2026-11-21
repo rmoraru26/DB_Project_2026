@@ -69,6 +69,12 @@ MUTANTS = [
     ("D15", "src/record_format.cpp",
      "while (start > 0 && (static_cast<unsigned char>(out[start]) & 0xC0) == 0x80) --start;",
      "while (false) --start;", "a truncated digest may end inside a multi-byte UTF-8 character"),
+    ("D17", "src/record_format.cpp", "            (s[i + 2] == '!' ||", "            (false ||",
+     "executable comments /*! ... */ are dropped from the digest again"),
+    ("D18", "src/record_format.cpp", "            in_executable_comment = true;", "            in_executable_comment = false;",
+     "the end of an executable comment is not recognised"),
+    ("D19", "src/record_format.cpp", "            while (i < length && is_digit(s[i])) ++i;\n            in_executable_comment",
+     "            in_executable_comment", "the version number of an executable comment is kept"),
     # ------------------------------------------------------------ JSON writer
     ("J01", "src/record_format.cpp", "if (c == '\"' || c == '\\\\') {", "if (c == '\"') {",
      "backslash is not escaped in JSON"),
