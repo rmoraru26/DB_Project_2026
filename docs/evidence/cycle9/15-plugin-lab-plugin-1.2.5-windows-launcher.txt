@@ -1,0 +1,487 @@
+﻿== building campus-audit-plugin-lab:13.0.2 (target plugin-server; compiles the plugins, runs the unit tests)
+#0 building with "desktop-linux" instance using docker driver
+System.Management.Automation.RemoteException
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 6.17kB 0.0s done
+#1 DONE 0.0s
+System.Management.Automation.RemoteException
+#2 [internal] load metadata for docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#2 DONE 0.1s
+System.Management.Automation.RemoteException
+#3 [internal] load .dockerignore
+#3 transferring context: 372B done
+#3 DONE 0.0s
+System.Management.Automation.RemoteException
+#4 [internal] load build context
+#4 DONE 0.0s
+System.Management.Automation.RemoteException
+#5 [build 1/9] FROM docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
+#5 resolve docker.io/library/mariadb:13.0.2-resolute@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39 0.1s done
+#5 DONE 0.1s
+System.Management.Automation.RemoteException
+#4 [internal] load build context
+#4 transferring context: 10.51kB 0.0s done
+#4 DONE 0.0s
+System.Management.Automation.RemoteException
+#6 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:13.0.2+maria~ubu2604" "libmariadb-dev=1:13.0.2+maria~ubu2604";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+System.Management.Automation.RemoteException
+#7 [build 3/9] WORKDIR /src/plugin
+#7 CACHED
+System.Management.Automation.RemoteException
+#8 [build 4/9] COPY plugin/ ./
+#8 DONE 0.1s
+System.Management.Automation.RemoteException
+#9 [build 5/9] RUN make clean && make test && make plugin
+#9 0.410 rm -rf build
+#9 0.413 mkdir -p build
+#9 0.418 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+#9 2.856 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+#9 5.670 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+#9 6.451 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+#9 6.954 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+#9 7.420 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+#9 7.489 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+#9 7.670 == test_record_format
+#9 7.672 PASS: JSON plain string
+#9 7.672 PASS: JSON quotes and backslashes escaped
+#9 7.672 PASS: JSON newline/tab/CR escaped
+#9 7.672 PASS: JSON control characters escaped
+#9 7.672 PASS: JSON embedded NUL escaped, length respected
+#9 7.672 PASS: JSON valid UTF-8 kept as is
+#9 7.672 PASS: JSON invalid UTF-8 replaced by U+FFFD
+#9 7.672 PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+#9 7.672 PASS: JSON overlong encoding rejected
+#9 7.672 PASS: JSON NULL pointer becomes null
+#9 7.672 PASS: JSON empty string stays empty string
+#9 7.672 PASS: JSON overflow detected instead of writing past the buffer
+#9 7.672 PASS: JSON overflow keeps buffer NUL-terminated
+#9 7.672 PASS: bounded field cut before a multi-byte character
+#9 7.672 PASS: JSON numbers, booleans and null
+#9 7.672 PASS: digest masks string and number literals
+#9 7.672 PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+#9 7.672 PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+#9 7.672 PASS: the same rule hides the rest of a default-mode escaped quote
+#9 7.672 PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+#9 7.672 PASS: digest hides passwords given as literals
+#9 7.672 PASS: digest hides password hashes
+#9 7.672 PASS: digest masks hex, bit, national and introducer literals
+#9 7.672 PASS: digest masks decimals and exponents
+#9 7.672 PASS: digest keeps identifiers containing digits and backtick identifiers
+#9 7.672 PASS: digest keeps doubled backticks inside identifiers
+#9 7.672 PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+#9 7.672 PASS: digest removes ordinary comments of every style
+#9 7.672 PASS: digest keeps the statement inside a versioned executable comment, literals masked
+#9 7.672 PASS: digest lexes an executable comment in the middle of a statement
+#9 7.672 PASS: digest keeps MariaDB's /*M! ... */ executable comments
+#9 7.672 PASS: an ordinary comment inside an executable one is dropped
+#9 7.672 PASS: an unterminated executable comment still masks its literals
+#9 7.672 PASS: an empty executable comment leaves nothing
+#9 7.672 PASS: digest collapses whitespace
+#9 7.672 PASS: '--' without trailing space is not a comment
+#9 7.672 PASS: digest of empty statement
+#9 7.672 PASS: digest handles an unterminated string
+#9 7.672 PASS: digest handles an unterminated comment
+#9 7.672 PASS: digest keeps variable names but masks quoted ones
+#9 7.672 PASS: digest truncates at max length and reports it
+#9 7.672 PASS: digest never ends inside a UTF-8 sequence
+#9 7.672 PASS: digest with max length 0 is empty and marked truncated
+#9 7.672 PASS: 100 kB literal collapses to one '?'
+#9 7.672 PASS: digest of a NULL statement
+#9 7.672 PASS: database list parsed and trimmed
+#9 7.672 PASS: database match is case-insensitive
+#9 7.672 PASS: database match needs the whole name
+#9 7.672 PASS: NULL database never matches
+#9 7.672 PASS: empty database list watches nothing
+#9 7.672 PASS: empty list matches nothing
+#9 7.672 PASS: '*' accepted for databases
+#9 7.672 PASS: '*' matches user schemas
+#9 7.672 PASS: '*' never matches system schemas
+#9 7.672 PASS: the four system schemas are recognised
+#9 7.672 PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+#9 7.672 PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+#9 7.672 PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+#9 7.672 PASS: user schemas, prefixes and empty names are not system schemas
+#9 7.672 PASS: empty element rejected
+#9 7.672 PASS: trailing comma rejected
+#9 7.672 PASS: space inside a name rejected
+#9 7.672 PASS: punctuation rejected
+#9 7.672 PASS: '*' cannot be mixed with names
+#9 7.672 PASS: '*' rejected for users
+#9 7.672 PASS: more than 16 names rejected
+#9 7.672 PASS: name longer than 128 characters rejected
+#9 7.672 PASS: user list with '.', '-' and '@' accepted
+#9 7.672 PASS: user match is exact and case-sensitive
+#9 7.672 PASS: user match needs the whole name
+#9 7.672 PASS: user match: a login that is only a prefix of an excluded name is still audited
+#9 7.672 PASS: timestamp of the epoch
+#9 7.672 PASS: timestamp 2026-10-25
+#9 7.672 PASS: timestamp on a leap day
+#9 7.672 PASS: timestamp one second before the epoch
+#9 7.672 PASS: timestamp exactly one day before the epoch
+#9 7.672 PASS: bounded_length stops at the limit and accepts NULL
+#9 7.672 PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+#9 7.672 PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+#9 7.672 PASS: login name is the part of the account before '['
+#9 7.672 PASS: account without '[', NULL account and the length bound
+#9 7.672 Failures: 0
+#9 7.673 == test_log_sink
+#9 7.676 PASS: NULL path rejected
+#9 7.676 PASS: empty path rejected
+#9 7.676 PASS: directory-like path rejected
+#9 7.676 PASS: directory-like path ending in a backslash rejected
+#9 7.676 PASS: control character in path rejected
+#9 7.676 PASS: over-long path rejected
+#9 7.676 PASS: missing directory reported as open_Failed
+#9 7.676 PASS: open failure message names the log and the OS error
+#9 7.676 PASS: sink stays closed after failed open
+#9 7.676 PASS: write on closed sink fails
+#9 7.676 PASS: valid path opened
+#9 7.676 PASS: first record written
+#9 7.676 PASS: failed re-open keeps the previous file open
+#9 7.676 PASS: previous file still writable
+#9 7.676 PASS: re-opened file is appended to
+#9 7.676 PASS: file holds all records in order
+#9 7.676 PASS: an existing .jsonl file that is not a campus_audit log is refused (Refusing audit log 'sink_test_foreign.jsonl': the file exists and does not begin with a campus_audit record (accepted are a new file, an empty one and an earlier campus_audit log))
+#9 7.676 PASS: the refused file is unchanged
+#9 7.676 PASS: an existing empty file whose name does not end in .jsonl is refused (Refusing audit log 'sink_test_table.dat': a regular audit log file must end in .jsonl)
+#9 7.676 PASS: it stays empty
+#9 7.676 PASS: a new file whose name does not end in .jsonl is refused (Refusing audit log 'sink_test_new.log': a regular audit log file must end in .jsonl)
+#9 7.676 PASS: and is not created
+#9 7.676 PASS: the .jsonl suffix is matched without regard to case
+#9 7.676 PASS: an existing empty .jsonl file is accepted
+#9 7.676 PASS: a log that begins with the newline of an audit_gap record is accepted
+#9 7.676 PASS: a hard link is refused, even with a log-like content (Refusing audit log 'sink_test_hardlink.jsonl': it has 2 hard links; an audit log has exactly one)
+#9 7.676 PASS: and so is the file under its other name (Refusing audit log 'sink_test_linked_target.jsonl': it has 2 hard links; an audit log has exactly one)
+#9 7.676 PASS: the hard-linked file is unchanged
+#9 7.676 PASS: a symbolic link is refused (Refusing audit log 'sink_test_symlink.jsonl': it is a symbolic link)
+#9 7.676 PASS: the refusal names the symbolic link (the open itself refuses it)
+#9 7.676 PASS: the link's target is unchanged
+#9 7.676 PASS: a file of another OS user is refused (Refusing audit log 'sink_test_owner.jsonl': it belongs to another OS user (uid 4242))
+#9 7.676 PASS: it is unchanged
+#9 7.676 PASS: an existing log whose owner is not the expected one is refused
+#9 7.676 PASS: it is unchanged
+#9 7.676 PASS: the same file is accepted for its real owner
+#9 7.676 PASS: a FIFO without a reader is refused at once (Refusing audit log 'sink_test_fifo': it is a FIFO without a reader)
+#9 7.676 PASS: a FIFO with a reader is accepted (no .jsonl needed)
+#9 7.676 PASS: its descriptor is blocking again
+#9 7.676 PASS: a FIFO of another OS user is refused, even with a reader (Refusing audit log 'sink_test_fifo': it is a FIFO of another OS user (uid 0))
+#9 7.676 PASS: /dev/null is accepted
+#9 7.676 PASS: another character device (/dev/zero) is refused (Refusing audit log '/dev/zero': it is a character device other than /dev/null and /dev/full)
+#9 7.676 PASS: a newly created log file has no permission bits for others
+#9 7.676 PASS: readable_by_all: the permissions of an existing log file are not widened
+#9 7.676 PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+#9 7.676 PASS: readable_by_all: a refused file keeps its permissions
+#9 7.676 PASS: two sinks opened for swap
+#9 7.676 PASS: after swap the active sink writes
+#9 7.676 PASS: after swap the other sink holds the previous file
+#9 7.676 PASS: the record went to the file that was swapped in
+#9 7.676 PASS: swap with a closed sink moves the file
+#9 7.676 PASS: opened for EBADF test
+#9 7.676 PASS: write on a dead descriptor reported as write_Failed
+#9 7.676 PASS: write failure message carries errno
+#9 7.676 PASS: /dev/full write reported as write_Failed (ENOSPC)
+#9 7.676 Failures: 0
+#9 7.676 == test_automatic_errors
+#9 7.678 PASS: validate: NULL path
+#9 7.678 PASS: validate: empty path
+#9 7.678 PASS: validate: trailing forward slash
+#9 7.678 PASS: validate: trailing backslash
+#9 7.678 PASS: validate: newline in path
+#9 7.678 PASS: validate: DEL in path
+#9 7.678 PASS: validate: 513-byte path
+#9 7.678 PASS: validate: 512-byte path
+#9 7.678 PASS: validate: lexically valid path
+#9 7.678 PASS: validate: no file is created
+#9 7.678 Failures: 0
+#9 7.678 == test_error_reporter
+#9 7.680 Reported: Cannot open audit log
+#9 7.680 PASS: all reporter checks
+#9 7.680 == test_runtime_config
+#9 7.683 PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+#9 7.683 PASS: six reader threads completed 100000 reads each while one thread wrote
+#9 7.683 PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+#9 7.683 PASS: after the writer finished every setting holds the last value stored
+#9 7.683 Checks: 4, Failures: 0
+#9 7.683 == test_gap_accounting
+#9 7.684 PASS: a new accounting object has lost nothing
+#9 7.684 PASS: every lost event is counted
+#9 7.684 PASS: a marker that could not be written is reported as not written
+#9 7.684 PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+#9 7.684 PASS: events lost after the failed marker are added to the same outage
+#9 7.684 PASS: a written marker is reported as written
+#9 7.684 PASS: only a written marker resets the count
+#9 7.684 PASS: a new outage starts counting from zero
+#9 7.684 PASS: records lost without an I/O error are added to the count the marker announces
+#9 7.684 PASS: merging zero other losses changes nothing
+#9 7.684 PASS: the marker announces both kinds and resets the count
+#9 7.684 Checks: 11, Failures: 0
+#9 7.684 == test_statement_scope
+#9 7.685 PASS: TABLES: a statement without any fact is not recorded
+#9 7.685 PASS: a statement with a recorded table event is recorded without extra marks
+#9 7.685 PASS: an accepted SET GLOBAL campus_audit_* is recorded
+#9 7.685 PASS: SESSION: a statement with a recorded table event is not marked scope=session
+#9 7.685 PASS: TABLES: a refusal outside a watched default schema is not recorded
+#9 7.685 PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+#9 7.685 PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+#9 7.685 PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+#9 7.685 PASS: TABLES: the latch alone records nothing
+#9 7.685 PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+#9 7.685 PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+#9 7.685 PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+#9 7.685 PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+#9 7.685 PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+#9 7.685 PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+#9 7.685 PASS: SESSION: a table-less refusal carries both marks
+#9 7.685 PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+#9 7.685 PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+#9 7.685 PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+#9 7.685 PASS: SESSION: with both conditions met the statement is recorded
+#9 7.685 PASS: Query and Execute are SQL commands
+#9 7.685 PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+#9 7.685 PASS: the command name must match exactly; NULL and empty names are not SQL commands
+#9 7.685 PASS: an unrecorded table event marks the statement as seen, not as recorded
+#9 7.685 PASS: a recorded event of the same statement sets the latch
+#9 7.685 PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+#9 7.685 PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+#9 7.685 PASS: and a recorded event sets it again
+#9 7.685 PASS: LOCK TABLES on a watched table: one table event, recorded
+#9 7.685 PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+#9 7.685 PASS: UPDATE under LOCK TABLES: recorded
+#9 7.685 PASS: a failing statement under LOCK TABLES: recorded
+#9 7.685 PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+#9 7.685 PASS: the next statement on another schema is not recorded
+#9 7.685 PASS: and ends rule (b): a following table-less statement is not recorded
+#9 7.685 PASS: TABLES: LOCK TABLES on a watched table is recorded
+#9 7.685 PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+#9 7.685 PASS: rule (a): DROP VIEW in a watched default schema is recorded
+#9 7.685 PASS: rule (a): COMMIT in a watched default schema is recorded
+#9 7.685 PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+#9 7.685 PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+#9 7.685 PASS: INSERT into a watched table from another default schema is recorded
+#9 7.685 PASS: rule (b): the COMMIT that follows it is recorded
+#9 7.685 PASS: a statement on other tables is not recorded
+#9 7.685 PASS: and the COMMIT after that one is not recorded
+#9 7.685 PASS: a statement that touches another schema and a watched table is recorded
+#9 7.685 PASS: rule (b) holds after it
+#9 7.685 PASS: the order of its table events does not matter
+#9 7.685 PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+#9 7.685 PASS: the firing statement is recorded once, unmarked
+#9 7.685 PASS: the COMMIT after it is recorded: nothing is left open
+#9 7.685 PASS: TABLES: the same sequence gives exactly the firing statement
+#9 7.685 PASS: a routine's INSERT into a watched table is recorded as its own statement
+#9 7.685 PASS: a routine's SELECT from another schema is not recorded
+#9 7.685 PASS: the CALL itself raised no table event and is recorded, scope=session
+#9 7.685 PASS: a statement on a watched table
+#9 7.685 PASS: the Quit command that ends the connection is not recorded as a statement
+#9 7.685 PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+#9 7.685 PASS: a statement that also touched another user schema is classified and not recorded
+#9 7.685 PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+#9 7.685 PASS: rule (b): a system-schema event does not clear the latch
+#9 7.685 PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+#9 7.685 PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+#9 7.685 Checks: 63, Failures: 0
+#9 7.686 All unit test programs passed.
+#9 7.690 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+#9 7.690   -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+#9 7.690   src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+#9 11.52 built build/campus_audit.so (services: /usr/lib/x86_64-linux-gnu/libmysqlservices.a)
+#9 DONE 11.6s
+System.Management.Automation.RemoteException
+#10 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#10 DONE 0.2s
+System.Management.Automation.RemoteException
+#11 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#11 DONE 0.5s
+System.Management.Automation.RemoteException
+#12 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp examples/skeleton_plugin/Makefile /src/skeleton/
+#12 DONE 0.3s
+System.Management.Automation.RemoteException
+#13 [build 9/9] RUN make -C /src/skeleton all experimental
+#13 0.363 make: Entering directory '/src/skeleton'
+#13 0.363 g++ -std=c++11 -O2 -Wall -Wextra -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private skeleton_audit.cpp -o skeleton_audit.so
+#13 0.429 g++ -std=c++11 -O2 -Wall -Wextra -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN -DSKELETON_EXPERIMENTAL -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private skeleton_audit.cpp -o skeleton_audit_exp.so
+#13 0.492 make: Leaving directory '/src/skeleton'
+#13 DONE 0.5s
+System.Management.Automation.RemoteException
+#14 [plugin-server 3/8] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#14 CACHED
+System.Management.Automation.RemoteException
+#15 [plugin-server 4/8] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#15 CACHED
+System.Management.Automation.RemoteException
+#16 [plugin-server 5/8] COPY --from=build /src/skeleton/skeleton_audit.so /src/skeleton/skeleton_audit_exp.so /usr/lib/mysql/plugin/
+#16 CACHED
+System.Management.Automation.RemoteException
+#17 [plugin-server 6/8] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#17 CACHED
+System.Management.Automation.RemoteException
+#18 [plugin-server 7/8] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#18 CACHED
+System.Management.Automation.RemoteException
+#19 [plugin-server 2/8] RUN test -d /usr/lib/mysql/plugin
+#19 CACHED
+System.Management.Automation.RemoteException
+#20 [plugin-server 8/8] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#20 CACHED
+System.Management.Automation.RemoteException
+#21 exporting to image
+#21 exporting layers done
+#21 exporting manifest sha256:1797419755bf6529ac92b1f1c414ebf10d7f78c32d7765341304d29669ea7539 0.0s done
+#21 exporting config sha256:7c8a57adf844b6ba2400a291bcee9879c3f7a3833f71113d372551530e2c7e9b 0.0s done
+#21 exporting attestation manifest sha256:aefc831937f400bc517bac00eff3c643490d6d35b5afd712d5ab3ffe1e387864
+#21 exporting attestation manifest sha256:aefc831937f400bc517bac00eff3c643490d6d35b5afd712d5ab3ffe1e387864 0.1s done
+#21 exporting manifest list sha256:704db3b73831837e4d1f729c06b037d48174cf9800fa944e9dc8b2613634b022 0.1s done
+#21 naming to docker.io/library/campus-audit-plugin-lab:13.0.2
+#21 naming to docker.io/library/campus-audit-plugin-lab:13.0.2 0.0s done
+#21 unpacking to docker.io/library/campus-audit-plugin-lab:13.0.2 0.0s done
+#21 DONE 0.4s
+== starting the throw-away server campus-audit-plugin-lab (no published port)
+
+== 0. Waiting for the throw-away MariaDB server
+   SQL> SELECT VERSION() AS server, @@plugin_dir AS plugin_dir, @@plugin_maturity AS plugin_maturity;
+   +------------------------+------------------------+-----------------+
+   | server                 | plugin_dir             | plugin_maturity |
+   +------------------------+------------------------+-----------------+
+   | 13.0.2-MariaDB-ubu2604 | /usr/lib/mysql/plugin/ | beta            |
+   +------------------------+------------------------+-----------------+
+   plugin libraries in plugin_dir:
+   -rwxr-xr-x 1 root  root 1073328 Nov 21 04:47 campus_audit.so
+   -rwxr-xr-x 1 root  root   16072 Nov 21 04:47 skeleton_audit.so
+   -rwxr-xr-x 1 root  root   16072 Nov 21 04:47 skeleton_audit_exp.so
+
+== 1. INSTALL SONAME: the server opens the library, checks its maturity and calls init
+   SQL> INSTALL SONAME 'campus_audit';
+   SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY, PLUGIN_AUTH_VERSION, PLUGIN_MATURITY
+     FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'campus_audit';
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   | PLUGIN_NAME  | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY  | PLUGIN_AUTH_VERSION | PLUGIN_MATURITY |
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   | campus_audit | ACTIVE        | AUDIT       | campus_audit.so | 1.2.5               | Beta            |
+   +--------------+---------------+-------------+-----------------+---------------------+-----------------+
+   PASS: campus_audit is an ACTIVE AUDIT plugin
+   PASS: it declares 9 system variables
+   PASS: it declares 11 status variables
+   PASS: Campus_audit_state is ACTIVE
+   PASS: the log starts with a plugin_start record
+
+== 2. Configure it at run time: watch the schema lab (SET GLOBAL, validated by a check function)
+   SQL> CREATE DATABASE lab;
+   CREATE TABLE lab.notes (id INT PRIMARY KEY, label VARCHAR(40), quantity INT CHECK (quantity > 0));
+   SET GLOBAL campus_audit_databases = 'lab';
+   SHOW GLOBAL VARIABLES LIKE 'campus\_audit\_databases';
+   +------------------------+-------+
+   | Variable_name          | Value |
+   +------------------------+-------+
+   | campus_audit_databases | lab   |
+   +------------------------+-------+
+   PASS: the change is recorded as config_change
+
+== 3. Two INSERTs: one succeeds, one violates the CHECK constraint
+   SQL> INSERT INTO lab.notes VALUES (1, 'secret label', 5);
+   SQL> INSERT INTO lab.notes VALUES (2, 'invalid', 0);
+   INSERT INTO lab.notes VALUES (2, 'invalid', 0)
+   ERROR 4025 (23000) at line 1: CONSTRAINT `notes.quantity` failed for `lab`.`notes`
+   records written by the plugin:
+   | {"ts":"2026-11-21T05:05:08.413635Z","seq":4,"instance":"660c24df5708e-1","event":"table_write","conn":13,"query_id":24,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"lab","table":"notes"}
+   | {"ts":"2026-11-21T05:05:08.419000Z","seq":5,"instance":"660c24df5708e-1","event":"statement","conn":13,"query_id":24,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
+   | {"ts":"2026-11-21T05:05:08.452885Z","seq":6,"instance":"660c24df5708e-1","event":"table_write","conn":14,"query_id":26,"user":"root","priv_user":"root","priv_host":"localhost","host":"localhost","ip":null,"db":"lab","table":"notes"}
+   | {"ts":"2026-11-21T05:05:08.453034Z","seq":7,"instance":"660c24df5708e-1","event":"statement","conn":14,"query_id":26,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":4025,"status":"error","sql_digest":"INSERT INTO lab.notes VALUES (?, ?, ?)","sql_digest_truncated":false}
+   PASS: the successful INSERT: a table_write record
+   PASS: ... and a statement record with error_code 0
+   PASS: the rejected INSERT is recorded with its outcome (4025)
+   PASS: the digest replaces every literal by ?
+   PASS: no literal reaches the log
+
+== 4. A statement the privilege system refuses, and a failed login
+   The refusal raises no TABLE event; the plugin attributes it by the session's default schema (lab).
+   SQL (as lab_reader, default schema lab)> DELETE FROM notes;
+   DELETE FROM notes
+   ERROR 1142 (42000) at line 1: DELETE command denied to user 'lab_reader'@'localhost' for table `lab`.`notes`
+   login as lab_reader with a wrong password:
+   ERROR 1045 (28000): Access denied for user 'lab_reader'@'localhost' (using password: YES)
+   records written by the plugin:
+   | {"ts":"2026-11-21T05:05:08.640148Z","seq":8,"instance":"660c24df5708e-1","event":"statement","conn":16,"query_id":31,"account":"lab_reader[lab_reader] @ localhost []","db":"lab","command":"Query","error_code":1142,"status":"error","access_denied":true,"sql_digest":"DELETE FROM notes","sql_digest_truncated":false}
+   | {"ts":"2026-11-21T05:05:08.695725Z","seq":9,"instance":"660c24df5708e-1","event":"connect_failed","conn":17,"status":1045,"user":"lab_reader","priv_user":"","proxy_user":"","host":"localhost","ip":null,"port":0,"db":null,"tls_version":"TLSv1.3"}
+   PASS: the refused DELETE is recorded (access_denied, 1142)
+   PASS: the failed login is recorded (connect_failed, 1045)
+
+== 5. Invalid values are refused by the plugin's check functions, with the reason in SHOW WARNINGS
+   SQL> SET GLOBAL campus_audit_databases = 'bad name!'; SHOW WARNINGS;
+   SET GLOBAL campus_audit_databases = 'bad name!'
+   ERROR 1231 (42000) at line 1: Variable 'campus_audit_databases' can't be set to the value of 'bad name!'
+   Warning	1105	campus_audit: unsupported character in database name 'bad name!'
+   Error	1231	Variable 'campus_audit_databases' can't be set to the value of 'bad name!'
+   PASS: a schema name with a space is refused
+   SQL> SET GLOBAL campus_audit_file_path = '/etc/passwd'; SHOW WARNINGS;
+   SET GLOBAL campus_audit_file_path = '/etc/passwd'
+   ERROR 1231 (42000) at line 1: Variable 'campus_audit_file_path' can't be set to the value of '/etc/passwd'
+   Warning	1105	campus_audit: Refusing audit log '/etc/passwd': a regular audit log file must end in .jsonl
+   Error	1231	Variable 'campus_audit_file_path' can't be set to the value of '/etc/passwd'
+   PASS: a foreign file is refused as audit log (it would be appended to)
+   PASS: the previous values stay in force
+
+== 6. Fail-open: the log cannot be written (/dev/full), the statement still succeeds, the loss is announced
+   SQL> SET GLOBAL campus_audit_file_path = '/dev/full';
+   the log it left records where logging went (handover, since 1.2.5):
+   | {"ts":"2026-11-21T05:05:08.892072Z","seq":10,"instance":"660c24df5708e-1","event":"config_change","variable":"campus_audit_file_path","value":"/dev/full (previous: /var/log/campus_audit/campus_audit.jsonl)"}
+   PASS: the redirect is recorded in the log it left
+   SQL> INSERT INTO lab.notes VALUES (3, 'during the outage', 1);
+   PASS: the INSERT succeeded
+   PASS: Campus_audit_state is DEGRADED
+   SQL> SHOW GLOBAL STATUS WHERE Variable_name IN ('Campus_audit_state', 'Campus_audit_write_failures', 'Campus_audit_events_dropped', 'Campus_audit_last_error');
+   +-----------------------------+---------------------------------------------------------------+
+   | Variable_name               | Value                                                         |
+   +-----------------------------+---------------------------------------------------------------+
+   | Campus_audit_events_dropped | 4                                                             |
+   | Campus_audit_last_error     | Write to audit log failed: No space left on device (errno 28) |
+   | Campus_audit_state          | DEGRADED                                                      |
+   | Campus_audit_write_failures | 1                                                             |
+   +-----------------------------+---------------------------------------------------------------+
+   SQL> SET GLOBAL campus_audit_file_path = '/var/log/campus_audit/campus_audit.jsonl';
+   PASS: switching back makes it ACTIVE again
+   records written by the plugin:
+   | {"ts":"2026-11-21T05:05:09.028083Z","seq":14,"instance":"660c24df5708e-1","event":"audit_gap","dropped_events":4,"last_error":"Write to audit log failed: No space left on device (errno 28)"}
+   | {"ts":"2026-11-21T05:05:09.028099Z","seq":15,"instance":"660c24df5708e-1","event":"config_change","variable":"campus_audit_file_path","value":"/var/log/campus_audit/campus_audit.jsonl (previous: /dev/full)"}
+   | {"ts":"2026-11-21T05:05:09.028140Z","seq":16,"instance":"660c24df5708e-1","event":"statement","conn":26,"query_id":51,"account":"root[root] @ localhost []","db":null,"command":"Query","error_code":0,"status":"ok","sql_digest":"SET GLOBAL campus_audit_file_path = ?","sql_digest_truncated":false}
+   PASS: an audit_gap record announces the lost records
+
+== 7. The skeleton plugin (examples/skeleton_plugin): the same API in about 50 lines of code
+   The same source built with -DSKELETON_EXPERIMENTAL declares maturity Experimental; this server accepts Beta and above:
+   SQL> INSTALL SONAME 'skeleton_audit_exp';
+   ERROR 1126 (HY000) at line 1: Can't open shared library 'skeleton_audit_exp.so' (errno: 1, Loading of experimental plugin skeleton_audit is prohibited by --plugin-maturity=beta)
+   PASS: the server refuses a plugin below plugin_maturity (ER 1126) before init runs
+   SQL> INSTALL SONAME 'skeleton_audit';
+   SQL> SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE, PLUGIN_LIBRARY FROM information_schema.PLUGINS WHERE PLUGIN_TYPE = 'AUDIT';
+   +----------------+---------------+-------------+-------------------+
+   | PLUGIN_NAME    | PLUGIN_STATUS | PLUGIN_TYPE | PLUGIN_LIBRARY    |
+   +----------------+---------------+-------------+-------------------+
+   | campus_audit   | ACTIVE        | AUDIT       | campus_audit.so   |
+   | skeleton_audit | ACTIVE        | AUDIT       | skeleton_audit.so |
+   +----------------+---------------+-------------+-------------------+
+   SQL> SELECT COUNT(*) FROM lab.notes;
+   +----------+
+   | COUNT(*) |
+   +----------+
+   |        2 |
+   +----------+
+   SQL> SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
+   +----------------------------------+-------+
+   | Variable_name                    | Value |
+   +----------------------------------+-------+
+   | Skeleton_audit_connection_events | 10    |
+   | Skeleton_audit_general_events    | 23    |
+   | Skeleton_audit_table_events      | 1     |
+   +----------------------------------+-------+
+   PASS: two audit plugins are ACTIVE at the same time
+   PASS: the SELECT raised a TABLE event the skeleton counted (0 -> 1)
+   SQL> UNINSTALL SONAME 'skeleton_audit';
+   PASS: UNINSTALL removed it
+
+== Result: 25 passed, 0 failed
+
+Keep experimenting in this server (it holds nothing but these two plugins):
+   docker exec -it campus-audit-plugin-lab mariadb                     root SQL shell
+   docker exec campus-audit-plugin-lab tail -f /var/log/campus_audit/campus_audit.jsonl
+Change examples/skeleton_plugin/skeleton_audit.cpp and run the lab again: the image rebuilds only what changed.
+Remove the container: make plugin-lab-down   (Windows: .\frantastic.cmd plugin-lab-down)

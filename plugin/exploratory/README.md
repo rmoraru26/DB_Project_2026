@@ -3,14 +3,15 @@
 The team's first two experiments with the `AuditResult` type, kept for the record. They are **not
 tests**: they assert nothing, `interactive_open_log.cpp` asks for a path on stdin, and neither is built
 by `plugin/Makefile`, `plugin/build_windows.ps1` or CI. Their checks live on in the real unit tests
-(`../test_automatic_errors.cpp`, `../test_error_reporter.cpp`, `../test_log_sink.cpp`).
+(`../tests/test_automatic_errors.cpp`, `../tests/test_error_reporter.cpp`, `../tests/test_log_sink.cpp`).
 
-The "Was" column gives each program's former path. Those files were moved here (Phase 1) and no
-longer exist under `plugin/tests/`; nothing builds or references them there.
+The "Was" column gives each program's original path. In Phase 1 they were moved out of the test
+programs into `plugin/tests/exploratory/`, and after the first merge into `plugin/exploratory/`,
+outside the test tree altogether, so that nothing under `plugin/tests/` is a program without checks.
 
 | File | Was (former path, removed) | Shows |
 |---|---|---|
 | `demo_audit_result.cpp` | `plugin/tests/test_auditerror.cpp` | how a success and a failure look as `AuditResult` |
-| `interactive_open_log.cpp` | `plugin/tests/test_open_error.cpp` | the first version of `try_open_log()` (now in `plugin/audit_file_check.cpp`) |
+| `interactive_open_log.cpp` | `plugin/tests/test_open_error.cpp` | the first version of `try_open_log()` (never called by the plugin; removed from `plugin/audit_file_check.cpp` after the first merge) |
 
 Build one by hand, e.g. `g++ -std=c++11 demo_audit_result.cpp -o demo && ./demo`.

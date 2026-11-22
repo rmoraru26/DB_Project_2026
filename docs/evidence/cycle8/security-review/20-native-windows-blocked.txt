@@ -1,0 +1,11 @@
+# native Windows 11, cycle 8 (security review): plugin/build_windows.ps1 (Zig 0.16.0, MariaDB 13.0.2 zip), then INSTALL SONAME into a throw-away mariadbd
+## build (unit-test program blocked by Smart App Control):
+Built <scratch>\cycle8b\native-work-1794931886\build\campus_audit.dll
+Program 'test_automatic_errors.exe' failed to run: An Application Control policy has blocked this file
+## build outputs:
+470528 campus_audit.dll
+862720 test_automatic_errors.exe
+## INSTALL SONAME:
+13.0.2-MariaDB on Win64
+ERROR 1126 (HY000) at line 2: Can't open shared library '<scratch>\cycle8b\native-work-1794931886\mariadb-13.0.2-winx64\lib\plugin\campus_audit.dll' (errno: 2, An Application Control policy has blocked this file. )
+ERROR 1193 (HY000) at line 5: Unknown system variable 'campus_audit_file_path'

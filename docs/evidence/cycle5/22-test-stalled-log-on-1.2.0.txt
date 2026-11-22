@@ -1,0 +1,23 @@
+# cycle 5 2026-11-17T12:56:33Z: STALL_TEST_IMAGE=<image of tree b0504f76 (cycle 3, before the change)> bash tests/plugin/test_stalled_log.sh
+Server: 13.0.2-MariaDB-ubu2604, campus_audit 1.2.0
+PASS: log switched to the FIFO
+PASS: recorded statements wait for the stalled log (stopped at 119 of 1000 rows)
+-- with the log stalled, the rest of the server must keep answering
+PASS: INSERT into an unwatched schema
+FAIL: SHOW STATUS of the plugin answers BUSY: no answer within 5 s
+FAIL: SET GLOBAL campus_audit_reopen_now gives up: no answer within 8 s
+FAIL: SET GLOBAL campus_audit_log_reads: record dropped: no answer within 8 s
+FAIL: SET GLOBAL campus_audit_file_path gives up: no answer within 8 s
+FAIL: file_path changed although the log was busy
+FAIL: SELECT @@GLOBAL.max_connections: no answer within 5 s
+FAIL: SET GLOBAL max_connections: no answer within 5 s
+FAIL: SHOW GLOBAL VARIABLES: no answer within 5 s
+FAIL: a new connection: no answer within 5 s
+-- draining the FIFO
+PASS: the writer finished after draining
+PASS: all 1000 INSERTs committed
+PASS: 1000 table_write records delivered through the FIFO
+PASS: state ACTIVE after draining
+FAIL: events dropped: 0
+== 7 passed, 10 failed
+# exit status: 1

@@ -47,6 +47,12 @@ int main() {
     gap.event_lost_to_io();
     check(gap.dropped() == 1, "a new outage starts counting from zero");
 
+    gap.events_lost(3);
+    check(gap.dropped() == 4, "records lost without an I/O error are added to the count the marker announces");
+    gap.events_lost(0);
+    check(gap.dropped() == 4, "merging zero other losses changes nothing");
+    check(gap.marker_result(true) && gap.dropped() == 0, "the marker announces both kinds and resets the count");
+
     std::printf("Checks: %d, Failures: %d\n", checks, failures);
     return failures == 0 ? 0 : 1;
 }

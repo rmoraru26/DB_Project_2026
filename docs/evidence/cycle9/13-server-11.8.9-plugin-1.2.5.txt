@@ -1,0 +1,959 @@
+== building the server and test-runner images FROM mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 6.17kB 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 372B 0.0s done
+#3 DONE 0.1s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#5 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#5 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 601.25kB 0.1s done
+#4 DONE 0.1s
+
+#6 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:11.8.9+maria~ubu2404" "libmariadb-dev=1:11.8.9+maria~ubu2404";     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [build 3/9] WORKDIR /src/plugin
+#7 CACHED
+
+#8 [build 4/9] COPY plugin/ ./
+#8 DONE 0.2s
+
+#9 [build 5/9] RUN make clean && make test && make plugin
+#9 0.381 rm -rf build
+#9 0.385 mkdir -p build
+#9 0.389 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+#9 2.309 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+#9 4.664 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+#9 5.285 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+#9 5.833 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+#9 6.447 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+#9 6.519 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+#9 6.811 == test_record_format
+#9 6.815 PASS: JSON plain string
+#9 6.815 PASS: JSON quotes and backslashes escaped
+#9 6.815 PASS: JSON newline/tab/CR escaped
+#9 6.815 PASS: JSON control characters escaped
+#9 6.815 PASS: JSON embedded NUL escaped, length respected
+#9 6.815 PASS: JSON valid UTF-8 kept as is
+#9 6.815 PASS: JSON invalid UTF-8 replaced by U+FFFD
+#9 6.815 PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+#9 6.815 PASS: JSON overlong encoding rejected
+#9 6.815 PASS: JSON NULL pointer becomes null
+#9 6.815 PASS: JSON empty string stays empty string
+#9 6.815 PASS: JSON overflow detected instead of writing past the buffer
+#9 6.815 PASS: JSON overflow keeps buffer NUL-terminated
+#9 6.815 PASS: bounded field cut before a multi-byte character
+#9 6.815 PASS: JSON numbers, booleans and null
+#9 6.815 PASS: digest masks string and number literals
+#9 6.815 PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+#9 6.815 PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+#9 6.815 PASS: the same rule hides the rest of a default-mode escaped quote
+#9 6.815 PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+#9 6.815 PASS: digest hides passwords given as literals
+#9 6.815 PASS: digest hides password hashes
+#9 6.815 PASS: digest masks hex, bit, national and introducer literals
+#9 6.815 PASS: digest masks decimals and exponents
+#9 6.815 PASS: digest keeps identifiers containing digits and backtick identifiers
+#9 6.815 PASS: digest keeps doubled backticks inside identifiers
+#9 6.815 PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+#9 6.815 PASS: digest removes ordinary comments of every style
+#9 6.815 PASS: digest keeps the statement inside a versioned executable comment, literals masked
+#9 6.815 PASS: digest lexes an executable comment in the middle of a statement
+#9 6.815 PASS: digest keeps MariaDB's /*M! ... */ executable comments
+#9 6.815 PASS: an ordinary comment inside an executable one is dropped
+#9 6.815 PASS: an unterminated executable comment still masks its literals
+#9 6.815 PASS: an empty executable comment leaves nothing
+#9 6.815 PASS: digest collapses whitespace
+#9 6.815 PASS: '--' without trailing space is not a comment
+#9 6.815 PASS: digest of empty statement
+#9 6.815 PASS: digest handles an unterminated string
+#9 6.815 PASS: digest handles an unterminated comment
+#9 6.815 PASS: digest keeps variable names but masks quoted ones
+#9 6.815 PASS: digest truncates at max length and reports it
+#9 6.815 PASS: digest never ends inside a UTF-8 sequence
+#9 6.815 PASS: digest with max length 0 is empty and marked truncated
+#9 6.815 PASS: 100 kB literal collapses to one '?'
+#9 6.815 PASS: digest of a NULL statement
+#9 6.815 PASS: database list parsed and trimmed
+#9 6.815 PASS: database match is case-insensitive
+#9 6.815 PASS: database match needs the whole name
+#9 6.815 PASS: NULL database never matches
+#9 6.815 PASS: empty database list watches nothing
+#9 6.815 PASS: empty list matches nothing
+#9 6.815 PASS: '*' accepted for databases
+#9 6.815 PASS: '*' matches user schemas
+#9 6.815 PASS: '*' never matches system schemas
+#9 6.815 PASS: the four system schemas are recognised
+#9 6.815 PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+#9 6.815 PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+#9 6.815 PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+#9 6.815 PASS: user schemas, prefixes and empty names are not system schemas
+#9 6.815 PASS: empty element rejected
+#9 6.815 PASS: trailing comma rejected
+#9 6.815 PASS: space inside a name rejected
+#9 6.815 PASS: punctuation rejected
+#9 6.815 PASS: '*' cannot be mixed with names
+#9 6.815 PASS: '*' rejected for users
+#9 6.815 PASS: more than 16 names rejected
+#9 6.815 PASS: name longer than 128 characters rejected
+#9 6.815 PASS: user list with '.', '-' and '@' accepted
+#9 6.815 PASS: user match is exact and case-sensitive
+#9 6.815 PASS: user match needs the whole name
+#9 6.815 PASS: user match: a login that is only a prefix of an excluded name is still audited
+#9 6.815 PASS: timestamp of the epoch
+#9 6.815 PASS: timestamp 2026-10-25
+#9 6.815 PASS: timestamp on a leap day
+#9 6.815 PASS: timestamp one second before the epoch
+#9 6.815 PASS: timestamp exactly one day before the epoch
+#9 6.815 PASS: bounded_length stops at the limit and accepts NULL
+#9 6.815 PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+#9 6.815 PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+#9 6.815 PASS: login name is the part of the account before '['
+#9 6.815 PASS: account without '[', NULL account and the length bound
+#9 6.815 Failures: 0
+#9 6.815 == test_log_sink
+#9 6.819 PASS: NULL path rejected
+#9 6.819 PASS: empty path rejected
+#9 6.819 PASS: directory-like path rejected
+#9 6.819 PASS: directory-like path ending in a backslash rejected
+#9 6.819 PASS: control character in path rejected
+#9 6.819 PASS: over-long path rejected
+#9 6.819 PASS: missing directory reported as open_Failed
+#9 6.819 PASS: open failure message names the log and the OS error
+#9 6.819 PASS: sink stays closed after failed open
+#9 6.819 PASS: write on closed sink fails
+#9 6.819 PASS: valid path opened
+#9 6.819 PASS: first record written
+#9 6.819 PASS: failed re-open keeps the previous file open
+#9 6.819 PASS: previous file still writable
+#9 6.819 PASS: re-opened file is appended to
+#9 6.819 PASS: file holds all records in order
+#9 6.819 PASS: an existing .jsonl file that is not a campus_audit log is refused (Refusing audit log 'sink_test_foreign.jsonl': the file exists and does not begin with a campus_audit record (accepted are a new file, an empty one and an earlier campus_audit log))
+#9 6.819 PASS: the refused file is unchanged
+#9 6.819 PASS: an existing empty file whose name does not end in .jsonl is refused (Refusing audit log 'sink_test_table.dat': a regular audit log file must end in .jsonl)
+#9 6.819 PASS: it stays empty
+#9 6.819 PASS: a new file whose name does not end in .jsonl is refused (Refusing audit log 'sink_test_new.log': a regular audit log file must end in .jsonl)
+#9 6.819 PASS: and is not created
+#9 6.819 PASS: the .jsonl suffix is matched without regard to case
+#9 6.819 PASS: an existing empty .jsonl file is accepted
+#9 6.819 PASS: a log that begins with the newline of an audit_gap record is accepted
+#9 6.819 PASS: a hard link is refused, even with a log-like content (Refusing audit log 'sink_test_hardlink.jsonl': it has 2 hard links; an audit log has exactly one)
+#9 6.819 PASS: and so is the file under its other name (Refusing audit log 'sink_test_linked_target.jsonl': it has 2 hard links; an audit log has exactly one)
+#9 6.819 PASS: the hard-linked file is unchanged
+#9 6.819 PASS: a symbolic link is refused (Refusing audit log 'sink_test_symlink.jsonl': it is a symbolic link)
+#9 6.819 PASS: the refusal names the symbolic link (the open itself refuses it)
+#9 6.819 PASS: the link's target is unchanged
+#9 6.819 PASS: a file of another OS user is refused (Refusing audit log 'sink_test_owner.jsonl': it belongs to another OS user (uid 4242))
+#9 6.819 PASS: it is unchanged
+#9 6.819 PASS: an existing log whose owner is not the expected one is refused
+#9 6.819 PASS: it is unchanged
+#9 6.819 PASS: the same file is accepted for its real owner
+#9 6.819 PASS: a FIFO without a reader is refused at once (Refusing audit log 'sink_test_fifo': it is a FIFO without a reader)
+#9 6.819 PASS: a FIFO with a reader is accepted (no .jsonl needed)
+#9 6.819 PASS: its descriptor is blocking again
+#9 6.819 PASS: a FIFO of another OS user is refused, even with a reader (Refusing audit log 'sink_test_fifo': it is a FIFO of another OS user (uid 0))
+#9 6.819 PASS: /dev/null is accepted
+#9 6.819 PASS: another character device (/dev/zero) is refused (Refusing audit log '/dev/zero': it is a character device other than /dev/null and /dev/full)
+#9 6.819 PASS: a newly created log file has no permission bits for others
+#9 6.819 PASS: readable_by_all: the permissions of an existing log file are not widened
+#9 6.819 PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+#9 6.819 PASS: readable_by_all: a refused file keeps its permissions
+#9 6.819 PASS: two sinks opened for swap
+#9 6.819 PASS: after swap the active sink writes
+#9 6.819 PASS: after swap the other sink holds the previous file
+#9 6.819 PASS: the record went to the file that was swapped in
+#9 6.819 PASS: swap with a closed sink moves the file
+#9 6.819 PASS: opened for EBADF test
+#9 6.819 PASS: write on a dead descriptor reported as write_Failed
+#9 6.819 PASS: write failure message carries errno
+#9 6.819 PASS: /dev/full write reported as write_Failed (ENOSPC)
+#9 6.819 Failures: 0
+#9 6.820 == test_automatic_errors
+#9 6.822 PASS: validate: NULL path
+#9 6.822 PASS: validate: empty path
+#9 6.822 PASS: validate: trailing forward slash
+#9 6.822 PASS: validate: trailing backslash
+#9 6.822 PASS: validate: newline in path
+#9 6.822 PASS: validate: DEL in path
+#9 6.822 PASS: validate: 513-byte path
+#9 6.822 PASS: validate: 512-byte path
+#9 6.822 PASS: validate: lexically valid path
+#9 6.822 PASS: validate: no file is created
+#9 6.822 Failures: 0
+#9 6.823 == test_error_reporter
+#9 6.825 Reported: Cannot open audit log
+#9 6.825 PASS: all reporter checks
+#9 6.826 == test_runtime_config
+#9 6.830 PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+#9 6.830 PASS: six reader threads completed 100000 reads each while one thread wrote
+#9 6.830 PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+#9 6.830 PASS: after the writer finished every setting holds the last value stored
+#9 6.830 Checks: 4, Failures: 0
+#9 6.830 == test_gap_accounting
+#9 6.831 PASS: a new accounting object has lost nothing
+#9 6.831 PASS: every lost event is counted
+#9 6.831 PASS: a marker that could not be written is reported as not written
+#9 6.831 PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+#9 6.831 PASS: events lost after the failed marker are added to the same outage
+#9 6.831 PASS: a written marker is reported as written
+#9 6.831 PASS: only a written marker resets the count
+#9 6.831 PASS: a new outage starts counting from zero
+#9 6.831 PASS: records lost without an I/O error are added to the count the marker announces
+#9 6.831 PASS: merging zero other losses changes nothing
+#9 6.831 PASS: the marker announces both kinds and resets the count
+#9 6.831 Checks: 11, Failures: 0
+#9 6.832 == test_statement_scope
+#9 6.833 PASS: TABLES: a statement without any fact is not recorded
+#9 6.833 PASS: a statement with a recorded table event is recorded without extra marks
+#9 6.833 PASS: an accepted SET GLOBAL campus_audit_* is recorded
+#9 6.833 PASS: SESSION: a statement with a recorded table event is not marked scope=session
+#9 6.833 PASS: TABLES: a refusal outside a watched default schema is not recorded
+#9 6.833 PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+#9 6.833 PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+#9 6.833 PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+#9 6.833 PASS: TABLES: the latch alone records nothing
+#9 6.833 PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+#9 6.833 PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+#9 6.833 PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+#9 6.833 PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+#9 6.833 PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+#9 6.833 PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+#9 6.833 PASS: SESSION: a table-less refusal carries both marks
+#9 6.833 PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+#9 6.833 PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+#9 6.833 PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+#9 6.833 PASS: SESSION: with both conditions met the statement is recorded
+#9 6.833 PASS: Query and Execute are SQL commands
+#9 6.833 PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+#9 6.833 PASS: the command name must match exactly; NULL and empty names are not SQL commands
+#9 6.833 PASS: an unrecorded table event marks the statement as seen, not as recorded
+#9 6.833 PASS: a recorded event of the same statement sets the latch
+#9 6.833 PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+#9 6.833 PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+#9 6.833 PASS: and a recorded event sets it again
+#9 6.833 PASS: LOCK TABLES on a watched table: one table event, recorded
+#9 6.833 PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+#9 6.833 PASS: UPDATE under LOCK TABLES: recorded
+#9 6.833 PASS: a failing statement under LOCK TABLES: recorded
+#9 6.833 PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+#9 6.833 PASS: the next statement on another schema is not recorded
+#9 6.833 PASS: and ends rule (b): a following table-less statement is not recorded
+#9 6.833 PASS: TABLES: LOCK TABLES on a watched table is recorded
+#9 6.833 PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+#9 6.833 PASS: rule (a): DROP VIEW in a watched default schema is recorded
+#9 6.833 PASS: rule (a): COMMIT in a watched default schema is recorded
+#9 6.833 PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+#9 6.833 PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+#9 6.833 PASS: INSERT into a watched table from another default schema is recorded
+#9 6.833 PASS: rule (b): the COMMIT that follows it is recorded
+#9 6.833 PASS: a statement on other tables is not recorded
+#9 6.833 PASS: and the COMMIT after that one is not recorded
+#9 6.833 PASS: a statement that touches another schema and a watched table is recorded
+#9 6.833 PASS: rule (b) holds after it
+#9 6.833 PASS: the order of its table events does not matter
+#9 6.833 PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+#9 6.833 PASS: the firing statement is recorded once, unmarked
+#9 6.833 PASS: the COMMIT after it is recorded: nothing is left open
+#9 6.833 PASS: TABLES: the same sequence gives exactly the firing statement
+#9 6.833 PASS: a routine's INSERT into a watched table is recorded as its own statement
+#9 6.833 PASS: a routine's SELECT from another schema is not recorded
+#9 6.833 PASS: the CALL itself raised no table event and is recorded, scope=session
+#9 6.833 PASS: a statement on a watched table
+#9 6.833 PASS: the Quit command that ends the connection is not recorded as a statement
+#9 6.833 PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+#9 6.833 PASS: a statement that also touched another user schema is classified and not recorded
+#9 6.833 PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+#9 6.833 PASS: rule (b): a system-schema event does not clear the latch
+#9 6.833 PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+#9 6.833 PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+#9 6.833 Checks: 63, Failures: 0
+#9 6.835 All unit test programs passed.
+#9 6.840 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+#9 6.840   -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+#9 6.840   src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+#9 12.04 built build/campus_audit.so (services: /usr/lib/x86_64-linux-gnu/libmysqlservices.a)
+#9 DONE 12.1s
+
+#10 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#10 DONE 0.2s
+
+#11 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#11 DONE 0.6s
+
+#12 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp examples/skeleton_plugin/Makefile /src/skeleton/
+#12 DONE 0.2s
+
+#13 [build 9/9] RUN make -C /src/skeleton all experimental
+#13 0.378 make: Entering directory '/src/skeleton'
+#13 0.378 g++ -std=c++11 -O2 -Wall -Wextra -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private skeleton_audit.cpp -o skeleton_audit.so
+#13 0.450 g++ -std=c++11 -O2 -Wall -Wextra -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN -DSKELETON_EXPERIMENTAL -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private skeleton_audit.cpp -o skeleton_audit_exp.so
+#13 0.517 make: Leaving directory '/src/skeleton'
+#13 DONE 0.6s
+
+#14 [plugin-server 2/8] RUN test -d /usr/lib/mysql/plugin
+#14 CACHED
+
+#15 [plugin-server 3/8] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#15 DONE 0.2s
+
+#16 [plugin-server 4/8] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#16 DONE 0.2s
+
+#17 [plugin-server 5/8] COPY --from=build /src/skeleton/skeleton_audit.so /src/skeleton/skeleton_audit_exp.so /usr/lib/mysql/plugin/
+#17 DONE 0.2s
+
+#18 [plugin-server 6/8] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#18 DONE 0.2s
+
+#19 [plugin-server 7/8] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#19 DONE 0.4s
+
+#20 [plugin-server 8/8] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#20 DONE 0.5s
+
+#21 [stage-3  1/18] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#21 DONE 0.2s
+
+#22 [stage-3  2/18] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#22 DONE 0.3s
+
+#23 [stage-3  3/18] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#23 DONE 0.2s
+
+#24 [stage-3  4/18] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#24 DONE 0.2s
+
+#25 [stage-3  5/18] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#25 DONE 0.2s
+
+#26 [stage-3  6/18] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#26 DONE 0.2s
+
+#27 [stage-3  7/18] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#27 DONE 0.2s
+
+#28 [stage-3  8/18] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#28 DONE 0.2s
+
+#29 [stage-3  9/18] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#29 DONE 0.2s
+
+#30 [stage-3 10/18] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#30 DONE 0.2s
+
+#31 [stage-3 11/18] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#31 DONE 0.2s
+
+#32 [stage-3 12/18] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#32 DONE 0.2s
+
+#33 [stage-3 13/18] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#33 DONE 0.2s
+
+#34 [stage-3 14/18] COPY database/ /usr/local/share/campus/database/
+#34 DONE 0.2s
+
+#35 [stage-3 15/18] COPY scripts/ /usr/local/share/campus/scripts/
+#35 DONE 0.2s
+
+#36 [stage-3 16/18] COPY tests/ /usr/local/share/campus/tests/
+#36 DONE 0.3s
+
+#37 [stage-3 17/18] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#37 DONE 0.2s
+
+#38 [stage-3 18/18] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#38 0.358 + init_script=/docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.358 + chmod 0644 /docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.370 + test -f /docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.370 + test -r /docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.370 + test ! -x /docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.371 + stat -c %a /docker-entrypoint-initdb.d/60-app-account.sh
+#38 0.373 + test 644 = 644
+#38 DONE 0.4s
+
+#39 exporting to image
+#39 exporting layers
+#39 exporting layers 5.1s done
+#39 exporting manifest sha256:d810b8c6ee179ab194203e258b9b0843b7ef76d4f93be4315df7acddfe457be7
+#39 exporting manifest sha256:d810b8c6ee179ab194203e258b9b0843b7ef76d4f93be4315df7acddfe457be7 0.2s done
+#39 exporting config sha256:9b8749ae55bbc9f9eeada28506badc15861cb942a44e15f03eaf14ccc29ee8b3
+#39 exporting config sha256:9b8749ae55bbc9f9eeada28506badc15861cb942a44e15f03eaf14ccc29ee8b3 0.1s done
+#39 exporting attestation manifest sha256:f94ff2503ad66b9700a65eaf966cc8e1941489e7455c60952f10e1bb31359172
+#39 exporting attestation manifest sha256:f94ff2503ad66b9700a65eaf966cc8e1941489e7455c60952f10e1bb31359172 0.1s done
+#39 exporting manifest list sha256:873d2776e15a61d629730b971748a30cf0b9fde803b4a0bb68d98ed97feac148 0.1s done
+#39 naming to docker.io/library/campus-audit-mariadb:server-11.8
+#39 naming to docker.io/library/campus-audit-mariadb:server-11.8 done
+#39 unpacking to docker.io/library/campus-audit-mariadb:server-11.8
+#39 unpacking to docker.io/library/campus-audit-mariadb:server-11.8 2.2s done
+#39 DONE 8.1s
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.0s
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 6.17kB 0.0s done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 372B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [build 1/9] FROM docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#5 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 8.60MB 4.0s done
+#4 DONE 4.2s
+
+#6 [build 4/9] COPY plugin/ ./
+#6 CACHED
+
+#7 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#7 CACHED
+
+#8 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:11.8.9+maria~ubu2404" "libmariadb-dev=1:11.8.9+maria~ubu2404";     rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [build 3/9] WORKDIR /src/plugin
+#9 CACHED
+
+#10 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp examples/skeleton_plugin/Makefile /src/skeleton/
+#10 CACHED
+
+#11 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#11 CACHED
+
+#12 [build 5/9] RUN make clean && make test && make plugin
+#12 CACHED
+
+#13 [build 9/9] RUN make -C /src/skeleton all experimental
+#13 CACHED
+
+#14 [test-runner 1/6] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends python3 python3-venv python3-pip;     rm -rf /var/lib/apt/lists/*;     python3 -m venv /opt/frantastic-test-venv
+#14 0.961 + apt-get update
+#14 1.234 Get:1 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+#14 1.287 Get:2 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+#14 1.561 Get:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+#14 1.616 Get:4 http://archive.mariadb.org/mariadb-11.8.9/repo/ubuntu noble InRelease [27.9 kB]
+#14 1.645 Get:5 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [1475 kB]
+#14 1.736 Get:6 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+#14 2.215 Get:7 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages [19.3 MB]
+#14 2.248 Get:8 http://archive.mariadb.org/mariadb-11.8.9/repo/ubuntu noble/main/debug amd64 Packages [9731 B]
+#14 2.451 Get:9 http://archive.mariadb.org/mariadb-11.8.9/repo/ubuntu noble/main amd64 Packages [14.5 kB]
+#14 2.563 Get:10 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1560 kB]
+#14 2.831 Get:11 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [2216 kB]
+#14 3.308 Get:12 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [55.6 kB]
+#14 5.843 Get:13 http://archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [331 kB]
+#14 5.862 Get:14 http://archive.ubuntu.com/ubuntu noble/restricted amd64 Packages [117 kB]
+#14 5.875 Get:15 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages [1808 kB]
+#14 6.163 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [2184 kB]
+#14 6.438 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1822 kB]
+#14 6.603 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [2371 kB]
+#14 6.765 Get:19 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [61.7 kB]
+#14 6.768 Get:20 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [36.0 kB]
+#14 6.774 Get:21 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [669 B]
+#14 6.775 Get:22 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [49.0 kB]
+#14 8.067 Fetched 34.1 MB in 7s (4829 kB/s)
+#14 8.067 Reading package lists...
+#14 9.720 + apt-get install -y --no-install-recommends python3 python3-venv python3-pip
+#14 9.738 Reading package lists...
+#14 11.77 Building dependency tree...
+#14 12.13 Reading state information...
+#14 12.60 The following additional packages will be installed:
+#14 12.60   libexpat1 libpython3-stdlib libpython3.12-minimal libpython3.12-stdlib
+#14 12.60   media-types netbase python3-minimal python3-pip-whl python3-pkg-resources
+#14 12.60   python3-setuptools python3-setuptools-whl python3-wheel python3.12
+#14 12.61   python3.12-minimal python3.12-venv
+#14 12.61 Suggested packages:
+#14 12.61   python3-doc python3-tk python-setuptools-doc python3.12-doc binfmt-support
+#14 12.61 Recommended packages:
+#14 12.61   build-essential python3-dev
+#14 12.72 The following NEW packages will be installed:
+#14 12.72   libexpat1 libpython3-stdlib libpython3.12-minimal libpython3.12-stdlib
+#14 12.72   media-types netbase python3 python3-minimal python3-pip python3-pip-whl
+#14 12.72   python3-pkg-resources python3-setuptools python3-setuptools-whl python3-venv
+#14 12.72   python3-wheel python3.12 python3.12-minimal python3.12-venv
+#14 12.90 0 upgraded, 18 newly installed, 0 to remove and 3 not upgraded.
+#14 12.90 Need to get 10.5 MB of archives.
+#14 12.90 After this operation, 37.3 MB of additional disk space will be used.
+#14 12.90 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-minimal amd64 3.12.3-1ubuntu0.17 [839 kB]
+#14 13.12 Get:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libexpat1 amd64 2.6.1-2ubuntu0.6 [98.9 kB]
+#14 13.15 Get:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12-minimal amd64 3.12.3-1ubuntu0.17 [2335 kB]
+#14 13.33 Get:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-minimal amd64 3.12.3-0ubuntu2.1 [27.4 kB]
+#14 13.33 Get:5 http://archive.ubuntu.com/ubuntu noble/main amd64 media-types all 10.1.0 [27.5 kB]
+#14 13.34 Get:6 http://archive.ubuntu.com/ubuntu noble/main amd64 netbase all 6.4 [13.1 kB]
+#14 13.34 Get:7 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-stdlib amd64 3.12.3-1ubuntu0.17 [2071 kB]
+#14 13.64 Get:8 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12 amd64 3.12.3-1ubuntu0.17 [651 kB]
+#14 13.69 Get:9 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3-stdlib amd64 3.12.3-0ubuntu2.1 [10.1 kB]
+#14 13.69 Get:10 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3 amd64 3.12.3-0ubuntu2.1 [23.0 kB]
+#14 13.69 Get:11 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-pkg-resources all 68.1.2-2ubuntu1.2 [168 kB]
+#14 13.72 Get:12 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-setuptools all 68.1.2-2ubuntu1.2 [397 kB]
+#14 13.75 Get:13 http://archive.ubuntu.com/ubuntu noble/universe amd64 python3-wheel all 0.42.0-2 [53.1 kB]
+#14 13.75 Get:14 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-pip all 24.0+dfsg-1ubuntu1.3 [1320 kB]
+#14 13.86 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-pip-whl all 24.0+dfsg-1ubuntu1.3 [1707 kB]
+#14 14.01 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-setuptools-whl all 68.1.2-2ubuntu1.2 [716 kB]
+#14 14.07 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3.12-venv amd64 3.12.3-1ubuntu0.17 [5684 B]
+#14 14.07 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-venv amd64 3.12.3-0ubuntu2.1 [1032 B]
+#14 14.35 debconf: delaying package configuration, since apt-utils is not installed
+#14 14.43 Fetched 10.5 MB in 1s (7929 kB/s)
+#14 14.55 Selecting previously unselected package libpython3.12-minimal:amd64.
+#14 14.55 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 12862 files and directories currently installed.)
+#14 14.57 Preparing to unpack .../libpython3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb ...
+#14 14.59 Unpacking libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.17) ...
+#14 14.83 Selecting previously unselected package libexpat1:amd64.
+#14 14.84 Preparing to unpack .../libexpat1_2.6.1-2ubuntu0.6_amd64.deb ...
+#14 14.88 Unpacking libexpat1:amd64 (2.6.1-2ubuntu0.6) ...
+#14 15.07 Selecting previously unselected package python3.12-minimal.
+#14 15.07 Preparing to unpack .../python3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb ...
+#14 15.09 Unpacking python3.12-minimal (3.12.3-1ubuntu0.17) ...
+#14 15.29 Setting up libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.17) ...
+#14 15.39 Setting up libexpat1:amd64 (2.6.1-2ubuntu0.6) ...
+#14 15.45 Setting up python3.12-minimal (3.12.3-1ubuntu0.17) ...
+#14 16.76 Selecting previously unselected package python3-minimal.
+#14 16.76 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 13181 files and directories currently installed.)
+#14 16.77 Preparing to unpack .../0-python3-minimal_3.12.3-0ubuntu2.1_amd64.deb ...
+#14 16.80 Unpacking python3-minimal (3.12.3-0ubuntu2.1) ...
+#14 16.95 Selecting previously unselected package media-types.
+#14 16.95 Preparing to unpack .../1-media-types_10.1.0_all.deb ...
+#14 16.97 Unpacking media-types (10.1.0) ...
+#14 17.11 Selecting previously unselected package netbase.
+#14 17.12 Preparing to unpack .../2-netbase_6.4_all.deb ...
+#14 17.14 Unpacking netbase (6.4) ...
+#14 17.26 Selecting previously unselected package libpython3.12-stdlib:amd64.
+#14 17.26 Preparing to unpack .../3-libpython3.12-stdlib_3.12.3-1ubuntu0.17_amd64.deb ...
+#14 17.28 Unpacking libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.17) ...
+#14 17.58 Selecting previously unselected package python3.12.
+#14 17.58 Preparing to unpack .../4-python3.12_3.12.3-1ubuntu0.17_amd64.deb ...
+#14 17.60 Unpacking python3.12 (3.12.3-1ubuntu0.17) ...
+#14 17.74 Selecting previously unselected package libpython3-stdlib:amd64.
+#14 17.75 Preparing to unpack .../5-libpython3-stdlib_3.12.3-0ubuntu2.1_amd64.deb ...
+#14 17.76 Unpacking libpython3-stdlib:amd64 (3.12.3-0ubuntu2.1) ...
+#14 17.96 Setting up python3-minimal (3.12.3-0ubuntu2.1) ...
+#14 18.58 Selecting previously unselected package python3.
+#14 18.58 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 13622 files and directories currently installed.)
+#14 18.60 Preparing to unpack .../0-python3_3.12.3-0ubuntu2.1_amd64.deb ...
+#14 18.63 Unpacking python3 (3.12.3-0ubuntu2.1) ...
+#14 18.78 Selecting previously unselected package python3-pkg-resources.
+#14 18.78 Preparing to unpack .../1-python3-pkg-resources_68.1.2-2ubuntu1.2_all.deb ...
+#14 18.80 Unpacking python3-pkg-resources (68.1.2-2ubuntu1.2) ...
+#14 18.97 Selecting previously unselected package python3-setuptools.
+#14 18.97 Preparing to unpack .../2-python3-setuptools_68.1.2-2ubuntu1.2_all.deb ...
+#14 18.99 Unpacking python3-setuptools (68.1.2-2ubuntu1.2) ...
+#14 19.18 Selecting previously unselected package python3-wheel.
+#14 19.18 Preparing to unpack .../3-python3-wheel_0.42.0-2_all.deb ...
+#14 19.20 Unpacking python3-wheel (0.42.0-2) ...
+#14 19.37 Selecting previously unselected package python3-pip.
+#14 19.37 Preparing to unpack .../4-python3-pip_24.0+dfsg-1ubuntu1.3_all.deb ...
+#14 19.39 Unpacking python3-pip (24.0+dfsg-1ubuntu1.3) ...
+#14 20.57 Selecting previously unselected package python3-pip-whl.
+#14 20.58 Preparing to unpack .../5-python3-pip-whl_24.0+dfsg-1ubuntu1.3_all.deb ...
+#14 20.76 Unpacking python3-pip-whl (24.0+dfsg-1ubuntu1.3) ...
+#14 21.23 Selecting previously unselected package python3-setuptools-whl.
+#14 21.23 Preparing to unpack .../6-python3-setuptools-whl_68.1.2-2ubuntu1.2_all.deb ...
+#14 21.25 Unpacking python3-setuptools-whl (68.1.2-2ubuntu1.2) ...
+#14 21.78 Selecting previously unselected package python3.12-venv.
+#14 21.79 Preparing to unpack .../7-python3.12-venv_3.12.3-1ubuntu0.17_amd64.deb ...
+#14 21.81 Unpacking python3.12-venv (3.12.3-1ubuntu0.17) ...
+#14 22.07 Selecting previously unselected package python3-venv.
+#14 22.08 Preparing to unpack .../8-python3-venv_3.12.3-0ubuntu2.1_amd64.deb ...
+#14 22.09 Unpacking python3-venv (3.12.3-0ubuntu2.1) ...
+#14 22.21 Setting up media-types (10.1.0) ...
+#14 22.46 Setting up python3-setuptools-whl (68.1.2-2ubuntu1.2) ...
+#14 22.51 Setting up python3-pip-whl (24.0+dfsg-1ubuntu1.3) ...
+#14 22.56 Setting up netbase (6.4) ...
+#14 22.70 Setting up libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.17) ...
+#14 22.76 Setting up python3.12 (3.12.3-1ubuntu0.17) ...
+#14 24.13 Setting up libpython3-stdlib:amd64 (3.12.3-0ubuntu2.1) ...
+#14 24.18 Setting up python3.12-venv (3.12.3-1ubuntu0.17) ...
+#14 24.40 Setting up python3 (3.12.3-0ubuntu2.1) ...
+#14 24.44 running python rtupdate hooks for python3.12...
+#14 24.44 running python post-rtupdate hooks for python3.12...
+#14 24.59 Setting up python3-wheel (0.42.0-2) ...
+#14 24.84 Setting up python3-venv (3.12.3-0ubuntu2.1) ...
+#14 24.94 Setting up python3-pkg-resources (68.1.2-2ubuntu1.2) ...
+#14 25.34 Setting up python3-setuptools (68.1.2-2ubuntu1.2) ...
+#14 25.97 Setting up python3-pip (24.0+dfsg-1ubuntu1.3) ...
+#14 28.01 Processing triggers for libc-bin (2.39-0ubuntu8.12) ...
+#14 28.29 + rm -rf /var/lib/apt/lists/archive.mariadb.org_mariadb-11.8.9_repo_ubuntu_dists_noble_InRelease /var/lib/apt/lists/archive.mariadb.org_mariadb-11.8.9_repo_ubuntu_dists_noble_main_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.mariadb.org_mariadb-11.8.9_repo_ubuntu_dists_noble_main_debug_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-backports_InRelease /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-backports_main_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-backports_multiverse_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-backports_universe_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-updates_InRelease /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-updates_main_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-updates_multiverse_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-updates_restricted_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble-updates_universe_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_InRelease /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_multiverse_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_restricted_binary-amd64_Packages.lz4 /var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_universe_binary-amd64_Packages.lz4 /var/lib/apt/lists/auxfiles /var/lib/apt/lists/lock /var/lib/apt/lists/partial /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security_InRelease /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security_main_binary-amd64_Packages.lz4 /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security_multiverse_binary-amd64_Packages.lz4 /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security_restricted_binary-amd64_Packages.lz4 /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security_universe_binary-amd64_Packages.lz4
+#14 28.30 + python3 -m venv /opt/frantastic-test-venv
+#14 DONE 33.8s
+
+#15 [test-runner 2/6] WORKDIR /workspace
+#15 DONE 0.4s
+
+#16 [test-runner 3/6] COPY frontend/requirements.txt frontend/requirements-dev.txt /tmp/frantastic-requirements/
+#16 DONE 0.2s
+
+#17 [test-runner 4/6] RUN cd /tmp/frantastic-requirements && /opt/frantastic-test-venv/bin/pip install --no-cache-dir       -r requirements.txt -r requirements-dev.txt
+#17 2.088 Collecting Flask==3.1.3 (from -r requirements.txt (line 2))
+#17 2.330   Downloading flask-3.1.3-py3-none-any.whl.metadata (3.2 kB)
+#17 2.499 Collecting Werkzeug==3.1.9 (from -r requirements.txt (line 3))
+#17 2.609   Downloading werkzeug-3.1.9-py3-none-any.whl.metadata (4.1 kB)
+#17 2.678 Collecting PyMySQL==1.2.3 (from -r requirements.txt (line 4))
+#17 2.746   Downloading pymysql-1.2.3-py3-none-any.whl.metadata (4.2 kB)
+#17 2.891 Collecting python-dotenv==1.2.4 (from -r requirements.txt (line 5))
+#17 2.950   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
+#17 3.072 Collecting waitress==3.0.2 (from -r requirements.txt (line 6))
+#17 3.127   Downloading waitress-3.0.2-py3-none-any.whl.metadata (5.8 kB)
+#17 3.649 Collecting pytest==9.1.1 (from -r requirements-dev.txt (line 2))
+#17 3.832   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+#17 3.939 Collecting blinker>=1.9.0 (from Flask==3.1.3->-r requirements.txt (line 2))
+#17 4.004   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#17 4.144 Collecting click>=8.1.3 (from Flask==3.1.3->-r requirements.txt (line 2))
+#17 4.206   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+#17 4.309 Collecting itsdangerous>=2.2.0 (from Flask==3.1.3->-r requirements.txt (line 2))
+#17 4.386   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#17 4.577 Collecting jinja2>=3.1.2 (from Flask==3.1.3->-r requirements.txt (line 2))
+#17 4.635   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#17 4.840 Collecting markupsafe>=2.1.1 (from Flask==3.1.3->-r requirements.txt (line 2))
+#17 4.892   Downloading markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+#17 5.008 Collecting iniconfig>=1.0.1 (from pytest==9.1.1->-r requirements-dev.txt (line 2))
+#17 5.092   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+#17 5.210 Collecting packaging>=22 (from pytest==9.1.1->-r requirements-dev.txt (line 2))
+#17 5.265   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+#17 5.357 Collecting pluggy<2,>=1.5 (from pytest==9.1.1->-r requirements-dev.txt (line 2))
+#17 5.417   Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+#17 5.543 Collecting pygments>=2.7.2 (from pytest==9.1.1->-r requirements-dev.txt (line 2))
+#17 5.603   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+#17 5.726 Downloading flask-3.1.3-py3-none-any.whl (103 kB)
+#17 5.942    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.4/103.4 kB 717.6 kB/s eta 0:00:00
+#17 6.009 Downloading werkzeug-3.1.9-py3-none-any.whl (228 kB)
+#17 6.138    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 228.7/228.7 kB 1.8 MB/s eta 0:00:00
+#17 6.187 Downloading pymysql-1.2.3-py3-none-any.whl (46 kB)
+#17 6.207    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.7/46.7 kB 4.1 MB/s eta 0:00:00
+#17 6.287 Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
+#17 6.360 Downloading waitress-3.0.2-py3-none-any.whl (56 kB)
+#17 6.387    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.2/56.2 kB 6.1 MB/s eta 0:00:00
+#17 6.460 Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+#17 6.649    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 386.5/386.5 kB 2.1 MB/s eta 0:00:00
+#17 6.705 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#17 6.775 Downloading click-8.5.1-py3-none-any.whl (126 kB)
+#17 6.822    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 126.2/126.2 kB 2.9 MB/s eta 0:00:00
+#17 7.003 Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+#17 7.206 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#17 7.253 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#17 7.306    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 2.9 MB/s eta 0:00:00
+#17 7.351 Downloading markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+#17 7.413 Downloading packaging-26.3-py3-none-any.whl (129 kB)
+#17 7.455    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.0/130.0 kB 3.3 MB/s eta 0:00:00
+#17 7.515 Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+#17 7.590 Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+#17 8.038    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 2.8 MB/s eta 0:00:00
+#17 8.106 Installing collected packages: waitress, python-dotenv, PyMySQL, pygments, pluggy, packaging, markupsafe, itsdangerous, iniconfig, click, blinker, Werkzeug, pytest, jinja2, Flask
+#17 12.85 Successfully installed Flask-3.1.3 PyMySQL-1.2.3 Werkzeug-3.1.9 blinker-1.9.0 click-8.5.1 iniconfig-2.3.1 itsdangerous-2.2.0 jinja2-3.1.6 markupsafe-3.0.4 packaging-26.3 pluggy-1.7.0 pygments-2.21.0 pytest-9.1.1 python-dotenv-1.2.4 waitress-3.0.2
+#17 DONE 13.2s
+
+#18 [test-runner 5/6] COPY . .
+#18 DONE 0.4s
+
+#19 [test-runner 6/6] RUN gcc -O2 -Wall -o /usr/local/bin/campus_change_user tests/plugin/change_user.c $(mariadb_config --cflags --libs)
+#19 DONE 0.5s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 5.1s done
+#20 exporting manifest sha256:e9d14678edf21c5cd2dbf87fae10d5e56342db545af878b9bdea243f3bdfb8c0
+#20 exporting manifest sha256:e9d14678edf21c5cd2dbf87fae10d5e56342db545af878b9bdea243f3bdfb8c0 0.2s done
+#20 exporting config sha256:5bf688aa51df043cbce9be42bc7efe1250a7efe1e331e1d63e664c34374f93c0
+#20 exporting config sha256:5bf688aa51df043cbce9be42bc7efe1250a7efe1e331e1d63e664c34374f93c0 0.1s done
+#20 exporting attestation manifest sha256:9c96c82ca97c8d06931a0795d434640970b79b88f67b0a608f833ac8d29c37c2
+#20 exporting attestation manifest sha256:9c96c82ca97c8d06931a0795d434640970b79b88f67b0a608f833ac8d29c37c2 0.1s done
+#20 exporting manifest list sha256:c0a72da0beafd23f54907e9bdc77ce32ceaf3f153631a35cbdfb7fc73cc4d209 0.1s done
+#20 naming to docker.io/library/campus-audit-test-runner:server-11.8
+#20 naming to docker.io/library/campus-audit-test-runner:server-11.8 0.0s done
+#20 unpacking to docker.io/library/campus-audit-test-runner:server-11.8
+#20 unpacking to docker.io/library/campus-audit-test-runner:server-11.8 4.2s done
+#20 DONE 10.1s
+== starting a throw-away server
+== tests/plugin/run_plugin_tests.sh
+== campus_audit integration tests (run 1795237224_7)
+Server: 11.8.9-MariaDB-ubu2404 (debian-linux-gnu)
+PASS: plugin is installed and ACTIVE (information_schema.PLUGINS)
+PASS: SHOW PLUGINS lists campus_audit
+-- configuration validation
+PASS: empty file path rejected
+PASS: NULL file path rejected
+PASS: file path in a missing directory rejected
+PASS: directory-like file path rejected
+PASS: rejected path explains the reason in SHOW WARNINGS
+PASS: rejected paths leave the active file unchanged
+PASS: a .jsonl file that is not a campus_audit log is refused
+PASS: a .jsonl file that is not a campus_audit log is refused: the refusal says why
+PASS: that file is unchanged
+PASS: a log-like file whose name does not end in .jsonl is refused
+PASS: a log-like file whose name does not end in .jsonl is refused: the refusal says why
+PASS: that file is unchanged
+PASS: refused files leave the active file unchanged
+PASS: database list with a space rejected
+PASS: database list with an empty element rejected
+PASS: database list mixing '*' and names rejected
+PASS: user list with punctuation rejected
+PASS: unknown connections mode rejected
+PASS: non-boolean log_reads rejected
+PASS: SET GLOBAL as the first statement of a connection returns
+PASS: out-of-range max_sql_length is clamped to 8192
+PASS: path without write permission rejected (/root/campus_audit_denied.jsonl)
+PASS: test log is active
+PASS: state is ACTIVE
+PASS: the server can read the test log with LOAD_FILE()
+-- event capture
+PASS: every line is valid JSON
+PASS: CREATE TABLE recorded as table_create
+PASS: INSERT/UPDATE/DELETE recorded as table_write (3)
+PASS: ALTER TABLE recorded as table_alter
+PASS: RENAME TABLE recorded with new_db/new_table
+PASS: SELECT is not recorded while log_reads=OFF
+PASS: writes to an unwatched schema are not recorded
+PASS: each audited statement has exactly one statement record
+PASS: conn equals CONNECTION_ID() of the session
+PASS: table and statement records share query_id
+PASS: statement record carries account, db and status
+PASS: digest masks literals (no 'hunter2', no 'Lab')
+PASS: digest keeps statement structure
+PASS: required fields present on table records
+PASS: ts is ISO-8601 UTC with microseconds
+PASS: failed CHECK constraint recorded with error_code 4025
+PASS: duplicate key recorded with error_code 1062
+PASS: rolled-back UPDATE still produces table_write + ok statement (not transactional)
+PASS: the rolled-back value is not in the table
+-- special and malformed input
+PASS: table name with quote, backslash and UTF-8 is escaped correctly
+PASS: 200 kB literal produces a short digest
+PASS: over-long statement digest is truncated at max_sql_length and flagged
+PASS: newline, tab, emoji and empty literals never break a line
+PASS: NO_BACKSLASH_ESCAPES: 'C:\' does not let the next literal into the log
+PASS: max_sql_length=0 omits the digest
+-- filtering
+PASS: log_reads=ON records SELECT as table_read
+PASS: excluded user's write is not recorded
+PASS: non-excluded user's write is recorded
+PASS: events_filtered counter increased
+PASS: databases='*' records other user schemas
+PASS: databases='*' never records the mysql schema
+-- refused statements (privilege errors)
+PASS: refused DELETE (ER 1142) in a watched default schema is recorded with access_denied
+PASS: the refused statement raised no TABLE event
+PASS: refused statement in an unwatched default schema is not recorded
+PASS: known limit: a refused statement naming a watched table from another default schema is not recorded
+PASS: attempted SET GLOBAL campus_audit_* without the privilege is recorded (ER 1227)
+PASS: the refused SET GLOBAL changed nothing
+PASS: an excluded user's refused statement is not recorded, but counted as filtered
+PASS: connections=FAILED records a failed login (status 1045)
+PASS: connections=FAILED does not record successful logins
+PASS: connections=ALL records connect and disconnect
+PASS: no password text appears anywhere in the log
+PASS: connections=NONE records nothing
+-- CHANGE_USER (COM_CHANGE_USER through the C API)
+PASS: mysql_change_user(): switch to ca_test_cu works, wrong password refused with 1045
+PASS: connections=ALL records the successful switch as change_user, status 0
+PASS: change_user names the account BEFORE the switch (ca_test_user, not ca_test_cu)
+PASS: failed switch recorded as change_user_failed, status 1045
+PASS: change_user_failed names the current account (ca_test_cu), not the attempted one (ca_test_user)
+PASS: the connection's later disconnect carries the new account
+PASS: connections=FAILED records only the failed switch
+PASS: no COM_CHANGE_USER password appears in the log
+PASS: configuration changes are recorded as config_change
+PASS: the SET statement of a configuration change is attributed to the account
+-- statements without table events (LOCK TABLES; trigger, view and routine DDL)
+PASS: statement_scope defaults to TABLES
+PASS: LOCK TABLES on a watched table raises one table event and is recorded
+PASS: the statements under the lock did change the table
+PASS: scope TABLES, documented limit: INSERT/UPDATE/DELETE under LOCK TABLES leave no record (no table event is raised)
+PASS: scope TABLES, documented limit: CREATE/DROP TRIGGER and CREATE/DROP VIEW leave no record
+PASS: scope TABLES: the connection has exactly two statement records (LOCK TABLES and the INSERT after UNLOCK)
+PASS: unknown statement scope rejected
+PASS: the scope change is recorded as config_change
+PASS: scope SESSION: INSERT, UPDATE and DELETE under LOCK TABLES are recorded, marked scope=session
+PASS: scope SESSION: they still have no table record (the server raised no table event for them)
+PASS: scope SESSION: UNLOCK TABLES is recorded, so the end of the locked section is visible
+PASS: scope SESSION: DROP VIEW (no table event) and CREATE/DROP PROCEDURE (table event for mysql.proc only) are recorded
+PASS: API fact: CREATE/DROP TRIGGER and CREATE VIEW are reported as read access, so with log_reads=OFF they are not recorded in either scope
+PASS: log_reads=ON: CREATE TRIGGER, DROP TRIGGER and CREATE VIEW are each recorded as table_read of their table plus a statement
+PASS: log_reads=ON: each of those statement records shares its query_id with the table_read record
+PASS: scope SESSION: START TRANSACTION and ROLLBACK are recorded (the outcome of the transaction is visible)
+PASS: scope SESSION: a statement with a table event keeps its ordinary, unmarked record
+PASS: scope SESSION: a SELECT from a watched table stays unrecorded while log_reads=OFF (it raised a table event)
+PASS: scope SESSION: a failing statement under LOCK TABLES is recorded with its error code (1062)
+PASS: scope SESSION: three INSERTs that fire a trigger are recorded once each, with the trigger's table under the same query_id
+PASS: scope SESSION: the trigger's body statement is not recorded as a statement of the client
+PASS: scope SESSION: CALL, PREPARE and DEALLOCATE PREPARE (no table event) are recorded as scope=session
+PASS: scope SESSION: only the protocol commands that run SQL are recorded (no Quit, Ping or Init DB record)
+PASS: scope SESSION: DML under LOCK TABLES is recorded also from an unwatched default schema (qualified names)
+PASS: scope SESSION: after a statement on another schema, table-less statements of that connection are no longer recorded
+PASS: known limit, also with scope SESSION: trigger DDL with a qualified name from an unwatched default schema, without a preceding watched table access, is not recorded
+PASS: scope SESSION: an excluded user's table-less statements are not recorded, but counted as filtered
+PASS: back to scope TABLES: table-less statements are no longer recorded
+-- prepared statements over the binary protocol (C API)
+PASS: binary protocol: two executions succeed, the duplicate fails with 1062
+PASS: binary protocol: one statement record per execution, command Execute, the duplicate with error_code 1062
+PASS: binary protocol: each execution's statement record shares its query_id with a table_write of lock_t
+PASS: binary protocol: the digest of an execution has no bound value (9001, 9002 never appear in this connection's records)
+PASS: binary protocol: COM_STMT_PREPARE itself leaves no statement record; scope TABLES leaves the table-less SET unrecorded
+PASS: binary protocol, scope SESSION: the executions keep their ordinary records and the following table-less SET is recorded (nothing left pending)
+-- concurrency (8 clients x 50 inserts)
+PASS: all 400 concurrent inserts recorded as table_write
+PASS: all 400 concurrent statements recorded
+PASS: no torn or interleaved lines under concurrency
+PASS: seq values are unique
+-- I/O failure behaviour
+PASS: statement succeeds while the audit log cannot be written (fail-open)
+PASS: state becomes DEGRADED
+PASS: write_failures counted
+PASS: last_error explains the failure
+PASS: failed recovery-marker write keeps the plugin DEGRADED
+PASS: failed recovery-marker write is counted
+PASS: switching to a writable file restores ACTIVE
+PASS: the outage is announced by an audit_gap record
+PASS: the row written during the outage exists
+PASS: reopen_now reads back OFF
+PASS: reopen_now is recorded
+PASS: switching files records the previous path
+PASS: the previous log records the switch away from it (handover)
+PASS: a redirect to /dev/null is recorded in the log it left
+-- interaction with SQL triggers
+PASS: plugin sees the trigger's write to audit_events in the same statement
+PASS: trigger row carries the application user and connection id
+-- install / uninstall
+PASS: second INSTALL PLUGIN of the same plugin rejected
+PASS: INSTALL SONAME of an installed library is a silent no-op (observed server behaviour)
+PASS: INSTALL of a missing library fails cleanly
+PASS: UNINSTALL removes the plugin
+PASS: deinit wrote plugin_stop with counters
+PASS: nothing is recorded while uninstalled
+PASS: second UNINSTALL rejected
+PASS: re-INSTALL makes the plugin ACTIVE again
+PASS: re-INSTALL starts a new instance (new instance id)
+== 143 passed, 0 failed, 0 skipped
+== tests/plugin/test_thread_pool.sh
+Server: 11.8.9-MariaDB-ubu2404, thread_handling=pool-of-threads, thread_pool_size=2, campus_audit 1.2.5
+PASS: thread_handling (pool-of-threads)
+PASS: thread_pool_size (2)
+PASS: campus_audit plugin (ACTIVE)
+PASS: statement scope at the start (TABLES)
+Phase 1: 12 connections x 30 rounds in 2 s; pool worker threads now: 14
+PASS: phase 1: client errors (0)
+PASS: phase 1: rows inserted into the watched table (360)
+PASS: phase 1: records written (1800)
+PASS: phase 1: config_change records (360)
+PASS: phase 1: statement records for the SET GLOBAL statements (360)
+PASS: phase 1: connections with exactly 30 SET GLOBAL statement records (12)
+PASS: phase 1: stray records for SELECT (another statement's flag or id leaked to it) (0)
+PASS: phase 1: statement records for the INSERT (360)
+PASS: phase 1: INSERT statements whose (conn, query_id) has exactly two table_write records (360)
+PASS: phase 1: records marked scope=session (the default scope records none) (0)
+Phase 2: 12 connections x 30 rounds in 5 s; pool worker threads now: 14
+PASS: phase 2: client errors (0)
+PASS: phase 2: rows inserted under LOCK TABLES (360)
+PASS: phase 2: rows inserted into the other schema (360)
+PASS: phase 2: LOCK TABLES statements, each with its one table event (360,360)
+PASS: phase 2: INSERTs under LOCK TABLES recorded as scope=session (360)
+PASS: phase 2: UNLOCK TABLES recorded as scope=session (360)
+PASS: phase 2: the table-less statement after UNLOCK TABLES (latch still set) recorded as scope=session (360)
+PASS: phase 2: connections with exactly 30 scope=session INSERT records (12)
+PASS: phase 2: statements on the other schema recorded (0)
+PASS: phase 2: SELECT after the latch was cleared recorded (the latch leaked to or from another connection) (0)
+PASS: phase 2: records written (1800)
+PASS: events dropped (0)
+PASS: write failures (0)
+PASS: unexpected events (0)
+PASS: duplicate seq values in the log (0)
+PASS: lines that are not one JSON object (0)
+== 30 passed, 0 failed
+== tests/plugin/test_stalled_log.sh
+Server: 11.8.9-MariaDB-ubu2404, campus_audit 1.2.5
+PASS: log switched to the FIFO
+PASS: recorded statements wait for the stalled log (stopped at 119 of 1000 rows)
+-- with the log stalled, the rest of the server must keep answering
+PASS: INSERT into an unwatched schema
+PASS: SHOW STATUS of the plugin answers BUSY
+PASS: SET GLOBAL campus_audit_reopen_now gives up
+PASS: SET GLOBAL campus_audit_log_reads returns
+PASS: the new value is in effect
+PASS: SET GLOBAL campus_audit_file_path gives up
+PASS: file_path unchanged after giving up
+PASS: SELECT @@GLOBAL.max_connections
+PASS: SET GLOBAL max_connections
+PASS: SHOW GLOBAL VARIABLES
+PASS: a new connection
+-- draining the FIFO
+PASS: the writer finished after draining
+PASS: all 1000 INSERTs committed
+PASS: 1000 table_write records delivered through the FIFO
+PASS: state ACTIVE after draining
+PASS: its config_change record was written, not dropped
+PASS: no record dropped
+== 19 passed, 0 failed
+== tests/plugin/test_log_path_safety.sh
+Server: 11.8.9-MariaDB-ubu2404, campus_audit 1.2.5, readable_by_all 1
+-- attacks with disposable decoys (all in /var/log/campus_audit, all created by this test)
+PASS: a symbolic link to a log-like file is refused
+PASS: a symbolic link to a log-like file is refused: the reason is given
+PASS: a symbolic link to a log-like file is refused: the active log is kept
+PASS: its target is unchanged (content, mode, owner, links)
+PASS: a hard link to a log-like file is refused
+PASS: a hard link to a log-like file is refused: the reason is given
+PASS: a hard link to a log-like file is refused: the active log is kept
+PASS: the same file under its first name is refused too
+PASS: the same file under its first name is refused too: the reason is given
+PASS: the same file under its first name is refused too: the active log is kept
+PASS: the hard-linked file is unchanged
+PASS: a log-like file of another OS user, writable for the server, is refused
+PASS: a log-like file of another OS user, writable for the server, is refused: the reason is given
+PASS: a log-like file of another OS user, writable for the server, is refused: the active log is kept
+PASS: that file is unchanged
+PASS: an empty file named like a table file is refused
+PASS: an empty file named like a table file is refused: the reason is given
+PASS: an empty file named like a table file is refused: the active log is kept
+PASS: it stays empty, mode unchanged
+PASS: a new file whose name does not end in .jsonl is refused
+PASS: a new file whose name does not end in .jsonl is refused: the reason is given
+PASS: a new file whose name does not end in .jsonl is refused: the active log is kept
+PASS: and is not created
+PASS: a FIFO without a reader is refused at once
+PASS: a FIFO without a reader is refused at once: the reason is given
+PASS: a FIFO without a reader is refused at once: the active log is kept
+PASS: a FIFO of another OS user is refused, even with a reader
+PASS: a FIFO of another OS user is refused, even with a reader: the reason is given
+PASS: a FIFO of another OS user is refused, even with a reader: the active log is kept
+PASS: a character device other than /dev/null and /dev/full is refused
+PASS: a character device other than /dev/null and /dev/full is refused: the reason is given
+PASS: a character device other than /dev/null and /dev/full is refused: the active log is kept
+PASS: an existing campus_audit log of the server's own is accepted
+PASS: its permissions are not widened (readable_by_all applies to new files only)
+PASS: a new log is created readable by others (readable_by_all)
+-- rotation, recovery and restart still work
+PASS: rotation: reopen_now creates the new file and records go there
+PASS: rotation: the renamed file keeps the earlier records
+PASS: recovery: a write failure (/dev/full, a character device) makes the plugin DEGRADED
+PASS: recovery: back to the existing log, ACTIVE, with an audit_gap record
+== phase1: 39 passed, 0 failed
+-- restarting the server (the plugin is loaded from mysql.plugin and reopens its existing log)
+PASS: restart: the plugin is ACTIVE on its existing log (/var/log/campus_audit/campus_audit.jsonl)
+PASS: restart: the existing log was appended to (two plugin_start records)
+== phase2: 2 passed, 0 failed
+== result for mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707: run_plugin_tests.sh exit 0, test_thread_pool.sh exit 0, test_stalled_log.sh exit 0, test_log_path_safety.sh exit 0

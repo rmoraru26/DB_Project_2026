@@ -45,9 +45,11 @@ show that the tests detect the defects.
 | `15-final-repository-checks.txt` | file 10's checks again on the finished tree (after this folder, its README and the doc updates were written) | all exit 0; no trailing blanks in non-evidence untracked files or in this README and `scripts/` |
 | `14-catalogue-race-prefix.txt` | `scripts/catalogue_race.sh` with the pre-fix `catalogue.sql` | REPEATABLE READ: 5 rooms; READ COMMITTED: 10 rooms, 5 distinct names |
 
-`scripts/` holds the drivers of files 03 to 06 and 14 as they were run. The passwords in them
-(`expRootPw12345`, `expAppPw123456`, `expUserPw1234`) exist only inside the throw-away containers
-those scripts start and remove.
+`scripts/` holds the drivers of files 03 to 06 and 14. When these files were recorded the drivers
+used fixed throw-away passwords for their throw-away containers; afterwards those literals were
+replaced by random passwords generated at run time (nothing else changed). The changed drivers
+were run again with the same results: `catalogue_race.sh` and `server_probes.sh` in
+`docs/evidence/cycle1/01-…` and `03-…`.
 
 Not run after the remediation: GitHub Actions; the native Windows DLL build and harness; the Windows
 launcher suites; `make test` / `make test-app` as a whole; browser tests; the demo-credential life

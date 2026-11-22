@@ -1,0 +1,6 @@
+# cycle 1 2026-11-17T07:25:37Z: catalogue_race.sh again after correcting the formatting of its rand_pw line (01-03 were recorded with a functionally identical line broken across two lines)
+  A: 0
+== REPEATABLE READ: rooms=5 distinct names=5
+  A: 0
+== READ COMMITTED: rooms=10 distinct names=5
+# exit status: 0

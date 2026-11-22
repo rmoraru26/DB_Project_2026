@@ -10,6 +10,9 @@ public:
 
     unsigned long long dropped() const { return dropped_; }
     void event_lost_to_io() { ++dropped_; }
+    // Records lost for other reasons (counted elsewhere without the sink
+    // mutex), merged in before the next marker so that it announces them too.
+    void events_lost(unsigned long long n) { dropped_ += n; }
 
     // A failed marker must leave the count intact so a later recovery retries it.
     bool marker_result(bool written) {

@@ -1,0 +1,8 @@
+# tests/plugin/test_permanent_load.sh (make test-permanent-load), 21 November 2026, plugin 1.2.5 tree, Docker Desktop on the development PC
+== server options: --plugin-load-add=campus_audit.so --campus-audit=FORCE_PLUS_PERMANENT
+PASS: loaded with LOAD_OPTION FORCE_PLUS_PERMANENT and ACTIVE
+PASS: UNINSTALL SONAME is refused (ER 1702)
+PASS: UNINSTALL PLUGIN is refused (ER 1702)
+PASS: the plugin is still ACTIVE
+PASS: narrowing it with SET GLOBAL is recorded
+== 5 passed, 0 failed

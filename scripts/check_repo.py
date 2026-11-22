@@ -260,7 +260,7 @@ def check_makefile_reads_credentials_from_files():
 # branch table, build instructions for a directory that does not exist) and
 # every check still passed.  These are the properties that draft lacked.
 README_SECTIONS = (
-    "## Quick start", "## Features", "## Architecture", "## Why a MariaDB server plugin",
+    "## Quick start", "## Verify that it works", "## Features", "## Architecture", "## Why a MariaDB server plugin",
     "## What the plugin records", "## Database design", "## Setup in detail",
     "## Demonstration and Audit Lab", "## SQL examples", "## Experimental findings", "## Tests",
     "## Security", "## Known limitations", "## Design decisions", "## Lessons learned", "## Team",

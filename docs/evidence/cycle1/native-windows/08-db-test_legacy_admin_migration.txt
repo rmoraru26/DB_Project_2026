@@ -1,0 +1,4 @@
+# 2026-11-17T07:12:57Z bash tests/database/test_legacy_admin_migration.sh
+PASS: legacy admin demoted; unrelated admin and user rows preserved; rerun idempotent; transaction rolled back
+PASS: seed re-run after migration 004 keeps the shared account a student and leaves local administrators unchanged
+# exit status: 0

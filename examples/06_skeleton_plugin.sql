@@ -1,6 +1,6 @@
 -- 06  Write your own: the smallest audit plugin, loaded next to campus_audit.
 --
--- Shows:  examples/skeleton_plugin/skeleton_audit.cpp (about 60 lines without
+-- Shows:  examples/skeleton_plugin/skeleton_audit.cpp (about 50 lines without
 --         comments).  The server calls every installed audit plugin for every
 --         event of the classes it subscribed to, so the counters grow with
 --         every statement, table access and login.

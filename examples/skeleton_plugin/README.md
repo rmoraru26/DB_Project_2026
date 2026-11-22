@@ -15,15 +15,22 @@ the same three parts plus filtering, records, a log file and failure handling. S
 
 The status variables are a plain table of `{name, address, SHOW_ULONGLONG}`; the server reads the
 counters whenever someone runs `SHOW GLOBAL STATUS`. The callback runs in many threads at once, so the
-counters are incremented atomically.
+counters are incremented atomically (`__atomic_add_fetch`, a builtin of GCC and Clang, so of both
+build commands below; MSVC, which is not used here, would need `InterlockedIncrement64`).
 
 ## 2. Build it
 
-The headers come from the server package (`libmariadbd-dev` on Debian/Ubuntu, `include\mysql\server` in
-every MariaDB Windows installation). They must match the server's version.
+**Quickest, with Docker only:** `make plugin-lab` (Windows: `.\frantastic.cmd plugin-lab`) from the
+repository root. It builds this file with its [`Makefile`](Makefile), loads it into a throw-away
+MariaDB 13.0.2 next to campus_audit, and keeps that server running for step 3. After you change the
+source, run it again; only the changed layers are rebuilt.
+
+**On your own machine,** the headers come from the server package (`libmariadbd-dev` on
+Debian/Ubuntu, `include\mysql\server` in every MariaDB Windows installation). They must match the
+server's version.
 
 ```bash
-# Linux (the Docker image does exactly this in its build stage)
+# Linux: make -C examples/skeleton_plugin (the Docker image uses the same Makefile), or by hand:
 g++ -std=c++11 -O2 -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
     -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private \
     examples/skeleton_plugin/skeleton_audit.cpp -o skeleton_audit.so
@@ -40,19 +47,21 @@ Copy the library into `SELECT @@plugin_dir;` (the Docker image already has
 ## 3. Load it and watch it count
 
 ```bash
-make sql            # Docker; natively: mariadb -uroot -p
+docker exec -it campus-audit-plugin-lab mariadb   # after make plugin-lab; natively: mariadb -uroot -p
 ```
 
 ```sql
 INSTALL SONAME 'skeleton_audit';
 SELECT PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE FROM information_schema.PLUGINS WHERE PLUGIN_TYPE = 'AUDIT';
 SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
-SELECT COUNT(*) FROM university_resources.rooms;
+SELECT COUNT(*) FROM lab.notes;        -- any table; the plugin lab created lab.notes
 SHOW GLOBAL STATUS LIKE 'skeleton\_audit\_%';
 ```
 
-Or run all of it at once: `examples/06_skeleton_plugin.sql` (part of `make examples`). Real output on
-MariaDB 13.0.2 (`docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt`):
+The plugin lab's tour does exactly this in its step 7 ([its last run](../../docs/evidence/cycle9/01-plugin-lab-docker-desktop.txt)).
+With the full application (`make up`), `make sql` opens the shell instead and
+`examples/06_skeleton_plugin.sql` runs these statements (part of `make examples`). Real output from a
+native Windows server, MariaDB 13.0.2 (`docs/evidence/windows-2026-11-03/12-skeleton-plugin.txt`):
 
 ```text
 | campus_audit   | ACTIVE | AUDIT | campus_audit.dll   | Beta |
@@ -102,6 +111,6 @@ UNINSTALL SONAME 'skeleton_audit';
 | filtering by schema and user, records per table and per statement, joined by `query_id` | `on_table()`, `on_general()`, a per-connection `MYSQL_THDVAR` |
 | JSON Lines records with literal-free SQL digests | `plugin/src/record_format.cpp` |
 | a log file, fail-open on write errors, `audit_gap` records | `plugin/src/log_sink.cpp`, `write_record()` |
-| eight system variables: seven validated and dynamic, one startup option | `MYSQL_SYSVAR_*` with check and update functions, `PLUGIN_VAR_READONLY` |
+| nine system variables: eight dynamic (validated by check functions), one startup option | `MYSQL_SYSVAR_*` with check and update functions, `PLUGIN_VAR_READONLY` |
 | status variables computed on demand | `SHOW_SIMPLE_FUNC` entries |
 | errors reported to the client and the error log | the `my_print_error` service (`plugin/src/service_symbols.cpp` on Windows/Zig) |

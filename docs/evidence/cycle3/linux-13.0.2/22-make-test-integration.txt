@@ -1,0 +1,83 @@
+# make test-integration: demo credential life cycle, log rotation, thread pool
+# command: env LIFECYCLE_LOG_DIR=/work/out/lifecycle make test-integration
+# started: 2026-11-17T07:59:33Z   host: Linux 6.18.58.1-microsoft-standard-WSL2 x86_64, GNU make 4.4.1, Docker version 27.5.1, build 9f9e405, compose 2.33.0
+
+PASS: credential file: two lines (e-mail address, password), mode 0600, not a link
+PASS: login with the generated credential succeeds; the session is a student without administrator access
+PASS: a wrong password is rejected (401, no session)
+PASS: MariaDB: exactly one demo row, role student, active, Werkzeug hash
+PASS: MariaDB stores a hash that does not contain the password
+PASS: the server refuses to give the demo identity the administrator role (ER 4025, as root)
+PASS: make up on the running installation: no rotation, same file, same stored hash, login works
+PASS: after a restart of both containers the same credential still logs in
+PASS: existing database, credential file missing: make up succeeds, changes no password, writes no file, names the recovery
+PASS: the password that was valid before is still valid (nothing was rotated)
+PASS: putting the file back is recognised without any change
+PASS: a credential file with another password: the file is not overwritten and the stored password is not changed
+PASS: a leftover pending file whose password never reached MariaDB is discarded; the working credential is kept
+PASS: make reset-demo: a new password in the file (mode 0600) and a new hash in MariaDB
+PASS: the new credential logs in and is still a student
+PASS: the previous password no longer works
+PASS: interrupted rotation after MariaDB was updated: the next start completes it from the pending file
+PASS: after every step there is still exactly one demo row, with the role student
+PASS: no password and no password hash appears in the output of make up / make reset-demo (9 captured logs)
+== 19 passed, 0 failed   (logs: /work/out/lifecycle)
+PASS: rotate_log.sh renames the log, reopens it and imports both files
+PASS: the archived file and a new active file exist; the plugin is ACTIVE
+PASS: the new log has the owner and mode of the old one (mysql:mysql 664)
+PASS: the archived file holds every earlier record (4 lines of this plugin instance); the new file starts with the reopen record
+PASS: the statement written before the rotation and the one written after it are both in plugin_events, once each
+PASS: no record lost and none duplicated: 9 lines in the two files, each of their seq values exactly once in plugin_events
+PASS: a second rotation creates a second archive and keeps the first
+PASS: re-importing the archived files adds nothing
+== 8 passed, 0 failed   (archives kept: /var/log/campus_audit/campus_audit-20261117T080413Z.jsonl /var/log/campus_audit/campus_audit-20261117T080417Z.jsonl)
+PASS: ordinary rotation (default limit 16777216): renamed, reopened, both files imported in one call each
+PASS: ordinary rotation: every record of the two files is in plugin_events exactly once (63); no temporary file
+PASS: the active log has grown to 129711 bytes, at or above max_allowed_packet = 65536
+PASS: import_plugin_log() refuses it with ER 1644 and names the remedy (import in parts)
+PASS: rotate_log.sh rotates the oversized log and imports the archive (129711 bytes) in 3 line-aligned parts
+PASS: no part file is left after the import
+PASS: nothing lost, nothing duplicated: 515 records in the three files and in plugin_events
+PASS: rotate_log.sh --import re-imports the oversized archive in parts and adds nothing
+PASS: the archive is unchanged (same SHA-256) and no part file is left
+PASS: after SET GLOBAL max_allowed_packet = 131072 a new connection imports the archive in one call (0 new)
+PASS: a line at or above the limit is refused before any import, with the remedy (exit 1)
+PASS: after that refusal nothing was imported, the file is unchanged and no part file is left
+PASS: a missing file is refused (exit 1)
+== 13 passed, 0 failed
+Server: 13.0.2-MariaDB-ubu2604, thread_handling=pool-of-threads, thread_pool_size=2, campus_audit 1.2.0
+PASS: thread_handling (pool-of-threads)
+PASS: thread_pool_size (2)
+PASS: campus_audit plugin (ACTIVE)
+PASS: statement scope at the start (TABLES)
+Phase 1: 12 connections x 30 rounds in 2 s; pool worker threads now: 14
+PASS: phase 1: client errors (0)
+PASS: phase 1: rows inserted into the watched table (360)
+PASS: phase 1: records written (1800)
+PASS: phase 1: config_change records (360)
+PASS: phase 1: statement records for the SET GLOBAL statements (360)
+PASS: phase 1: connections with exactly 30 SET GLOBAL statement records (12)
+PASS: phase 1: stray records for SELECT (another statement's flag or id leaked to it) (0)
+PASS: phase 1: statement records for the INSERT (360)
+PASS: phase 1: INSERT statements whose (conn, query_id) has exactly two table_write records (360)
+PASS: phase 1: records marked scope=session (the default scope records none) (0)
+Phase 2: 12 connections x 30 rounds in 3 s; pool worker threads now: 14
+PASS: phase 2: client errors (0)
+PASS: phase 2: rows inserted under LOCK TABLES (360)
+PASS: phase 2: rows inserted into the other schema (360)
+PASS: phase 2: LOCK TABLES statements, each with its one table event (360,360)
+PASS: phase 2: INSERTs under LOCK TABLES recorded as scope=session (360)
+PASS: phase 2: UNLOCK TABLES recorded as scope=session (360)
+PASS: phase 2: the table-less statement after UNLOCK TABLES (latch still set) recorded as scope=session (360)
+PASS: phase 2: connections with exactly 30 scope=session INSERT records (12)
+PASS: phase 2: statements on the other schema recorded (0)
+PASS: phase 2: SELECT after the latch was cleared recorded (the latch leaked to or from another connection) (0)
+PASS: phase 2: records written (1800)
+PASS: events dropped (0)
+PASS: write failures (0)
+PASS: unexpected events (0)
+PASS: duplicate seq values in the log (0)
+PASS: lines that are not one JSON object (0)
+== 30 passed, 0 failed
+
+# exit status: 0

@@ -1,10 +1,9 @@
 #include "audit_file_check.h"
-#include <fstream>
 
 namespace {
 
 // The lexical rules, on a std::string so that a byte sequence with an
-// embedded NUL (possible through try_open_log) is checked in full.
+// embedded NUL is checked in full.
 AuditResult validate_path_text(const std::string& path) {
     if (path.empty()) {
         return {
@@ -56,21 +55,3 @@ AuditResult validate_log_path(const char* path) {
 }
 
 }  // namespace campus_audit
-
-AuditResult try_open_log(const std::string& path) {
-    AuditResult valid = validate_path_text(path);
-    if (!valid.ok()) {
-        return valid;
-    }
-
-    std::ofstream file(path, std::ios::app);
-
-    if (!file.is_open()) {
-        return {
-            AuditError::open_Failed,
-            "Cannot open audit log: " + path
-        };
-    }
-
-    return {AuditError::None, ""};
-}

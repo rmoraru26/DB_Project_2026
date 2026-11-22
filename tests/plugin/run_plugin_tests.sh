@@ -23,7 +23,7 @@
 #   CONCURRENT_CLIENTS / CONCURRENT_STATEMENTS  (default 8 / 50)
 #   CHANGE_USER_CLIENT  command that runs the campus_change_user helper
 #                    (tests/plugin/change_user.c); without it the CHANGE_USER
-#                    checks are skipped.  Docker: built into the server image.
+#                    and binary-protocol (--prepared) checks are skipped.  Docker: built into the server image.
 #                    Native: compile it, set CU_HOST/CU_PORT for TCP.
 #
 # Exit status: 0 if every executed check passed.  Skipped checks are listed.
@@ -35,7 +35,10 @@ ADMIN_USER=${DB_ADMIN_USER:-root}
 CLIENTS=${CONCURRENT_CLIENTS:-8}
 PER_CLIENT=${CONCURRENT_STATEMENTS:-50}
 RUN_ID="$(date +%s)_$$"
-TEST_PW="t_${RUN_ID}_Pw"          # throwaway password for throwaway test accounts
+# Throwaway password for the throwaway test accounts: random, so a test account
+# on a reachable server cannot be guessed while the run lasts.  It reaches the
+# server only through stdin (CREATE USER) and the environment (sql_as).
+TEST_PW="t$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')Pw"
 
 PASS=0
 FAIL=0
@@ -45,6 +48,15 @@ SKIP=0
 
 # Statements go through stdin, never the command line: Windows limits a
 # command line to 32 kB and Linux a single argument to 128 kB.
+# A shell value as an SQL string expression, for values the test does not
+# choose itself (paths read from the server or the environment, the saved
+# configuration).  A hex literal is correct for every byte, a quote or a
+# backslash included, and does not depend on NO_BACKSLASH_ESCAPES: the earlier
+# '${x//\\/\\\\}' escaped backslashes only.
+sql_str() {
+    printf "CONVERT(X'%s' USING utf8mb4)" "$(printf '%s' "$1" | od -An -tx1 | tr -d ' \n')"
+}
+
 sql() {      # sql "<statements>" -> stdout (tab separated, no headers)
     printf '%s\n' "$1" | "${CLIENT[@]}" -u"$ADMIN_USER" --batch --skip-column-names --default-character-set=utf8mb4
 }
@@ -82,14 +94,14 @@ count_where() { reload_log; sql "SELECT COUNT(*) FROM campus_audit_test.log_line
 ev() { echo "JSON_VALUE(line,'\$.$1')"; }
 
 cleanup() {
-    sql "SET GLOBAL campus_audit_databases = '${ORIG_DATABASES:-university_resources}';
-         SET GLOBAL campus_audit_exclude_users = '${ORIG_EXCLUDE:-}';
+    sql "SET GLOBAL campus_audit_databases = $(sql_str "${ORIG_DATABASES:-university_resources}");
+         SET GLOBAL campus_audit_exclude_users = $(sql_str "${ORIG_EXCLUDE:-}");
          SET GLOBAL campus_audit_log_reads = ${ORIG_LOG_READS:-OFF};
-         SET GLOBAL campus_audit_connections = '${ORIG_CONNECTIONS:-FAILED}';
-         SET GLOBAL campus_audit_statement_scope = '${ORIG_SCOPE:-TABLES}';
+         SET GLOBAL campus_audit_connections = $(sql_str "${ORIG_CONNECTIONS:-FAILED}");
+         SET GLOBAL campus_audit_statement_scope = $(sql_str "${ORIG_SCOPE:-TABLES}");
          SET GLOBAL campus_audit_max_sql_length = ${ORIG_MAX_SQL:-1024};" >/dev/null 2>&1
     if [ -n "${ORIG_PATH:-}" ]; then
-        sql "SET GLOBAL campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';" >/dev/null 2>&1
+        sql "SET GLOBAL campus_audit_file_path = $(sql_str "$ORIG_PATH");" >/dev/null 2>&1
     fi
     sql "DROP DATABASE IF EXISTS audit_test_watched;
          DROP DATABASE IF EXISTS audit_test_other;
@@ -126,7 +138,7 @@ ORIG_MAX_SQL=$(sql "SELECT @@GLOBAL.campus_audit_max_sql_length;")
 trap cleanup EXIT
 
 if [ -n "${AUDIT_TEST_DIR:-}" ]; then
-    DIR_EXPR="'${AUDIT_TEST_DIR//\\/\\\\}'"
+    DIR_EXPR=$(sql_str "$AUDIT_TEST_DIR")
 else
     DIR_EXPR="@@GLOBAL.datadir"
 fi
@@ -171,7 +183,42 @@ else
     fail "rejected path explains the reason in SHOW WARNINGS" "got: $warn"
 fi
 check "rejected paths leave the active file unchanged" \
-    "SELECT @@GLOBAL.campus_audit_file_path = '${ORIG_PATH//\\/\\\\}';"
+    "SELECT @@GLOBAL.campus_audit_file_path = $(sql_str "$ORIG_PATH");"
+
+# Existing files that are not campus_audit logs (1.2.4).  SET GLOBAL needs
+# SYSTEM_VARIABLES_ADMIN, not FILE: before 1.2.4 it could append to any file
+# the server may write, a table file in the data directory included.  The
+# foreign files are made by the server itself (INTO OUTFILE), in the test
+# directory, so no real data file is put at risk.  Links and files of other
+# OS users: tests/plugin/test_log_path_safety.sh (needs a shell on the server).
+make_outfile() {   # make_outfile <SQL path expression> <content>
+    # QUOTE(): the path goes into a string literal, where a Windows path's
+    # backslashes would otherwise be read as escapes (C:\mdbdata\f... -> form feed).
+    sql "SET @p = $1; SET @s = CONCAT('SELECT ''$2'' INTO OUTFILE ', QUOTE(@p)); PREPARE s FROM @s; EXECUTE s;" >/dev/null 2>&1
+}
+expect_refusal() {   # expect_refusal <description> <SQL path expression> <reason text>
+    expect_error "$1" 1231 "SET GLOBAL campus_audit_file_path = $2;"
+    warn=$(sql_force "SET GLOBAL campus_audit_file_path = $2; SHOW WARNINGS;" 2>/dev/null)
+    if printf '%s' "$warn" | grep -q -- "$3"; then
+        pass "$1: the refusal says why"
+    else
+        fail "$1: the refusal says why" "got: $warn"
+    fi
+}
+FOREIGN_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.jsonl')"
+OTHER_EXPR="CONCAT($DIR_EXPR, 'foreign_$RUN_ID.txt')"
+if make_outfile "$FOREIGN_EXPR" "not an audit log" && make_outfile "$OTHER_EXPR" '{\"ts\":\"spoofed\"}'; then
+    expect_refusal "a .jsonl file that is not a campus_audit log is refused" "$FOREIGN_EXPR" \
+        "does not begin with a campus_audit record"
+    check "that file is unchanged" "SELECT LOAD_FILE($FOREIGN_EXPR) = 'not an audit log\\n';"
+    expect_refusal "a log-like file whose name does not end in .jsonl is refused" "$OTHER_EXPR" \
+        "must end in .jsonl"
+    check "that file is unchanged" "SELECT LOAD_FILE($OTHER_EXPR) = '{\"ts\":\"spoofed\"}\\n';"
+else
+    skip "foreign-file refusal (SELECT ... INTO OUTFILE is not allowed in the test directory)"
+fi
+check "refused files leave the active file unchanged" \
+    "SELECT @@GLOBAL.campus_audit_file_path = $(sql_str "$ORIG_PATH");"
 expect_error "database list with a space rejected" 1231 "SET GLOBAL campus_audit_databases = 'bad name';"
 expect_error "database list with an empty element rejected" 1231 "SET GLOBAL campus_audit_databases = 'a,,b';"
 expect_error "database list mixing '*' and names rejected" 1231 "SET GLOBAL campus_audit_databases = '*,a';"
@@ -205,7 +252,7 @@ check "out-of-range max_sql_length is clamped to 8192" "SELECT @@GLOBAL.campus_a
 if [ "${AUDIT_TEST_DENIED_PATH:-}" != "" ] || [ "$OS" != "Win64" ]; then
     DENIED=${AUDIT_TEST_DENIED_PATH:-/root/campus_audit_denied.jsonl}
     expect_error "path without write permission rejected ($DENIED)" 1231 \
-        "SET GLOBAL campus_audit_file_path = '${DENIED//\\/\\\\}';"
+        "SET GLOBAL campus_audit_file_path = $(sql_str "$DENIED");"
 else
     skip "permission-denied path (set AUDIT_TEST_DENIED_PATH on Windows)"
 fi
@@ -601,6 +648,55 @@ sql "SET GLOBAL campus_audit_statement_scope = 'TABLES';"
 LE=$(sql "USE audit_test_watched; SET @frt_scope_off = 1; CREATE VIEW lock_v2 AS SELECT id FROM lock_t; DROP VIEW lock_v2; SELECT CONNECTION_ID();" | tail -1)
 check "back to scope TABLES: table-less statements are no longer recorded" "SELECT $(count_where "$(ev conn)=${LE:-0}") = 0;"
 
+# Prepared statements over the binary protocol (COM_STMT_PREPARE /
+# COM_STMT_EXECUTE).  The mariadb client sends PREPARE/EXECUTE as SQL text
+# (COM_QUERY, tested above); a real driver uses the binary protocol, which
+# only the C API can send.  The helper prepares an INSERT, executes it twice,
+# once more with a duplicate key, and then sends one table-less COM_QUERY.
+echo "-- prepared statements over the binary protocol (C API)"
+run_prepared() {   # run_prepared -> helper output; the password travels in the environment
+    if command -v timeout >/dev/null 2>&1; then
+        CU_PW1="$TEST_PW" CU_PW2="" timeout 60 $CHANGE_USER_CLIENT --prepared ca_test_user audit_test_watched lock_t 2>&1
+    else
+        CU_PW1="$TEST_PW" CU_PW2="" $CHANGE_USER_CLIENT --prepared ca_test_user audit_test_watched lock_t 2>&1
+    fi
+}
+if [ -n "${CHANGE_USER_CLIENT:-}" ]; then
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002);"
+    out=$(run_prepared)
+    PS_CONN=$(printf '%s\n' "$out" | awk '$1 == "CONN" {print $2}' | tr -d '\r'); PS_CONN=${PS_CONN:-0}
+    if printf '%s' "$out" | grep -q '^EXEC_OK 9002' && printf '%s' "$out" | grep -q '^EXEC_FAILED 1062' && printf '%s' "$out" | grep -q '^QUERY_OK'; then
+        pass "binary protocol: two executions succeed, the duplicate fails with 1062"
+    else fail "binary protocol: helper run" "got: $out"; fi
+    check "binary protocol: one statement record per execution, command Execute, the duplicate with error_code 1062" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev event)='statement' AND $(ev command)='Execute' AND $(ev status)='ok'") = 2
+            AND $(count_where "$(ev conn)=$PS_CONN AND $(ev event)='statement' AND $(ev command)='Execute' AND $(ev error_code)='1062'") = 1;"
+    check "binary protocol: each execution's statement record shares its query_id with a table_write of lock_t" \
+        "SELECT COUNT(DISTINCT JSON_VALUE(s.line,'\$.query_id')) = 3 FROM campus_audit_test.log_lines s JOIN campus_audit_test.log_lines t
+           ON JSON_VALUE(t.line,'\$.query_id') = JSON_VALUE(s.line,'\$.query_id') AND JSON_VALUE(t.line,'\$.conn') = JSON_VALUE(s.line,'\$.conn')
+              AND JSON_VALUE(t.line,'\$.event') = 'table_write' AND JSON_VALUE(t.line,'\$.table') = 'lock_t'
+         WHERE JSON_VALUE(s.line,'\$.conn') = '$PS_CONN' AND JSON_VALUE(s.line,'\$.command') = 'Execute';"
+    check "binary protocol: the digest of an execution has no bound value (9001, 9002 never appear in this connection's records)" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev command)='Execute' AND $(ev sql_digest) LIKE 'INSERT INTO lock_t VALUES (?, ?)%'") = 3
+            AND $(count_where "$(ev conn)=$PS_CONN AND (line LIKE '%9001%' OR line LIKE '%9002%')") = 0;"
+    check "binary protocol: COM_STMT_PREPARE itself leaves no statement record; scope TABLES leaves the table-less SET unrecorded" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN AND $(ev command)='Prepare'") = 0
+            AND $(count_where "$(ev conn)=$PS_CONN AND $(ev sql_digest) LIKE 'SET @campus_after_prepared%'") = 0;"
+    # Scope SESSION: after the executions no "pending statement" is left over,
+    # so the table-less COM_QUERY that follows is recorded.
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002); SET GLOBAL campus_audit_statement_scope = 'SESSION';"
+    out=$(run_prepared)
+    sql "SET GLOBAL campus_audit_statement_scope = 'TABLES';"
+    PS_CONN2=$(printf '%s\n' "$out" | awk '$1 == "CONN" {print $2}' | tr -d '\r'); PS_CONN2=${PS_CONN2:-0}
+    check "binary protocol, scope SESSION: the executions keep their ordinary records and the following table-less SET is recorded (nothing left pending)" \
+        "SELECT $(count_where "$(ev conn)=$PS_CONN2 AND $(ev command)='Execute' AND $(ev scope) IS NULL") = 3
+            AND $(count_where "$(ev conn)=$PS_CONN2 AND $(ev scope)='session' AND $(ev sql_digest) LIKE 'SET @campus_after_prepared%'") = 1
+            AND $(count_where "$(ev conn)=$PS_CONN2 AND $(ev command)='Prepare'") = 0;"
+    sql "DELETE FROM audit_test_watched.lock_t WHERE id IN (9001, 9002);"
+else
+    skip "prepared statements over the binary protocol (set CHANGE_USER_CLIENT to the campus_change_user helper; make test-e2e does)"
+fi
+
 # ---------------------------------------------------------------- concurrency
 
 echo "-- concurrency ($CLIENTS clients x $PER_CLIENT inserts)"
@@ -651,6 +747,26 @@ sql "SET GLOBAL campus_audit_file_path = $LOG2_EXPR;"
 sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
 check "switching files records the previous path" \
     "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '%(previous: %_b.jsonl)'") = 1;"
+# 1.2.5: the log that is switched away from also records where logging went
+# (handover), so a redirect cannot be hidden from the log being read.
+check "the previous log records the switch away from it (handover)" \
+    "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '%_b.jsonl (previous: %' AND $(ev value) NOT LIKE '%(previous: %_b.jsonl)'") = 1;"
+if [ "$OS" != "Win64" ]; then
+    sql "SET GLOBAL campus_audit_file_path = '/dev/null';"
+    sql "INSERT INTO audit_test_watched.rooms_renamed (id, name, capacity) VALUES (22, 'unlogged', 1);" >/dev/null
+    sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
+    check "a redirect to /dev/null is recorded in the log it left" \
+        "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND $(ev value) LIKE '/dev/null (previous: %'") = 1;"
+    # Two assignments in one SET: the second check function replaces the file
+    # the first one staged, so the first update opens its file itself.  The log
+    # being read must still learn both steps.
+    sql "SET GLOBAL campus_audit_file_path = $LOG2_EXPR, GLOBAL campus_audit_file_path = '/dev/null';"
+    sql "SET GLOBAL campus_audit_file_path = $LOG_EXPR;"
+    check "two redirects in one SET are both recorded in the log they left" \
+        "SELECT $(count_where "$(ev event)='config_change' AND $(ev variable)='campus_audit_file_path' AND ($(ev value) LIKE '/dev/null (previous: %_b.jsonl)' OR ($(ev value) LIKE '%_b.jsonl (previous: %' AND $(ev value) NOT LIKE '%(previous: %_b.jsonl)'))") = 3;"
+else
+    skip "redirect to /dev/null (Linux only; the handover itself is checked above)"
+fi
 
 # ---------------------------------------------------------------- trigger interplay
 

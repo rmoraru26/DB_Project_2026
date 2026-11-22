@@ -6,7 +6,8 @@ Area 11 allows an audit plugin, an INFORMATION_SCHEMA table or an aggregate func
 system's open problem was "who changed bookings, loans and resources, and with what result", so an
 audit plugin is the natural fit.  An INFORMATION_SCHEMA plugin would need the private server headers
 (`TABLE`, `Field`) and a matching server build; the audit API is a small, stable C interface
-(`plugin_audit.h`, interface 0x0303) that works with the headers every MariaDB package installs.
+(`plugin_audit.h`: interface 0x0302 in 10.11 to 11.8, 0x0303 from 12.0; the plugin builds against
+both, experiment 31) that works with the headers every MariaDB package installs.
 
 ## 2. Event classes: TABLE + GENERAL STATUS + CONNECTION, filtered by schema
 
@@ -136,8 +137,10 @@ the import still reads the whole file and what bounds it.
 ## 6. Data minimisation
 
 The plugin never writes raw SQL.  `sql_digest()` replaces every literal (strings, numbers,
-hex/bit literals, `_charset'...'`), removes all comments (including `/*! ... */`) and collapses
-whitespace.  Passwords in `CREATE USER ... IDENTIFIED BY '...'`, password hashes in
+hex/bit literals, `_charset'...'`), removes ordinary comments and collapses whitespace.
+Executable comments (`/*! ... */`, `/*M! ... */`) are run by the server, so since 1.2.5 the digest
+keeps their content, lexed and masked like the rest of the statement. 1.2.4 dropped them, so
+`/*!100000 DELETE FROM t */` left an empty digest (found by an independent review).  Passwords in `CREATE USER ... IDENTIFIED BY '...'`, password hashes in
 `UPDATE users SET password_hash = '...'` and the personal data that PyMySQL interpolates into the
 statements of the web app are all literals and therefore never reach the log.  Statement records
 exist only for watched schemas, so administrative statements elsewhere are not logged at all.
@@ -181,9 +184,10 @@ use triggers (as for row history) or stop the service when `Campus_audit_state` 
 
 `AuditResult`/`AuditError` (`plugin/audit_error.h`) is the result type of every fallible plugin
 operation; `report_audit_error()` routes failures to the right sink (server error service outside
-callbacks, stderr inside callbacks); `validate_log_path()` was added next to the original
-`try_open_log()` in `audit_file_check.cpp` and is used by the log sink.  The original tests still
-build and pass.
+callbacks, stderr inside callbacks); `validate_log_path()` in `audit_file_check.cpp`
+is the lexical path check the log sink uses.  The team's first file-open check, `try_open_log()`,
+was never called by the plugin; it was removed after the first merge and survives as
+`plugin/exploratory/interactive_open_log.cpp`.
 
 ## 10. Refused statements are recorded (plugin 1.1.0)
 

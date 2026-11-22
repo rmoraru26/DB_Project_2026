@@ -1,5 +1,6 @@
 # Quick start for the campus_audit project (MariaDB server plugin, Area 11).
 #
+#   make plugin-lab  the plugin on its own: build it, start a throw-away server with nothing else, guided tour
 #   make up       build the plugin against MariaDB 13.0.2, start database + web app
 #   make demo     install the plugin, cause events, show what it recorded
 #   make test          unit tests + end-to-end plugin tests + web app tests
@@ -49,14 +50,23 @@ TEST_CREDENTIALS = \
 	  TEST_DEMO_EMAIL=$${TEST_DEMO_EMAIL%$$'\r'}; TEST_DEMO_PASSWORD=$${TEST_DEMO_PASSWORD%$$'\r'}; export TEST_DEMO_EMAIL TEST_DEMO_PASSWORD; fi
 
 .PHONY: help up down reset logs sql demo examples doctor migrate repair-credentials reset-admin reset-demo rotate-log import-log \
-        test test-unit test-e2e test-db test-app test-integration test-threadpool browser-setup test-browser \
-        mutation check bench evidence
+        test test-unit test-e2e test-db test-app test-integration test-threadpool test-stalled-log test-log-path-safety test-server-version browser-setup test-browser \
+        mutation check bench evidence plugin-lab plugin-lab-down test-permanent-load
 
 help:  ## list the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z0-9-]+:.*## / {printf "  make %-19s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .env:
 	@bash scripts/make_env.sh
+
+plugin-lab:  ## the plugin on its own: build campus_audit + skeleton plugin, start a throw-away MariaDB 13.0.2 with nothing else, run the guided tour (no .env, no web app)
+	@bash scripts/plugin_lab.sh
+
+test-permanent-load:  ## experiment 34: loaded as FORCE_PLUS_PERMANENT the plugin cannot be unloaded (throw-away server, no .env)
+	@bash tests/plugin/test_permanent_load.sh
+
+plugin-lab-down:  ## remove the plugin-lab container
+	@bash scripts/plugin_lab.sh --down
 
 up: .env  ## build, start MariaDB 13.0.2, update the database, install the plugin, start the web app
 	$(COMPOSE) up -d --build --wait mariadb
@@ -141,11 +151,22 @@ test-db: .env  ## database-side checks: migrations 004/006/007, catalogue, trigg
 test-threadpool: .env  ## statement correlation under thread_handling=pool-of-threads, in a throw-away server container
 	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_thread_pool.sh
 
-test-integration: .env  ## host-level tests of the running stack: demo credential life cycle, log rotation, thread pool (rotates the demo password and the audit log)
+test-stalled-log: .env  ## a log destination that stalls must not stop the rest of the server, in a throw-away server container
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_stalled_log.sh
+
+test-log-path-safety: .env  ## which files campus_audit_file_path may open: links, other owners, foreign files (disposable decoys in a throw-away server container)
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_log_path_safety.sh
+
+test-server-version:  ## the plugin's tests against another MariaDB version, built FROM MARIADB_IMAGE=<official image> (CI: 11.8.9)
+	@bash scripts/test_server_version.sh "$(MARIADB_IMAGE)"
+
+test-integration: .env  ## host-level tests of the running stack: demo credential life cycle, log rotation, thread pool, stalled log, log path safety (rotates the demo password and the audit log)
 	@COMPOSE="$(COMPOSE)" MAKE="$(MAKE)" bash tests/integration/test_demo_lifecycle.sh
 	@COMPOSE="$(COMPOSE)" bash tests/integration/test_log_rotation.sh
 	@COMPOSE="$(COMPOSE)" bash tests/integration/test_log_import_limits.sh
 	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_thread_pool.sh
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_stalled_log.sh
+	@COMPOSE="$(COMPOSE)" bash tests/plugin/test_log_path_safety.sh
 
 test-app: .env  ## web app and Audit Lab tests incl. the database tests, run inside the web container
 	@$(TEST_CREDENTIALS); forward=""; \

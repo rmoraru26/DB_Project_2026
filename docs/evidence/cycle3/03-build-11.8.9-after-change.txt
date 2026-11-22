@@ -1,0 +1,352 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load remote build context
+#1 DONE 0.5s
+
+#1 [internal] load remote build context
+#1 DONE 0.5s
+
+#2 copy /context /
+#2 DONE 0.3s
+
+#3 [internal] load metadata for docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#3 DONE 0.1s
+
+#4 [build 1/9] FROM docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+#4 resolve docker.io/library/mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707 0.1s done
+#4 DONE 0.1s
+
+#5 [build 2/9] RUN set -eux;     apt-get update;     apt-get install -y --no-install-recommends gcc g++ make         "libmariadbd-dev=1:11.8.9+maria~ubu2404" "libmariadb-dev=1:11.8.9+maria~ubu2404";     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [stage-2  2/26] RUN test -d /usr/lib/mysql/plugin
+#6 CACHED
+
+#7 [build 3/9] WORKDIR /src/plugin
+#7 CACHED
+
+#8 [build 4/9] COPY plugin/ ./
+#8 DONE 0.2s
+
+#9 [build 5/9] RUN make clean && make test && make plugin
+#9 0.381 rm -rf build
+#9 0.385 mkdir -p build
+#9 0.387 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_record_format.cpp src/record_format.cpp audit_file_check.cpp -o build/test_record_format
+#9 2.522 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_log_sink.cpp src/log_sink.cpp audit_file_check.cpp -o build/test_log_sink
+#9 3.935 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_automatic_errors.cpp audit_file_check.cpp -o build/test_automatic_errors
+#9 4.746 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_error_reporter.cpp audit_error_reporter.cpp -o build/test_error_reporter
+#9 5.278 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -pthread tests/test_runtime_config.cpp -o build/test_runtime_config
+#9 5.705 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_gap_accounting.cpp -o build/test_gap_accounting
+#9 5.768 g++ -O2 -g -std=c++11 -Wall -Wextra -I. tests/test_statement_scope.cpp -o build/test_statement_scope
+#9 5.948 == test_record_format
+#9 5.950 PASS: JSON plain string
+#9 5.950 PASS: JSON quotes and backslashes escaped
+#9 5.950 PASS: JSON newline/tab/CR escaped
+#9 5.950 PASS: JSON control characters escaped
+#9 5.950 PASS: JSON embedded NUL escaped, length respected
+#9 5.950 PASS: JSON valid UTF-8 kept as is
+#9 5.950 PASS: JSON invalid UTF-8 replaced by U+FFFD
+#9 5.950 PASS: JSON UTF-16 surrogate encoded in UTF-8 rejected
+#9 5.950 PASS: JSON overlong encoding rejected
+#9 5.950 PASS: JSON NULL pointer becomes null
+#9 5.950 PASS: JSON empty string stays empty string
+#9 5.950 PASS: JSON overflow detected instead of writing past the buffer
+#9 5.950 PASS: JSON overflow keeps buffer NUL-terminated
+#9 5.950 PASS: bounded field cut before a multi-byte character
+#9 5.950 PASS: JSON numbers, booleans and null
+#9 5.950 PASS: digest masks string and number literals
+#9 5.950 PASS: digest masks double-quoted, doubled-quote and backslash-escaped strings
+#9 5.950 PASS: a backslash before a quote masks the rest (no leak under NO_BACKSLASH_ESCAPES)
+#9 5.950 PASS: the same rule hides the rest of a default-mode escaped quote
+#9 5.950 PASS: an escaped backslash before the quote ends the literal in both modes (structure kept)
+#9 5.950 PASS: digest hides passwords given as literals
+#9 5.950 PASS: digest hides password hashes
+#9 5.950 PASS: digest masks hex, bit, national and introducer literals
+#9 5.950 PASS: digest masks decimals and exponents
+#9 5.950 PASS: digest keeps identifiers containing digits and backtick identifiers
+#9 5.950 PASS: digest keeps doubled backticks inside identifiers
+#9 5.950 PASS: digest: a backslash is not an escape inside `identifiers` (the closing backtick still closes)
+#9 5.950 PASS: digest removes all comment styles including executable comments
+#9 5.950 PASS: digest collapses whitespace
+#9 5.950 PASS: '--' without trailing space is not a comment
+#9 5.950 PASS: digest of empty statement
+#9 5.950 PASS: digest handles an unterminated string
+#9 5.950 PASS: digest handles an unterminated comment
+#9 5.950 PASS: digest keeps variable names but masks quoted ones
+#9 5.950 PASS: digest truncates at max length and reports it
+#9 5.950 PASS: digest never ends inside a UTF-8 sequence
+#9 5.950 PASS: digest with max length 0 is empty and marked truncated
+#9 5.950 PASS: 100 kB literal collapses to one '?'
+#9 5.950 PASS: digest of a NULL statement
+#9 5.950 PASS: database list parsed and trimmed
+#9 5.950 PASS: database match is case-insensitive
+#9 5.950 PASS: database match needs the whole name
+#9 5.950 PASS: NULL database never matches
+#9 5.950 PASS: empty database list watches nothing
+#9 5.950 PASS: empty list matches nothing
+#9 5.950 PASS: '*' accepted for databases
+#9 5.950 PASS: '*' matches user schemas
+#9 5.950 PASS: '*' never matches system schemas
+#9 5.950 PASS: the four system schemas are recognised
+#9 5.950 PASS: information_schema and performance_schema are recognised in any case (the server resolves them so)
+#9 5.950 PASS: a user schema `MySQL` or `Sys` (lower_case_table_names=0) is not taken for mysql or sys
+#9 5.950 PASS: '*' audits the user schemas `MySQL` and `Sys`, never the system schemas
+#9 5.950 PASS: user schemas, prefixes and empty names are not system schemas
+#9 5.950 PASS: empty element rejected
+#9 5.950 PASS: trailing comma rejected
+#9 5.950 PASS: space inside a name rejected
+#9 5.950 PASS: punctuation rejected
+#9 5.950 PASS: '*' cannot be mixed with names
+#9 5.950 PASS: '*' rejected for users
+#9 5.950 PASS: more than 16 names rejected
+#9 5.950 PASS: name longer than 128 characters rejected
+#9 5.950 PASS: user list with '.', '-' and '@' accepted
+#9 5.950 PASS: user match is exact and case-sensitive
+#9 5.950 PASS: user match needs the whole name
+#9 5.950 PASS: user match: a login that is only a prefix of an excluded name is still audited
+#9 5.950 PASS: timestamp of the epoch
+#9 5.950 PASS: timestamp 2026-10-25
+#9 5.950 PASS: timestamp on a leap day
+#9 5.950 PASS: timestamp one second before the epoch
+#9 5.950 PASS: timestamp exactly one day before the epoch
+#9 5.950 PASS: bounded_length stops at the limit and accepts NULL
+#9 5.950 PASS: privilege errors are recognised (1044, 1142, 1143, 1227, 1370)
+#9 5.950 PASS: other errors are not access denials (0, 1045 login, 1146, 4025, 1064)
+#9 5.950 PASS: login name is the part of the account before '['
+#9 5.950 PASS: account without '[', NULL account and the length bound
+#9 5.950 Failures: 0
+#9 5.951 == test_log_sink
+#9 5.953 PASS: NULL path rejected
+#9 5.953 PASS: empty path rejected
+#9 5.953 PASS: directory-like path rejected
+#9 5.953 PASS: directory-like path ending in a backslash rejected
+#9 5.953 PASS: control character in path rejected
+#9 5.953 PASS: over-long path rejected
+#9 5.953 PASS: missing directory reported as open_Failed
+#9 5.953 PASS: open failure message carries errno
+#9 5.953 PASS: sink stays closed after failed open
+#9 5.953 PASS: write on closed sink fails
+#9 5.953 PASS: valid path opened
+#9 5.953 PASS: first record written
+#9 5.953 PASS: failed re-open keeps the previous file open
+#9 5.953 PASS: previous file still writable
+#9 5.953 PASS: re-opened file is appended to
+#9 5.953 PASS: file holds all records in order
+#9 5.953 PASS: a newly created log file has no permission bits for others
+#9 5.953 PASS: readable_by_all: an existing log file becomes readable by others
+#9 5.953 PASS: readable_by_all: a new log file is readable, not writable, by others (umask 077)
+#9 5.953 PASS: opened for EBADF test
+#9 5.953 PASS: write on a dead descriptor reported as write_Failed
+#9 5.953 PASS: write failure message carries errno
+#9 5.953 PASS: /dev/full write reported as write_Failed (ENOSPC)
+#9 5.953 Failures: 0
+#9 5.953 == test_automatic_errors
+#9 5.954 PASS: Empty path
+#9 5.954 PASS: Missing directory
+#9 5.954 PASS: Valid path
+#9 5.954 PASS: validate: NULL path
+#9 5.954 PASS: validate: empty path
+#9 5.954 PASS: validate: trailing forward slash
+#9 5.954 PASS: validate: trailing backslash
+#9 5.954 PASS: validate: newline in path
+#9 5.954 PASS: validate: DEL in path
+#9 5.954 PASS: validate: 513-byte path
+#9 5.954 PASS: validate: 512-byte path
+#9 5.954 PASS: validate: lexically valid path
+#9 5.954 PASS: validate: no file is created
+#9 5.954 Failures: 0
+#9 5.955 == test_error_reporter
+#9 5.956 Reported: Cannot open audit log
+#9 5.956 PASS: all reporter checks
+#9 5.956 == test_runtime_config
+#9 5.960 PASS: defaults before init publishes the configured values: log_reads OFF, connections FAILED, scope TABLES, digest 1024
+#9 5.960 PASS: six reader threads completed 100000 reads each while one thread wrote
+#9 5.960 PASS: no reader saw a value outside the ranges the writer stored (connections 0-2, scope 0-1, digest 0-8192)
+#9 5.960 PASS: after the writer finished every setting holds the last value stored
+#9 5.960 Checks: 4, Failures: 0
+#9 5.960 == test_gap_accounting
+#9 5.961 PASS: a new accounting object has lost nothing
+#9 5.961 PASS: every lost event is counted
+#9 5.961 PASS: a marker that could not be written is reported as not written
+#9 5.961 PASS: a failed marker does not erase the outage: the count is kept for the next attempt
+#9 5.961 PASS: events lost after the failed marker are added to the same outage
+#9 5.961 PASS: a written marker is reported as written
+#9 5.961 PASS: only a written marker resets the count
+#9 5.961 PASS: a new outage starts counting from zero
+#9 5.961 Checks: 8, Failures: 0
+#9 5.961 == test_statement_scope
+#9 5.962 PASS: TABLES: a statement without any fact is not recorded
+#9 5.962 PASS: a statement with a recorded table event is recorded without extra marks
+#9 5.962 PASS: an accepted SET GLOBAL campus_audit_* is recorded
+#9 5.962 PASS: SESSION: a statement with a recorded table event is not marked scope=session
+#9 5.962 PASS: TABLES: a refusal outside a watched default schema is not recorded
+#9 5.962 PASS: TABLES: a refusal in a watched default schema is recorded with access_denied (since 1.1.0)
+#9 5.962 PASS: TABLES: the 1.1.0 refusal rule does not depend on the two SESSION conditions
+#9 5.962 PASS: TABLES: a table-less statement in a watched default schema is NOT recorded (default behaviour)
+#9 5.962 PASS: TABLES: the latch alone records nothing
+#9 5.962 PASS: SESSION: a table-less statement with neither rule (a) nor (b) is not recorded
+#9 5.962 PASS: SESSION rule (a): table-less statement in a watched default schema is recorded, scope=session
+#9 5.962 PASS: SESSION rule (b): table-less statement after a watched table access is recorded, scope=session
+#9 5.962 PASS: SESSION: a statement that raised table events, none recorded, is not recorded (it was classified)
+#9 5.962 PASS: SESSION: the same holds in a watched default schema (reads with log_reads OFF stay unrecorded)
+#9 5.962 PASS: SESSION: a refusal that raised table events is recorded by the 1.1.0 rule only
+#9 5.962 PASS: SESSION: a table-less refusal carries both marks
+#9 5.962 PASS: SESSION rule (b): a refusal under the latch is recorded although the default schema is not watched
+#9 5.962 PASS: SESSION: a protocol command that is not a statement (Quit, Ping) is not recorded
+#9 5.962 PASS: SESSION: a statement executed inside a statement whose table events are recorded (trigger body) is not recorded
+#9 5.962 PASS: SESSION: with both conditions met the statement is recorded
+#9 5.962 PASS: Query and Execute are SQL commands
+#9 5.962 PASS: Quit, Ping, Init DB, Prepare, Close stmt and Change user are not
+#9 5.962 PASS: the command name must match exactly; NULL and empty names are not SQL commands
+#9 5.962 PASS: an unrecorded table event marks the statement as seen, not as recorded
+#9 5.962 PASS: a recorded event of the same statement sets the latch
+#9 5.962 PASS: a later unrecorded event of the SAME statement does not clear the latch (multi-table statement)
+#9 5.962 PASS: the first event of a NEW statement clears the latch; the recorded id is left for its STATUS event
+#9 5.962 PASS: and a recorded event sets it again
+#9 5.962 PASS: LOCK TABLES on a watched table: one table event, recorded
+#9 5.962 PASS: INSERT under LOCK TABLES (no table event): recorded, scope=session
+#9 5.962 PASS: UPDATE under LOCK TABLES: recorded
+#9 5.962 PASS: a failing statement under LOCK TABLES: recorded
+#9 5.962 PASS: UNLOCK TABLES: recorded (the end of the locked section is visible)
+#9 5.962 PASS: the next statement on another schema is not recorded
+#9 5.962 PASS: and ends rule (b): a following table-less statement is not recorded
+#9 5.962 PASS: TABLES: LOCK TABLES on a watched table is recorded
+#9 5.962 PASS: TABLES: DML under LOCK TABLES is not recorded (documented limit of the default scope)
+#9 5.962 PASS: rule (a): DROP VIEW in a watched default schema is recorded
+#9 5.962 PASS: rule (a): COMMIT in a watched default schema is recorded
+#9 5.962 PASS: rule (a): SELECT with log_reads OFF raises an unrecorded table event and stays unrecorded
+#9 5.962 PASS: rule (a): an ordinary INSERT is recorded as before, unmarked
+#9 5.962 PASS: INSERT into a watched table from another default schema is recorded
+#9 5.962 PASS: rule (b): the COMMIT that follows it is recorded
+#9 5.962 PASS: a statement on other tables is not recorded
+#9 5.962 PASS: and the COMMIT after that one is not recorded
+#9 5.962 PASS: a statement that touches another schema and a watched table is recorded
+#9 5.962 PASS: rule (b) holds after it
+#9 5.962 PASS: the order of its table events does not matter
+#9 5.962 PASS: a trigger's body statement, whose STATUS event arrives while the firing statement is open, is not recorded
+#9 5.962 PASS: the firing statement is recorded once, unmarked
+#9 5.962 PASS: the COMMIT after it is recorded: nothing is left open
+#9 5.962 PASS: TABLES: the same sequence gives exactly the firing statement
+#9 5.962 PASS: a routine's INSERT into a watched table is recorded as its own statement
+#9 5.962 PASS: a routine's SELECT from another schema is not recorded
+#9 5.962 PASS: the CALL itself raised no table event and is recorded, scope=session
+#9 5.962 PASS: a statement on a watched table
+#9 5.962 PASS: the Quit command that ends the connection is not recorded as a statement
+#9 5.962 PASS: rule (a): CREATE PROCEDURE, whose only table event is for mysql.proc, is recorded
+#9 5.962 PASS: a statement that also touched another user schema is classified and not recorded
+#9 5.962 PASS: TABLES: CREATE PROCEDURE is not recorded (default behaviour)
+#9 5.962 PASS: rule (b): a system-schema event does not clear the latch
+#9 5.962 PASS: documented limit: CREATE TRIGGER is reported as a read of its table and is not recorded while log_reads is OFF
+#9 5.962 PASS: documented limit: table-less DDL with a qualified name from another default schema, no latch, is not recorded
+#9 5.962 Checks: 63, Failures: 0
+#9 5.963 All unit test programs passed.
+#9 5.966 g++ -O2 -g -std=c++11 -Wall -Wextra -I. -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN \
+#9 5.966   -I"/usr/include/mariadb/server" -I"/usr/include/mariadb/server/private" \
+#9 5.966   src/campus_audit.cpp src/record_format.cpp src/log_sink.cpp audit_file_check.cpp audit_error_reporter.cpp /usr/lib/x86_64-linux-gnu/libmysqlservices.a -o build/campus_audit.so
+#9 8.373 built build/campus_audit.so (services: /usr/lib/x86_64-linux-gnu/libmysqlservices.a)
+#9 DONE 8.4s
+
+#10 [build 6/9] COPY tests/plugin/change_user.c /src/tests/change_user.c
+#10 DONE 0.2s
+
+#11 [build 7/9] RUN gcc -O2 -Wall -o /src/campus_change_user /src/tests/change_user.c $(mariadb_config --cflags --libs)
+#11 DONE 0.6s
+
+#12 [build 8/9] COPY examples/skeleton_plugin/skeleton_audit.cpp /src/skeleton/skeleton_audit.cpp
+#12 DONE 0.4s
+
+#13 [build 9/9] RUN g++ -std=c++11 -O2 -Wall -shared -fPIC -DMYSQL_DYNAMIC_PLUGIN         -I/usr/include/mariadb/server -I/usr/include/mariadb/server/private         /src/skeleton/skeleton_audit.cpp -o /src/skeleton/skeleton_audit.so
+#13 DONE 0.5s
+
+#14 [stage-2  3/26] COPY --from=build /src/plugin/build/campus_audit.so /usr/lib/mysql/plugin/campus_audit.so
+#14 DONE 0.3s
+
+#15 [stage-2  4/26] COPY --from=build /src/campus_change_user /usr/local/bin/campus_change_user
+#15 DONE 0.2s
+
+#16 [stage-2  5/26] COPY --from=build /src/skeleton/skeleton_audit.so /usr/lib/mysql/plugin/skeleton_audit.so
+#16 DONE 0.2s
+
+#17 [stage-2  6/26] COPY docker/mariadb/campus_audit.cnf /etc/mysql/conf.d/campus_audit.cnf
+#17 DONE 0.2s
+
+#18 [stage-2  7/26] RUN chmod 0644 /etc/mysql/conf.d/campus_audit.cnf
+#18 DONE 0.5s
+
+#19 [stage-2  8/26] RUN mkdir -p /var/log/campus_audit && chown mysql:mysql /var/log/campus_audit && chmod 0750 /var/log/campus_audit
+#19 DONE 0.5s
+
+#20 [stage-2  9/26] COPY database/schema.sql /docker-entrypoint-initdb.d/10-schema.sql
+#20 DONE 0.2s
+
+#21 [stage-2 10/26] COPY database/migrations/001_audit_events_trigger_ownership.sql /docker-entrypoint-initdb.d/20-migration-001.sql
+#21 DONE 0.2s
+
+#22 [stage-2 11/26] COPY database/migrations/002_campus_audit_schema.sql /docker-entrypoint-initdb.d/21-migration-002.sql
+#22 DONE 0.2s
+
+#23 [stage-2 12/26] COPY database/migrations/003_audit_lab.sql /docker-entrypoint-initdb.d/22-migration-003.sql
+#23 DONE 0.2s
+
+#24 [stage-2 13/26] COPY database/triggers.sql /docker-entrypoint-initdb.d/30-triggers.sql
+#24 DONE 0.2s
+
+#25 [stage-2 14/26] COPY database/seed.sql /docker-entrypoint-initdb.d/40-seed.sql
+#25 DONE 0.2s
+
+#26 [stage-2 15/26] COPY database/catalogue.sql /docker-entrypoint-initdb.d/41-catalogue.sql
+#26 DONE 0.3s
+
+#27 [stage-2 16/26] COPY database/migrations/004_remove_shared_admin.sql /docker-entrypoint-initdb.d/50-migration-004.sql
+#27 DONE 0.2s
+
+#28 [stage-2 17/26] COPY database/migrations/005_local_admin_bootstrap_state.sql /docker-entrypoint-initdb.d/51-migration-005.sql
+#28 DONE 0.2s
+
+#29 [stage-2 18/26] COPY database/migrations/006_cancelled_loan_status.sql /docker-entrypoint-initdb.d/52-migration-006.sql
+#29 DONE 0.2s
+
+#30 [stage-2 19/26] COPY database/migrations/007_local_demo_student.sql /docker-entrypoint-initdb.d/53-migration-007.sql
+#30 DONE 0.2s
+
+#31 [stage-2 20/26] COPY database/migrations/008_import_plugin_log_errors.sql /docker-entrypoint-initdb.d/54-migration-008.sql
+#31 DONE 0.2s
+
+#32 [stage-2 21/26] COPY database/app_account.sh database/native_password_hash.sh /usr/local/share/campus/
+#32 DONE 0.2s
+
+#33 [stage-2 22/26] COPY database/ /usr/local/share/campus/database/
+#33 DONE 0.2s
+
+#34 [stage-2 23/26] COPY scripts/ /usr/local/share/campus/scripts/
+#34 DONE 0.2s
+
+#35 [stage-2 24/26] COPY tests/ /usr/local/share/campus/tests/
+#35 DONE 0.2s
+
+#36 [stage-2 25/26] COPY docker/mariadb/initdb/50-app-account.sh /docker-entrypoint-initdb.d/60-app-account.sh
+#36 DONE 0.2s
+
+#37 [stage-2 26/26] RUN set -eux;     init_script=/docker-entrypoint-initdb.d/60-app-account.sh;     chmod 0644 "$init_script";     test -f "$init_script";     test -r "$init_script";     test ! -x "$init_script";     test "$(stat -c '%a' "$init_script")" = 644
+#37 0.383 + init_script=/docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.383 + chmod 0644 /docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.393 + test -f /docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.393 + test -r /docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.393 + test ! -x /docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.393 + stat -c %a /docker-entrypoint-initdb.d/60-app-account.sh
+#37 0.395 + test 644 = 644
+#37 DONE 0.4s
+
+#38 exporting to image
+#38 exporting layers
+#38 exporting layers 6.0s done
+#38 exporting manifest sha256:2d4a7826f32acc9f938a582a177016207b6305ac76166bf9daadd9d7693922b9 0.1s done
+#38 exporting config sha256:8a299e07ac56e1ee93ed7403381fcdfedda957c3cca2e3eb5d2ce03c706ac6c4
+#38 exporting config sha256:8a299e07ac56e1ee93ed7403381fcdfedda957c3cca2e3eb5d2ce03c706ac6c4 0.1s done
+#38 exporting attestation manifest sha256:0f58a7b5723ec7d176ed9cf949fa445dd932ae89f23cb8f0de35159b54693e3e 0.1s done
+#38 exporting manifest list sha256:759a24137cb9b21bb4de80a56a1a81cb3b227c23cf5607287c3db52b9e16e9f3
+#38 exporting manifest list sha256:759a24137cb9b21bb4de80a56a1a81cb3b227c23cf5607287c3db52b9e16e9f3 0.1s done
+#38 naming to docker.io/library/frt-x118-mariadb:11.8.9 0.0s done
+#38 unpacking to docker.io/library/frt-x118-mariadb:11.8.9
+#38 unpacking to docker.io/library/frt-x118-mariadb:11.8.9 1.7s done
+#38 DONE 8.3s

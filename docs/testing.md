@@ -20,7 +20,26 @@ volumes; **W** = Windows 11, Windows PowerShell 5.1, Docker Desktop, through `fr
 **N** = native Windows MariaDB 13.0.2 (official zip) with the DLL built by Zig 0.16.0; **B** =
 Chromium in the Playwright container.
 
+## Current state (plugin 1.2.5, 21 November 2026)
+
+**Read this section for the current results.** Everything below it is dated history, kept as it was
+recorded: the suite table further down gives the Phase 1 counts (184 unit checks, 65 mutants and
+so on), not the current ones.
+
+| Suite | Current result | Raw output (`docs/evidence/cycle9/`) |
+|---|---|---|
+| Plugin unit tests, 7 programs | 225 passed as root; 223 passed and 1 skipped as a normal user | `07-unit-tests-root.txt`, `06-unit-tests-normal-user.txt` |
+| Mutation check | 80 of 80 killed | `08-mutation-check.txt` |
+| End-to-end harness; thread pool; stalled log; log path safety, on 13.0.2 and on 11.8.9 | 144/0/0, 30/0, 19/0, 39/0 + 2/0 on both | `16-server-13.0.2-plugin-1.2.5-two-assignments.txt`, `17-server-11.8.9-plugin-1.2.5-two-assignments.txt` |
+| Plugin lab; permanent load | 25 / 0; 5 / 0 | `14-…`, `15-…`, `05-…` |
+| Windows PowerShell tests | 10, 98 (the suite's own count; 99 PASS lines), 18, 37; ACL 8 | `09-windows-powershell-tests.txt` |
+| GitHub Actions | four jobs on every push: static checks, Docker end to end (with `make plugin-lab` and `make test-permanent-load` on the clean checkout), MariaDB 11.8.9, native Windows | the runs of each commit are named in the cycle 9 section |
+
 ## GitHub Actions
+
+**Merge commit `abdfa3a` on `main`** (PR #5 merged on 17 November 2026): run
+[44034444030](https://github.com/rmoraru26/DB_Project_2026/actions/runs/44034444030) (push to `main`),
+completed, success, 3 of 3 jobs, 41 of 41 steps (GitHub API, read 17 November 2026).
 
 **Phase 1 commit `5d48de0`** (pushed to PR #5 on 17 November 2026), verified through the GitHub
 API (`docs/evidence/phase1/checks/github-actions-runs-for-5d48de0.txt`): run
@@ -29,7 +48,7 @@ API (`docs/evidence/phase1/checks/github-actions-runs-for-5d48de0.txt`): run
 both completed, success; 3 of 3 jobs each (`ubuntu-24.04`, `ubuntu-24.04`, `windows-2022`), 82 of
 82 steps successful, among them the new Phase 1 steps: the shell and demo-bootstrap tests, the
 fresh-install check, `make test-integration`, the four PowerShell suites, and
-`pluginuild_windows.ps1` with all seven unit-test programs on the hosted Windows runner (the
+`plugin\build_windows.ps1` with all seven unit-test programs on the hosted Windows runner (the
 script stops with an error if any of them fails or cannot run). The job logs themselves were not
 downloaded (they need an authenticated request); this record rests on the job and step results.
 
@@ -57,9 +76,9 @@ What the baseline runs do **not** show:
 | Suite | What it proves | How to run | P1 result | Other sources |
 |---|---|---|---|---|
 | Plugin unit tests, 7 programs: `test_record_format`, `test_log_sink`, `test_automatic_errors`, `test_error_reporter`, `test_runtime_config`, `test_gap_accounting`, `test_statement_scope` | JSON escaping and UTF-8 validation, digest masking incl. `NO_BACKSLASH_ESCAPES`, list parsing, system-schema detection, timestamps, path validation, open and write failures, file modes, privilege-error detection, atomic settings under concurrent readers, outage accounting, and the statement-scope rules with the event sequences observed on the server | `make -C plugin test`; Windows: `plugin\build_windows.ps1` | **PASS (L)**: 184 checks (72, 23, 13, 1, 4, 8, 63); **post-audit: 187** (75, 23, 13, 1, 4, 8, 63; three new system-schema checks; `post-audit/01-unit-tests.txt`). Post-audit, `test_record_format` alone also built and passed natively with MSYS2 g++ 15.2 (75 checks, `post-audit/12-…`). **PASS (native Windows, g++ 15.2)**: 180 checks (72, 19, 13, 1, 4, 8, 63; four are POSIX-only), **aggregated across two build configurations**: no single build ran all seven programs. `-O2` ran six (`test_statement_scope` refused by application control); `-O2 -DNDEBUG` ran four (`test_automatic_errors`, `test_error_reporter`, `test_gap_accounting` refused); so `test_statement_scope` passed only in the NDEBUG build and those three only in the `-O2` build (`windows-native/05-unit-tests-windows-gxx.txt`). The Zig builds of all seven **compile and link**; they were **not run** on the PC, whose application-control policy refuses them | P0: 6 programs pass. CI (`19fd0a2`): the Linux job ran 6 programs, the Windows job 4 (two were missing from the Windows script, and the two built on `assert()` checked nothing in an optimised build; both corrected in Phase 1) |
-| Mutation check `scripts/mutation_check.py` | every one of 65 deliberately injected bugs in the plugin code makes a unit test fail | `make mutation` | **PASS (L)**: 65 of 65 killed; **post-audit: 67 of 67** (N07 and C10 rewritten for the new system-schema code, N12 and N13 added; `post-audit/02-mutation-check.txt`) | CI (`19fd0a2`): 47 of 47 |
+| Mutation check `scripts/mutation_check.py` | every one of the deliberately injected bugs in the plugin code (67 since the post-audit; 65 in Phase 1) makes a unit test fail | `make mutation` | **PASS (L)**: 65 of 65 killed; **post-audit: 67 of 67** (N07 and C10 rewritten for the new system-schema code, N12 and N13 added; `post-audit/02-mutation-check.txt`) | CI (`19fd0a2`): 47 of 47 |
 | End-to-end plugin harness `tests/plugin/run_plugin_tests.sh` | the loaded plugin through SQL only: install, configuration validation, every event type, filters, special input, refused statements, CHANGE_USER via the C API, **statements without table events in both scopes (28 checks)**, concurrency, fail-open, rotation, trigger interplay, uninstall and reinstall | `make test-e2e` | **PASS (L)**: 128 passed, 0 failed, 0 skipped. **PASS (W)**: the same 128. **PASS (N)**: 110 passed, 0 failed, 3 skipped (permission-denied path, `/dev/full`, and CHANGE_USER because its helper was not built). Each SKIP line stands for a whole block, so 18 of the 128 Linux checks did not run natively: CHANGE_USER 8 (switch and wrong password, `change_user`/`change_user_failed` records under `connections=ALL` and `FAILED`, accounts named before and after, no password in the log), the permission-denied path 1, the write failure via `/dev/full` 9 (statement still succeeds, `DEGRADED`, `write_failures`, `last_error`, `audit_gap`, recovery to `ACTIVE`, the failed recovery marker). 110 + 18 = 128; "113" is 110 PASS lines plus 3 SKIP lines (comparison of `linux/20-make-test.txt` with `windows-native/09-plugin-e2e.txt`) | P0: 100 passed. CI (`19fd0a2`): Linux and Windows jobs green |
-| Thread pool `tests/plugin/test_thread_pool.sh` | attribution of `SET GLOBAL`, of table events and of scope `SESSION` when 12 connections share a pool of 2 threads (an observation for 13.0.2, not an API guarantee) | `make test-threadpool` | **PASS (L)**: 30 checks | P0: the first, manual version of phase 1 of this test |
+| Thread pool `tests/plugin/test_thread_pool.sh` | attribution of `SET GLOBAL`, of table events and of scope `SESSION` when 12 connections are served by `thread_pool_size=2` (two thread groups; the pool grew to 14 workers) (an observation for 13.0.2, not an API guarantee) | `make test-threadpool` | **PASS (L)**: 30 checks | P0: the first, manual version of phase 1 of this test |
 | Database tests, 8 scripts in `tests/database/` | migration 004 and seed re-run; migration 006; triggers; exact grants of the application account; **migration 007 and its procedures (30)**; **the booking catalogue on a fresh and on a changed database (18)**; **the log import and its error paths (16)**; the password-hash helper; the team's constraint checks | `make test-db` | **PASS (L, W)**: 2 statements, then 18, 22, 24, 30, 18, 16, 3 and 10 checks. **Post-audit (throw-away 13.0.2 server, `post-audit/04-…`)**: 2 statements, then 18, 22, 24, **35**, **24**, 16, 3, 10 — migration 007 gained the open-transaction refusal (4 checks + 1) and the documented `check_constraint_checks` bypass (1), and lost the check that needs an installed demo account (none in a bare server); the catalogue gained 6 concurrency checks | P0: the first five and the last two pass. CI (`19fd0a2`): green |
 | Web application and Audit Lab `frontend/tests/` | validation, access control, CSRF, throttles, booking rules and transactions against the in-memory database; with MariaDB: registration, bookings, triggers, least privilege, every lab action with real plugin records, **login of the generated demo student and administrator, the demo student's lack of administrator access, the booking catalogue through the real URLs** | `make test-app`, or as a suite of `make test` | **PASS (L, W)**: 332 passed, 1 skipped (the browser module) in the test-runner container; 331 passed, 2 skipped in the web container (additionally the catalogue comparison, which needs the repository tree). A run without a database was not recorded in Phase 1 (an earlier "294 passed, 39 skipped" had no evidence and was withdrawn) | P0: 292 passed, 3 skipped. CI (`19fd0a2`): green, with the administrator tests skipped (above) |
 | Browser tests `frontend/tests/browser/` | registration and login through the forms, the tour's navigation, live plugin state, insert, CHECK violation, explorer filters, no horizontal scroll at 390 px | `make test-browser` | **PASS (B)**: 11 passed. `make test-browser` itself (a local virtual environment on the host) was **not run** | CI (`19fd0a2`): green |
@@ -133,7 +152,9 @@ requirement. See the [dated evidence summary](evidence/windows-docker-desktop-20
 1. **GitHub Actions job logs.** The Phase 1 commit `5d48de0` ran green in CI (above); its job logs
    were not downloaded, so test counts inside the CI jobs are not recorded here.
 2. **macOS**, in any form. The Linux host scripts use GNU `stat -c` and `mv -T`.
-3. **A Linux machine without Docker** (building against distribution headers and installing by hand).
+3. **A physical Linux machine without Docker.** The by-hand path itself (distribution headers,
+   build, install, restart, setup, demo, harness, web app) was run in cycle 2 on Ubuntu with the
+   MariaDB 13.0.2 packages inside a plain container (`docs/evidence/cycle2/01-native-linux-install.txt`).
 4. **`make` on a real Linux installation.** The P1 "Linux host" is a Linux container with GNU make
    that drives Docker Desktop's engine; the commands and file-system semantics are Linux, the
    kernel and Docker engine are Docker Desktop's.
@@ -158,8 +179,9 @@ requirement. See the [dated evidence summary](evidence/windows-docker-desktop-20
    tests; the demo-credential life cycle and thread-pool tests. None of their code changed except
    comments, the plugin source and the SQL files covered above.
 14. **Post-audit P2-1** (a "pending statement" left set without a STATUS event): 16 event
-   sequences were tried, none left it set (`post-audit/06-…`); binary-protocol
-   `COM_STMT_PREPARE`/`COM_STMT_EXECUTE` from a client library was not tried.
+   sequences were tried, none left it set (`post-audit/06-…`). Prepared statements over the binary
+   protocol (`COM_STMT_PREPARE`/`COM_STMT_EXECUTE` through the C API) were added to the harness
+   after the first merge (6 checks, `docs/evidence/cycle1/`): nothing is left pending there either.
 
 ## Post-audit remediation (17 November 2026)
 
@@ -215,6 +237,194 @@ Two defects were found and fixed during this pass, and the affected tests re-run
 after a failed reopen (above), and `tests/integration/test_log_rotation.sh`, which failed when the
 same plugin instance had been rotated before (it compared all rows of the instance with only the
 two newest files; all records were in fact imported exactly once). The failing runs are kept.
+
+## Improvement cycle 1 after the merge (17 November 2026)
+
+Raw outputs in `docs/evidence/cycle1/`. New: prepared statements over the binary protocol
+(`COM_STMT_PREPARE`/`COM_STMT_EXECUTE` through the C API, 6 harness checks); random passwords in the
+evidence driver scripts (three of them re-run with the same results); the exploratory programs
+moved out of the test tree.
+
+| Suite | Result |
+|---|---|
+| Linux: unit, shell, repository checks, mutation | 187; 31, 35, 21; pass; 67 of 67 |
+| Linux: `make test` | 8 of 8 suites; harness 134/0/0; database 18, 22, 24, 36, 24, 16, 3, 10; application 332 passed, 1 skipped |
+| Linux: `make examples`, `make test-integration`, `make test-app` | pass; 19, 8, 13, 30; 331 passed, 2 skipped |
+| Native Windows: DLL, harness, database scripts | `ACTIVE 1.2.0`; 125/0/1 (`/dev/full` only); all nine pass |
+| Native Windows: `build_windows.ps1` unit programs | Smart App Control **blocked** `test_automatic_errors.exe` (not counted; CI runs all seven) |
+
+## Improvement cycles 2 and 3 (17 November 2026)
+
+Cycle 2 (`docs/evidence/cycle2/`): the README's Linux path without Docker run in full on Ubuntu with the
+MariaDB 13.0.2 packages in a plain container: build, install, restart, setup, demo, verification SQL,
+harness 134/0/0, web application (`/healthz` 200).
+
+Cycle 3 (`docs/evidence/cycle3/`): the plugin built against MariaDB 11.8.9 (audit API `0x0302`) after
+relaxing its version check; on a running 11.8.9 server the harness passed 134/0/0 and the thread-pool
+test 30/30. The full Linux suite on 13.0.2 for the same tree: 187 unit checks, 67 of 67 mutants,
+`make test` 8 of 8 (harness 134/0/0, database 18, 22, 24, 36, 24, 16, 3, 10, application 332/1),
+integration 19, 8, 13, 30, `make test-app` 331/2. Not run: 10.11 and 11.4; native Windows for this
+tree (CI runs it on push).
+
+## Improvement cycles 4 and 5 (17 November 2026)
+
+Cycle 4 (`docs/evidence/cycle4/`): the unused `try_open_log()` removed with its three unit-test
+cases; 184 unit checks, 67 of 67 mutants. CI run 44071525891 for `3208c75`: 3 of 3 jobs successful.
+
+Cycle 5 (`docs/evidence/cycle5/`), plugin 1.2.1: guards on every function the server calls; bounded
+waits for the log under server locks (experiment 32). New `tests/plugin/test_stalled_log.sh`
+(`make test-stalled-log`, also in `make test-integration`), 17 checks. On plugin 1.2.0 it gives
+7 passed, 10 failed. New `scripts/test_server_version.sh` (`make test-server-version`), CI job
+`server-11-8`. Local results: 184 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harness
+134/0/0, thread pool 30/0 and stalled log 17/0. Not run locally: the web application, database and
+browser suites, and native Windows; CI runs them on push. CI run 44090286551 for `3166885`: 4 of 4
+jobs successful (Docker, MariaDB 11.8.9, native Windows, static).
+
+## Improvement cycle 6 (17 November 2026)
+
+`docs/evidence/cycle6/`, plugin 1.2.2: update functions normally do no log I/O (check functions open the
+files; `config_change` records are written by the statement's STATUS event); records lost without
+an I/O error are announced by the next `audit_gap` record. Local results: 192 unit checks; 67 of 67
+mutants; on 13.0.2 and on 11.8.9 the harness 134/0/0, thread pool 30/0 and stalled log 19/0 (two new
+checks: a `SET GLOBAL campus_audit_log_reads` while the log is stalled returns, and its record is
+written afterwards). Not run locally: the web application, database and browser suites, and native
+Windows; CI runs them on push. CI run 44094440392 for `61a0814`: 4 of 4 jobs successful.
+
+## Improvement cycle 7 (17 November 2026)
+
+`docs/evidence/cycle7/`, plugin 1.2.3: the DISCONNECT event writes a connection's pending
+configuration records; a staged file is closed when its update gives up; wording and citations
+corrected. 192 unit checks; 67 of 67 mutants; on 13.0.2 and on 11.8.9 the harness 134/0/0, thread pool
+30/0, stalled log 19/0. CI run 44097222910 for `dce0a16`: 4 of 4 jobs successful.
+
+## Improvement cycle 8 (17 November 2026)
+
+`docs/evidence/cycle8/`, plugin 1.2.4: `campus_audit_file_path` refuses an existing file that is not a
+campus_audit log (`docs/security.md`, "Tamper evidence"). New: 7 unit checks, 4 mutants (S04-S07),
+3 harness checks. Local results: 199 unit checks; 71 of 71 mutants; on 13.0.2 and on 11.8.9 the
+harness 137/0/0, thread pool 30/0, stalled log 19/0. CI run 44121153458 for `d147cdc`: static, Docker
+and 11.8.9 successful, native Windows failed (end-to-end step; log not readable without signing in).
+
+Security review of the same protection (`docs/evidence/cycle8/security-review/`): decisions on the
+opened descriptor or handle; no symbolic or hard links, owner check (Linux), `.jsonl` names only,
+widening only of new files. New `tests/plugin/test_log_path_safety.sh` (`make test-log-path-safety`,
+also in `make test-integration` and `make test-server-version`). 213 unit checks; 75 of 75 mutants; on
+13.0.2 and 11.8.9 the harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 33/0 + 2/0.
+Native Windows: built; loading blocked locally by Smart App Control; CI job `windows-native`.
+
+After the second independent review (`docs/evidence/cycle8/security-review/final/`): 219 unit checks
+as root (217 and one skip as a normal user); 77 of 77 mutants as a normal user; on 13.0.2 and 11.8.9 the
+harness 141/0/0, thread pool 30/0, stalled log 19/0, log path safety 39/0 + 2/0. CI run 44842611321 for
+`38aa30c`: 4 of 4 jobs successful, including native Windows (unit tests with the Windows attack cases,
+setup, demo, harness).
+
+## Improvement cycle 9 (21 November 2026)
+
+`docs/evidence/cycle9/`. First part, plugin code unchanged (1.2.4):
+
+- **`make plugin-lab` / `.\frantastic.cmd plugin-lab`**: the plugin on its own, in a throw-away server
+  built from the new Dockerfile stage `plugin-server`, with the guided tour `plugin/lab/tour.sh`.
+  Results: 24 passed, 0 failed, through `scripts/plugin_lab.sh` in Git Bash against Docker Desktop on the development PC (`01-plugin-lab-docker-desktop.txt`; its image layers were cached, the clean build is CI's) and through
+  the Windows launcher against Docker Desktop (`02-plugin-lab-windows-launcher.txt`). An earlier run
+  through the launcher, before the maturity step existed, gave 23 of 23
+  (`02-plugin-lab-windows-launcher-23-checks.txt`). The development PC has no GNU make; the
+  `make plugin-lab` target itself ran in CI, on the clean checkout, before `make up`.
+- **The skeleton plugin** has its own Makefile, which the image build now uses. The native Windows CI
+  job builds `skeleton_audit.dll` with Zig and loads it next to campus_audit.
+- **`test_local_file_acl.ps1` in CI.** It refuses an elevated session, and GitHub's runners are
+  elevated, so `tests/windows/run_as_standard_user.ps1` runs it as a throw-away standard user. That
+  user is a member of Users only and has a random, masked password; the user and its profile are
+  removed afterwards. The script refuses to run anywhere but a GitHub-hosted runner. The test itself
+  is unchanged and still refuses elevation, so a zero exit code shows a non-elevated run.
+- **Harness literals.** `run_plugin_tests.sh` quoted values it does not choose itself (paths read
+  from the server or the environment, the saved configuration) with `'${x//\\/\\\\}'`. That escaped
+  backslashes only, so a `'` in a path broke the statement, and it depended on `NO_BACKSLASH_ESCAPES`.
+  It now writes them as hex literals (`sql_str`). The throw-away test accounts' password was
+  `t_<time>_<pid>_Pw` and could be guessed while a run lasted; it is now random.
+- **Experiment 34** (`03-force-plus-permanent.txt`): loaded as `FORCE_PLUS_PERMANENT`, the plugin cannot be
+  unloaded (ER 1702).
+- **The launcher** test gained 4 checks for `plugin-lab` and `plugin-lab-down` (18 in all).
+
+Local results of the first part (commit `9f87fe6`; CI runs 44872138609 and 44872142721, 4 of 4 jobs each): unit tests, all 7 programs passed as a normal user and as root
+(`04-unit-tests-and-mutation.txt`); mutation check 77 of 77; on 13.0.2 the harness 141/0/0, thread pool
+30/0, stalled log 19/0, log path safety 39/0 + 2/0 (`10-server-13.0.2.txt`); on 11.8.9 the same counts, 0 failed
+(`11-server-11.8.9.txt`; a first attempt stopped before any test, when apt in the image build refused Ubuntu release files as "not valid yet": the Docker VM clock was about 6 minutes behind, `11-server-11.8.9-first-attempt-clock-skew.txt`); Windows PowerShell tests 10, 99, 18, 37 and the ACL test 8 (non-elevated);
+`scripts/check_repo.py` passed.
+
+Second part, after two independent evaluations of `4abb6ae` (they scored 33 and 28 of 40; the
+starting point was 35, from another evaluator). The defensible deductions were acted on:
+
+- **Plugin 1.2.5, redirect handover** (experiment 35): a change of `campus_audit_file_path` is now
+  recorded in the log it leaves, not only in the new one. Two new harness checks; the plugin lab
+  shows it (step 6, now 25 checks).
+- **Plugin 1.2.5, executable comments** (experiment 36): `/*! ... */` and `/*M! ... */` are lexed,
+  not dropped. Six new unit checks; mutants D17 to D19.
+- **Experiment 34 as a test:** `tests/plugin/test_permanent_load.sh` (`make test-permanent-load`,
+  also in CI).
+- **Documentation corrections:** the thread-pool wording (the pool grew to 14 workers; the test
+  does not show a statement moving between threads); the README SQL example now shows real output;
+  stale statements in `docs/docker.md`, `docs/architecture.md`, `docs/plugin-api-notes.md` and
+  `docs/experiments.md`; the skeleton walkthrough and the "Things to try" list work in the plugin
+  lab; the plugin-lab evidence file is named for where it ran (Docker Desktop on the development PC).
+- **Full raw outputs** instead of tails: unit tests as a normal user and as root, the mutation check,
+  the Windows PowerShell tests.
+
+Local results of the second part (plugin 1.2.5, commit `bf19156`; CI runs 44873899006 and 44873903594, 4 of 4 jobs each, native Windows included):
+
+| Suite | Result | Raw output |
+|---|---|---|
+| Unit tests, 7 programs | 225 passed as root; 223 passed and 1 skipped as uid 1000 | `07-unit-tests-root.txt`, `06-unit-tests-normal-user.txt` |
+| Mutation check | 80 of 80 killed (uid 1000) | `08-mutation-check.txt` |
+| Harness / thread pool / stalled log / log path safety on 13.0.2 | 143/0/0, 30/0, 19/0, 39/0 + 2/0 | `12-server-13.0.2-plugin-1.2.5.txt` |
+| The same on 11.8.9 | 143/0/0, 30/0, 19/0, 39/0 + 2/0 | `13-server-11.8.9-plugin-1.2.5.txt` |
+| Plugin lab | 25 passed, 0 failed, through the script and through the Windows launcher | `14-…`, `15-…` |
+| Permanent load (experiment 34) | 5 passed, 0 failed | `05-test-permanent-load.txt` |
+| Windows PowerShell tests (non-elevated) | 10, 99, 18, 37; ACL 8 | `09-windows-powershell-tests.txt` |
+| Repository checks | passed | |
+
+Not done in this cycle: the screenshots still show plugin 1.2.0 (`03-plugin-state.png` lists 6 of
+the 9 variables), because retaking them needs the browser tests against the full stack; no
+mysql-test-run suite; `campus_audit.cpp` has no unit tests or mutants of its own.
+
+Third part, after two further independent evaluations of `bf19156` (34 and 31 of 40). Their
+verified findings were acted on:
+
+- **Handover with two assignments in one `SET`** (`SET GLOBAL campus_audit_file_path = 'x.jsonl',
+  GLOBAL campus_audit_file_path = '/dev/null'`). The second check function replaced the file staged
+  by the first, and `LogSink::open` closed the log that was being read before it could be handed
+  over. Now the file is opened beside the active one, and the first retired file, the log being
+  read, keeps the handover. New harness check "two redirects in one SET are both recorded in the
+  log they left"; reading the old code path, it would find 1 record instead of 3 (not run against
+  the old code). Harness 144/0/0 on 13.0.2 and 11.8.9 (`16-…`, `17-…`).
+- **Documentation corrections:**
+  - which variables have check functions (four have none);
+  - sample records now copied from committed evidence;
+  - `database` is already in `0x0302`;
+  - 10.11 and 11.4 were not run;
+  - executable comments in `docs/security.md`;
+  - `BUSY` in `plugin/docs/error_handling.md`;
+  - the browser-test claim (CI checks 390 px; the three-width scan was local);
+  - the hardening suite's own count (98);
+  - the remaining log I/O under a server lock in recovery paths;
+  - the real 11.8.9 digest;
+  - a current-state table at the top of this file.
+- **Limitations documented:**
+  - the handover's gaps: the old log gets no account, and a `SET` without its own STATUS event is not covered;
+  - excluded users' failed logins are not recorded;
+  - schema names are matched case-insensitively.
+- **Not done, and why:**
+  - merging to `main` needs the team's approval;
+  - screenshots;
+  - no mysql-test-run suite or in-tree CMake build;
+  - no unit tests or sanitizer builds for `campus_audit.cpp`;
+  - the polling timed lock;
+  - per-thread state on UNINSTALL;
+  - the event-scheduler case was not tested.
+
+**Screenshots, 21 November 2026 (after `a92ef8d`).** The ten README screenshots were regenerated
+from the running application with plugin 1.2.5. This was a separate Compose project with the
+Playwright browser tests (11 passed); the details are in `docs/visual-qa.md`, "Latest capture". The
+remarks above that the screenshots still showed plugin 1.2.0 refer to the state before this capture.
 
 ## Windows validation source ZIP
 

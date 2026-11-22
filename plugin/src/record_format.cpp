@@ -230,6 +230,7 @@ size_t sql_digest(const char* sql, size_t length, char* out, size_t max_length,
     size_t i = 0, o = 0;
     bool pending_space = false;
     bool cut = false;
+    bool in_executable_comment = false;   // inside /*! ... */ or /*M! ... */
     if (truncated) *truncated = false;
     if (out == nullptr) return 0;
     if (sql == nullptr) {
@@ -294,8 +295,30 @@ size_t sql_digest(const char* sql, size_t length, char* out, size_t max_length,
             ++i;
             continue;
         }
-        // Comments are dropped entirely (including /*! executable */ ones):
-        // they can carry literals, and the digest is not meant to be replayed.
+        // The end of an executable comment (below): the comment markers go,
+        // what was between them stays.
+        if (in_executable_comment && c == '*' && i + 1 < length && s[i + 1] == '/') {
+            in_executable_comment = false;
+            i += 2;
+            pending_space = true;
+            continue;
+        }
+        // Ordinary comments are dropped: they can carry literals and are not
+        // executed.  Executable comments (/*! ... */, /*!50000 ... */, and
+        // MariaDB's /*M! ... */, /*M!100000 ... */) ARE executed by the
+        // server, so their content is lexed like the rest of the statement:
+        // its keywords and identifiers stay visible and its literals are
+        // masked (`/*!100000 DELETE FROM t */` would otherwise leave an empty
+        // digest).  The version number after the '!' is dropped.
+        if (c == '/' && i + 2 < length && s[i + 1] == '*' && !in_executable_comment &&
+            (s[i + 2] == '!' ||
+             ((s[i + 2] == 'M' || s[i + 2] == 'm') && i + 3 < length && s[i + 3] == '!'))) {
+            i += (s[i + 2] == '!') ? 3 : 4;
+            while (i < length && is_digit(s[i])) ++i;
+            in_executable_comment = true;
+            pending_space = true;
+            continue;
+        }
         if (c == '#' ||
             (c == '-' && i + 1 < length && s[i + 1] == '-' &&
              (i + 2 >= length || is_space(s[i + 2])))) {

@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("up", "demo", "test", "down", "reset-admin", "reset-demo", "help")]
+    [ValidateSet("up", "demo", "test", "down", "reset-admin", "reset-demo", "plugin-lab", "plugin-lab-down", "help")]
     [string] $Command = "help"
 )
 
@@ -157,7 +157,11 @@ Push-Location -LiteralPath $ProjectRoot
 $savedSecretEnvironment = $null
 try {
     if ($Command -eq "help") {
-        Write-Host "Usage: .\frantastic.cmd up|demo|test|down|reset-admin|reset-demo"
+        Write-Host "Usage: .\frantastic.cmd up|demo|test|down|reset-admin|reset-demo|plugin-lab|plugin-lab-down"
+        Write-Host "  plugin-lab       the plugin on its own: build campus_audit and the skeleton plugin, start a"
+        Write-Host "                   throw-away MariaDB 13.0.2 that holds nothing else and run the guided tour"
+        Write-Host "                   (no .env, no web application, no published port)"
+        Write-Host "  plugin-lab-down  remove that container"
         Write-Host "  up           build and start MariaDB 13.0.2 with the campus_audit plugin and the web app"
         Write-Host "  demo         cause audited events and show what the plugin recorded"
         Write-Host "  test         run every test suite"
@@ -229,6 +233,26 @@ try {
             [void](Invoke-FrantasticDemoProvision -ProjectRoot $ProjectRoot -Compose $Compose -Rotate)
         }
         "down" { Invoke-Docker (@($Compose) + @("down")) }
+        { $_ -in "plugin-lab", "plugin-lab-down" } {
+            # The same docker commands as scripts/plugin_lab.sh (make plugin-lab).
+            $labName = "campus-audit-plugin-lab"
+            $labImage = "campus-audit-plugin-lab:13.0.2"
+            # The name filter matches substrings, so the names are compared exactly.
+            $existing = @(& docker ps -a --filter "name=$labName" --format "{{.Names}}")
+            if ($LASTEXITCODE -ne 0) { throw "docker ps failed with exit code $LASTEXITCODE." }
+            if ($existing -ccontains $labName) {
+                Invoke-Docker @("rm", "-f", "-v", $labName) | Out-Null
+            }
+            if ($Command -eq "plugin-lab-down") { Write-Host "removed $labName (if it existed)"; break }
+            Write-Host "== building $labImage (target plugin-server; compiles the plugins, runs the unit tests)"
+            Invoke-Docker @("build", "-f", "docker/mariadb/Dockerfile", "--target", "plugin-server", "-t", $labImage, ".")
+            Write-Host "== starting the throw-away server $labName (no published port)"
+            # The root password is random, forwarded by variable name only, never printed.
+            Invoke-DockerWithEnvironment -Environment @{ MARIADB_ROOT_PASSWORD = ("r" + (New-RandomHex 16)) } `
+                -Arguments @("run", "-d", "--name", $labName, "-e", "MARIADB_ROOT_PASSWORD", $labImage) | Out-Null
+            Invoke-Docker @("cp", "plugin/lab/tour.sh", "${labName}:/tmp/tour.sh") | Out-Null
+            Invoke-Docker @("exec", $labName, "bash", "/tmp/tour.sh")
+        }
     }
     exit 0
 } catch {
